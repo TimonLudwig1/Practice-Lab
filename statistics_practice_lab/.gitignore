@@ -1,0 +1,36 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# --- Virtuelle Umgebungen ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+# Notebook-Zellausgaben werden mitversioniert (didaktisch gewollt: Plots/Zahlen
+# sollen im Repo sichtbar sein). Falls das Repo zu groß wird, hier ausschließen.
+
+# --- Editoren / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Caches / Tooling ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_convert/
+
+# --- Große/generierte Rohdaten (Generierungsskripte bleiben im Repo!) ---
+# Standardmäßig NICHTS aus data/ ignorieren — generierte Daten sind meist klein
+# und reproduzierbar. Bei großen Downloads einzelne Muster hier ergänzen, z.B.:
+# projekte/**/data/*.parquet

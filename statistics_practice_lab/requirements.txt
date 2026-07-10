@@ -1,0 +1,26 @@
+# Statistik-Lernbegleiter — Abhängigkeiten
+# Getestet mit Python 3.13.9 (2026-07-09). Versionen sind die aktuell installierten;
+# `>=` statt `==`, damit kleinere Updates nicht sofort brechen, aber die getestete
+# Basis dokumentiert bleibt.
+
+# --- Kernstack (jedes Projekt) ---
+numpy>=2.3.5
+pandas>=2.3.3
+scipy>=1.16.3
+statsmodels>=0.14.5
+matplotlib>=3.10.8
+seaborn>=0.13.2
+
+# --- Notebook-Umgebung ---
+jupyter>=1.0.0
+notebook>=7.5.7
+ipykernel>=6.0.0
+
+# --- Ab Phase 8/10 (ML-nahe Projekte) ---
+scikit-learn>=1.8.0
+
+# --- Optional, erst bei Bedarf installieren ---
+# Phase 9 (Bayes/MCMC, Projekte 9.x): PyMC
+#   pip install pymc
+# Projekt 10.3 (Survival Analysis, Kaplan-Meier/Cox): lifelines
+#   pip install lifelines
