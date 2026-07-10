@@ -13,7 +13,12 @@ __pycache__/
 **/daten/*.model
 **/daten/*.vocab
 **/daten/*.npz
+**/daten/*.jpg
+**/daten/*.jpeg
+**/daten/*.png
 !**/daten/README.md
 **/daten/SMSSpamCollection
 **/daten/readme*
 **/daten/FashionMNIST/
+**/daten/eurosat/
+**/daten/EuroSAT/
