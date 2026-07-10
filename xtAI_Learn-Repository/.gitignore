@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+# Heruntergeladene Datensätze nicht committen
+**/daten/*.csv
+**/daten/*.zip
+**/daten/*.tsv
+**/daten/*.db
+**/daten/*.txt
+**/daten/*.conllu
+**/daten/*.model
+**/daten/*.vocab
+**/daten/*.npz
+!**/daten/README.md
+**/daten/SMSSpamCollection
+**/daten/readme*
+**/daten/FashionMNIST/
