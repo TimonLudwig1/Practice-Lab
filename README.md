@@ -1,6 +1,6 @@
 # Practice Labs
 
-Übergeordnetes Repository für meine praxisorientierten Lern-Labs. Es bündelt mehrere in sich geschlossene Lab-Sammlungen zu einzelnen Themen- und Studienbereichen und dient als gemeinsamer Einstiegspunkt, gemeinsame Konvention und langfristiges Archiv des Lernfortschritts.
+Übergeordnetes, selbst erstelltes Repository für meine praxisorientierten Lern-Labs. Es bündelt mehrere in sich geschlossene Lab-Sammlungen zu einzelnen Themen- und Studienbereichen und dient als gemeinsamer Einstiegspunkt, gemeinsame Konvention und langfristiges Archiv des Lernfortschritts.
 
 Ziel des Repos ist es, Theorie konsequent in eigenständig lauffähigen, nachvollziehbaren Übungen zu verankern – vom Grundkonzept bis zur praxisnahen Anwendung.
 
@@ -15,7 +15,8 @@ Jede Lab-Sammlung liegt in einem eigenen Unterverzeichnis und ist unabhängig vo
 | Statistik-Intuition durch Projekte | `statistics_practice_lab/` | katalogbasiert | Statistik von Grund auf, simulationsgetrieben | 10 Phasen |
 | ML/DS Practice Projects | `ds-practice-lab/` | katalogbasiert | End-to-end-ML-Projekte, Data-Science-Handwerk | 25 Projekte (2 Batches), noch nicht begonnen |
 | Data Science / Machine Learning / IT-Operations | `ML_DS_ITOP_Learn-Repository/` | modulbasiert | Datenmanagement, ML, BI, IT-Operations | 21 Module, noch nicht begonnen |
-| eXtended Artificial Intelligence (xtAI) | `xtAI_Learn-Repository/` | modulbasiert | KI-Methoden, NLP, Computer Vision, XR | 41 Module, in Arbeit (Modul 11) |
+| eXtended Artificial Intelligence (xtAI) | `xtAI_Learn-Repository/` | modulbasiert | KI-Methoden, NLP, Computer Vision, XR | 41 Module, generierung in Arbeit (Modul 13) |
+| Data Structures & Algorithms | `DSA-lab/` | modul + blockbasiert | Fundamente, Lineare Strukturen, Algorithmen-Grundtechniken, Hierarchische & vernetzte Strukturen, Entwurfsparadigmen | 17 module, noch nicht begonnen |
 
 > Der detaillierte Stand jeder Sammlung steht in deren eigenem Fortschritts-Tracker (`PROGRESS.md`).
 
@@ -23,7 +24,7 @@ Jede Lab-Sammlung liegt in einem eigenen Unterverzeichnis und ist unabhängig vo
 
 ## Aufbau einer Lab-Sammlung
 
-Beide Bauweisen teilen dieselben übergeordneten Prinzipien (siehe „Konventionen"), unterscheiden sich aber in der Gliederung.
+Die Bauweisen teilen dieselben übergeordneten Prinzipien (siehe „Konventionen"), unterscheiden sich aber in der Gliederung.
 
 ### Katalogbasiert
 
@@ -36,7 +37,7 @@ Eine flache, thematisch geordnete Sammlung vieler eigenständiger Projekte. Geei
 ```
 <sammlung>/
 ├── CLAUDE.md              # Arbeits- und Tutor-Anweisungen
-├── <KATALOG>.md           # Projektkatalog (Phasen, Schwierigkeit, Aufgaben)
+├── <KATALOG>.md           # Projektkatalog (Phasen, Schwierigkeit, Aufgaben) - name kann variieren pro lab
 ├── PROGRESS.md            # Fortschritts-Tracker
 └── <projekt-slug>/
     ├── README.md          # Aufgabenstellung und Interpretation
@@ -123,4 +124,4 @@ Der Einstieg in eine Sammlung erfolgt über deren **`PROGRESS.md`** (bei modulba
 
 ## Hinweis
 
-Dieses Repository entsteht zu Lern- und Übungszwecken. Inhalte werden fortlaufend ergänzt und sind bewusst didaktisch aufgebaut.
+Dieses Repository entsteht zu privaten Lern- und Übungszwecken. Inhalte werden fortlaufend ergänzt und sind bewusst didaktisch aufgebaut.
