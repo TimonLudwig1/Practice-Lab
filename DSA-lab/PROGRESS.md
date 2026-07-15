@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 01 (Komplexitätsanalyse & Big-O): Projekt 01-basic erstellen.**
+> **Modul 01 (Komplexitätsanalyse & Big-O): Projekt 02-medium erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 01" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -45,7 +45,7 @@ fünf Zellen `fertig` sind.
 
 | Nr. | Modul | Theorie | 01-basic | 02-medium | 03-final | Getestet | Formate | Notizen |
 |---|---|---|---|---|---|---|---|---|
-| 01 | Komplexitätsanalyse & Big-O | fertig | offen | offen | offen | offen | Markdown | Theorie: Intuition → Simulation → Formalisierung; Python-Beispiele syntaktisch geprüft |
+| 01 | Komplexitätsanalyse & Big-O | fertig | fertig | offen | offen | offen | Markdown, Python-Skript | Theorie plus Laufzeit-Labor; 9 Unit Tests und vollständiger Benchmark-Lauf erfolgreich |
 | 02 | Arrays & Strings | offen | offen | offen | offen | offen | — | — |
 | 03 | Rekursion & Divide and Conquer | offen | offen | offen | offen | offen | — | — |
 | 04 | Linked Lists | offen | offen | offen | offen | offen | — | — |
@@ -80,3 +80,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | Datum | Erledigt | Notizen |
 |---|---|---|
 | 2026-07-16 | Modul 01: Theorie | Umfassendes Theorie-Skript erstellt; Python-Beispiele syntaktisch geprüft. |
+| 2026-07-16 | Modul 01: 01-basic | Laufzeit-Labor mit fünf Kurven, adaptivem Benchmark, CSV und Log-Log-Plot; 9 Tests erfolgreich. |
