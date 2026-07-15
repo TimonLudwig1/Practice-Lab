@@ -13,6 +13,7 @@ __pycache__/
 **/daten/*.model
 **/daten/*.vocab
 **/daten/*.npz
+**/daten/*.gz
 **/daten/*.jpg
 **/daten/*.jpeg
 **/daten/*.png

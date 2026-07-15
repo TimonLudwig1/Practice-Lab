@@ -141,9 +141,9 @@ Auf der **echten** AS-Topologie (Projekt 01 reproduziert das):
 
 | entfernte Knoten | zufälliger Ausfall | gezielt (nach Grad) |
 |---|---|---|
-| 1 % | 0,988 | **0,413** |
-| 5 % | 0,923 | **0,003** |
-| 10 % | 0,836 | 0,001 |
+| 1 % | 0,989 | **0,413** |
+| 5 % | 0,939 | **0,003** |
+| 10 % | 0,800 | 0,001 |
 
 *(Anteil der Knoten in der größten zusammenhängenden Komponente.)*
 
@@ -174,10 +174,14 @@ Nachbarschaft von $u$:
 | **Adamic-Adar** | $\sum_{w\in N(u)\cap N(v)}\frac{1}{\log d_w}$ | seltene gemeinsame Nachbarn zählen mehr |
 | **Preferential Attachment** | $d_u\cdot d_v$ | Hubs verbinden sich mit Hubs |
 
-**Adamic-Adar** ist die stärkste dieser Heuristiken — die Gewichtung $1/\log d_w$ sagt: ein
+**Adamic-Adar** gilt als die stärkste dieser Heuristiken — die Gewichtung $1/\log d_w$ sagt: ein
 gemeinsamer Nachbar mit Grad 3 ist ein starkes Indiz, ein gemeinsamer Nachbar mit Grad 2000
 (ein Tier-1-Hub, mit dem *alle* verbunden sind) sagt fast nichts. Genau die richtige Intuition
 für scale-free-Netze.
+
+**Preferential Attachment** fällt aus der Reihe: es schaut **nur** auf die Grade und ignoriert
+die Nachbarschaft komplett. Merk dir das — in Projekt 01 „gewinnt" es trotzdem, und die
+Aufklärung dieses Widerspruchs ist eine der wichtigsten Lektionen des Moduls (Abschnitt 2.5).
 
 ### 2.2 Generation 2: node2vec / DeepWalk
 
@@ -280,11 +284,28 @@ Knotenpaare (**negative**), und prüft, ob das Modell sie trennt.
 >    auf einem Graphen, der die gesuchte Kante schon enthält — und misst Auswendiglernen.
 >    Das ist die Graph-Variante des Leakage-Problems aus Modul 15 (3.5).
 > 2. **Die Basisrate — schon wieder.** Ein Graph mit $n=10\,670$ hat ~57 Mio. mögliche Paare,
->    aber nur 22 000 Kanten ⟹ die echte Basisrate ist $\pi\approx 4\cdot10^{-4}$. Evaluiert man
->    (wie üblich) mit **1:1** positiv:negativ, misst man bei $\pi=0{,}5$ — und der **Base-Rate-
+>    aber nur 22 000 Kanten ⟹ die echte Basisrate ist $\pi\approx 3{,}9\cdot10^{-4}$. Evaluiert
+>    man (wie üblich) mit **1:1** positiv:negativ, misst man bei $\pi=0{,}5$ — und der **Base-Rate-
 >    Fallacy aus Modul 15 (3.1)** schlägt in voller Härte zu: eine AUC von 0,95 auf balancierten
 >    Daten heißt im echten Einsatz (alle Paare durchprobieren) fast nur Fehlalarme. Balanciertes
 >    Sampling ist bequem — aber man muss dazusagen, dass es die Realität **nicht** abbildet.
+> 3. **Der Grad-Confound.** Zieht man die negativen Paare **uniform zufällig** (der Standard!),
+>    sind sie in einem scale-free-Graphen fast immer **Blatt × Blatt** — echte Kanten betreffen
+>    dagegen überdurchschnittlich oft Hubs. Gemessen auf der echten AS-Topologie: Median-
+>    Gradprodukt **500** (echte Kanten) vs. **4** (Zufallspaare). Jede gradbasierte Größe trennt
+>    das fast trivial, **ohne irgendetwas über Struktur zu wissen**. Konsequenz (Projekt 01
+>    misst es):
+>
+>    | Heuristik | uniform Negative | **grad-gematchte** Negative |
+>    |---|---|---|
+>    | Adamic-Adar | 0,724 | **0,566** ← jetzt bester |
+>    | Common Neighbors | 0,719 | 0,559 |
+>    | **Preferential Attachment** | **0,763** ← „Sieger" | **0,406** ← Zufallsniveau |
+>
+>    **PA stürzt von 0,763 auf 0,406** — sein ganzer Vorsprung war ein **Artefakt der
+>    Negativ-Auswahl**, kein Signal. Und alle Verfahren fallen auf ~0,56: die Aufgabe ist
+>    *viel* schwerer als die naive Evaluation suggeriert. **Nicht nur das Modell kann täuschen —
+>    schon die Konstruktion der Testmenge entscheidet, was man misst.**
 
 ---
 
@@ -452,7 +473,7 @@ Verkehrsgraph.
 **Preferential Attachment**. **Exponent per MLE schätzen**
 ($\hat\alpha=1+n[\sum\ln\frac{d_i}{d_{\min}-0{,}5}]^{-1}$), **nie** per log-log-Fit (Faktor 2 daneben!).
 
-**Robustheit.** Zufallsausfall: harmlos (10 % → 0,84). **Hub-Angriff: fatal (5 % → 0,003).**
+**Robustheit.** Zufallsausfall: harmlos (10 % → 0,80). **Hub-Angriff: fatal (5 % → 0,003).**
 
 **Message Passing.** $\mathbf h_v^{(k)}=\text{UPDATE}(\mathbf h_v^{(k-1)},\text{AGGREGATE}(\{\mathbf h_u\}))$,
 AGGREGATE **permutationsinvariant**.
@@ -467,8 +488,9 @@ Eigenwerte in $[-1,1]$).
 **Over-Smoothing.** $\hat A^k$ → stationär ⟹ alle Knoten gleich ⟹ GNNs bleiben **2–3 Schichten**.
 
 **Link Prediction.** Common Neighbors · Jaccard · **Adamic-Adar** ($\sum 1/\log d_w$) ·
-Pref. Attachment. **Test-Kanten VOR der Feature-Berechnung entfernen!** Echte Basisrate
-$\approx4\cdot10^{-4}$, nicht 0,5.
+Pref. Attachment. Drei Fallen: **Test-Kanten VOR der Feature-Berechnung entfernen** · echte
+Basisrate $\approx3{,}9\cdot10^{-4}$ statt 0,5 · **Grad-Confound** (uniform gezogene Negative sind
+Blatt×Blatt ⟹ PA 0,763 → **0,406** bei grad-gematchten Negativen).
 
 **Forecasting.** Erst **saisonal-naiv** schlagen! · Lags + zyklische Kalender-Features
 ($\sin/\cos$) · **MASE < 1** = besser als naiv · SARIMA
@@ -504,7 +526,7 @@ vs. MLE **2,08** — Faktor 2.
 
 Wegen der Gradverteilung. Ein **zufällig** getroffener Knoten ist fast sicher ein Blatt (Grad
 1–2) — sein Ausfall stört nichts. Ein **gezielt** getroffener Hub reißt Tausende Kanten mit.
-Real: 10 % zufällig → 84 % bleiben verbunden; **5 % Hubs → 0,3 %** (Albert/Jeong/Barabási 2000).
+Real: 10 % zufällig → 80 % bleiben verbunden; **5 % Hubs → 0,3 %** (Albert/Jeong/Barabási 2000).
 </details>
 
 <details>
