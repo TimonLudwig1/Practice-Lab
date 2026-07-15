@@ -15,8 +15,9 @@ Jede Lab-Sammlung liegt in einem eigenen Unterverzeichnis und ist unabhängig vo
 | Statistik-Intuition durch Projekte | `statistics_practice_lab/` | katalogbasiert | Statistik von Grund auf, simulationsgetrieben | 10 Phasen |
 | ML/DS Practice Projects | `ds-practice-lab/` | katalogbasiert | End-to-end-ML-Projekte, Data-Science-Handwerk | 25 Projekte (2 Batches), noch nicht begonnen |
 | Data Science / Machine Learning / IT-Operations | `ML_DS_ITOP_Learn-Repository/` | modulbasiert | Datenmanagement, ML, BI, IT-Operations | 21 Module, noch nicht begonnen |
-| eXtended Artificial Intelligence (xtAI) | `xtAI_Learn-Repository/` | modulbasiert | KI-Methoden, NLP, Computer Vision, XR | 41 Module, generierung in Arbeit (Modul 13) |
+| eXtended Artificial Intelligence (xtAI) | `xtAI_Learn-Repository/` | modulbasiert | KI-Methoden, NLP, Computer Vision, XR | 41 Module, generierung in Arbeit (Modul 16) |
 | Data Structures & Algorithms | `DSA-lab/` | modul + blockbasiert | Fundamente, Lineare Strukturen, Algorithmen-Grundtechniken, Hierarchische & vernetzte Strukturen, Entwurfsparadigmen | 17 module, noch nicht begonnen |
+| Internship Preperation Lab | `Internship-prep-lab/` | phasenbasiert | SQL, Git, Redshift / Athena, S3, Glue / Data Catalog, Airflow, dbt, Looker | 41 Module, generierung in Arbeit (Modul 13) |
 
 > Der detaillierte Stand jeder Sammlung steht in deren eigenem Fortschritts-Tracker (`PROGRESS.md`).
 
