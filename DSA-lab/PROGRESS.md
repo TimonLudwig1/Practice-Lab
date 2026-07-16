@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 02 (Arrays & Strings): Projekt 03-final erstellen.**
+> **Modul 02 (Arrays & Strings): Test-Durchlauf durchführen.**
 > Dazu ausschließlich den Abschnitt „Modul 02" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -46,7 +46,7 @@ fünf Zellen `fertig` sind.
 | Nr. | Modul | Theorie | 01-basic | 02-medium | 03-final | Getestet | Formate | Notizen |
 |---|---|---|---|---|---|---|---|---|
 | 01 | Komplexitätsanalyse & Big-O | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 35/35 Unit Tests; alle 9 Code-Dateien und drei vollständigen Benchmark-/Auditläufe am 2026-07-16 erfolgreich |
-| 02 | Arrays & Strings | fertig | fertig | fertig | offen | offen | Markdown, Python-Skripte, CSV | Theorie, dynamisches Array und Katalog mit zehn Array-/String-Patterns; zuletzt 53 Tests erfolgreich |
+| 02 | Arrays & Strings | fertig | fertig | fertig | fertig | offen | Markdown, Python-Skripte, CSV, PNG | Zeitreihen-Toolkit ergänzt; 31 Tests sowie Benchmark mit 100.000 Messwerten und NumPy-Ergebnisvergleich erfolgreich |
 | 03 | Rekursion & Divide and Conquer | offen | offen | offen | offen | offen | — | — |
 | 04 | Linked Lists | offen | offen | offen | offen | offen | — | — |
 | 05 | Stacks & Queues | offen | offen | offen | offen | offen | — | — |
@@ -87,3 +87,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-16 | Modul 02: Theorie | Umfassendes Array-/String-Skript erstellt; alle extrahierten Python-Beispiele gemeinsam ausgeführt. |
 | 2026-07-16 | Modul 02: 01-basic | Dynamisches Array auf festem ctypes-Puffer, Resize-Tracking, CSV und Kostenplot; 18 Tests erfolgreich. |
 | 2026-07-16 | Modul 02: 02-medium | Zehn Array-/String-Patterns mit Invarianten, Randfällen und Demo; 53 Tests erfolgreich. |
+| 2026-07-16 | Modul 02: 03-final | Reproduzierbares Zeitreihen-Toolkit, 31 Tests und NumPy-Benchmark mit 100.000 Messwerten erfolgreich. |
