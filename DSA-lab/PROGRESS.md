@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 03 (Rekursion & Divide and Conquer): Projekt 02-medium erstellen.**
+> **Modul 03 (Rekursion & Divide and Conquer): Projekt 03-final erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 03" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -47,7 +47,7 @@ fünf Zellen `fertig` sind.
 |---|---|---|---|---|---|---|---|---|
 | 01 | Komplexitätsanalyse & Big-O | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 35/35 Unit Tests; alle 9 Code-Dateien und drei vollständigen Benchmark-/Auditläufe am 2026-07-16 erfolgreich |
 | 02 | Arrays & Strings | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 102/102 Tests; alle 10 Python-Dateien, Experimente, Generator, Demo und vollständiger NumPy-Benchmark am 2026-07-16 erfolgreich |
-| 03 | Rekursion & Divide and Conquer | fertig | fertig | offen | offen | offen | Markdown, Python-Skripte | Theorie und Rekursions-Visualizer für Fakultät, Fibonacci, Summe und Potenz; 24 Tests und vollständige Demo erfolgreich |
+| 03 | Rekursion & Divide and Conquer | fertig | fertig | fertig | offen | offen | Markdown, Python-Skripte | Visualizer und D&C-Werkzeugkasten mit binärer Potenz, Maximum Subarray und Inversionszählung; zuletzt 25 Tests erfolgreich |
 | 04 | Linked Lists | offen | offen | offen | offen | offen | — | — |
 | 05 | Stacks & Queues | offen | offen | offen | offen | offen | — | — |
 | 06 | Hashing & Hash Maps | offen | offen | offen | offen | offen | — | — |
@@ -91,3 +91,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-16 | Modul 02: Test-Durchlauf | 102/102 Tests; alle 10 Python-Dateien und vollständigen Experimente/Benchmarks erfolgreich. |
 | 2026-07-16 | Modul 03: Theorie | Umfassendes Rekursions-/Divide-and-Conquer-Skript erstellt; alle Python-Beispiele gemeinsam ausgeführt. |
 | 2026-07-16 | Modul 03: 01-basic | Rekursions-Visualizer mit vier Funktionen, Call-Tree-Decorator und vollständiger Demo; 24 Tests erfolgreich. |
+| 2026-07-16 | Modul 03: 02-medium | Instrumentierter D&C-Werkzeugkasten mit drei Rekursionsbäumen und Demo; 25 Tests erfolgreich. |
