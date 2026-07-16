@@ -7,8 +7,8 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 03 (Rekursion & Divide and Conquer): Test-Durchlauf durchführen.**
-> Dazu ausschließlich den Abschnitt „Modul 03" sowie die Arbeitsanweisungen
+> **Modul 04 (Linked Lists): Theorie erstellen.**
+> Dazu ausschließlich den Abschnitt „Modul 04" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
 *(Dieser Block wird nach jedem abgeschlossenen Task aktualisiert und zeigt immer
@@ -47,7 +47,7 @@ fünf Zellen `fertig` sind.
 |---|---|---|---|---|---|---|---|---|
 | 01 | Komplexitätsanalyse & Big-O | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 35/35 Unit Tests; alle 9 Code-Dateien und drei vollständigen Benchmark-/Auditläufe am 2026-07-16 erfolgreich |
 | 02 | Arrays & Strings | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 102/102 Tests; alle 10 Python-Dateien, Experimente, Generator, Demo und vollständiger NumPy-Benchmark am 2026-07-16 erfolgreich |
-| 03 | Rekursion & Divide and Conquer | fertig | fertig | fertig | fertig | offen | Markdown, Python-Skripte, CSV | Rekursive Dateisystem-Analyse mit reproduzierbarem Baum und explizitem Stack ergänzt; zuletzt 19 Tests und vollständiger Benchmark erfolgreich |
+| 03 | Rekursion & Divide and Conquer | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 68/68 Tests; alle 10 Python-Dateien, Theoriebeispiele, Demos, Generator und vollständiger Dateisystem-Benchmark am 2026-07-16 erfolgreich |
 | 04 | Linked Lists | offen | offen | offen | offen | offen | — | — |
 | 05 | Stacks & Queues | offen | offen | offen | offen | offen | — | — |
 | 06 | Hashing & Hash Maps | offen | offen | offen | offen | offen | — | — |
@@ -93,3 +93,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-16 | Modul 03: 01-basic | Rekursions-Visualizer mit vier Funktionen, Call-Tree-Decorator und vollständiger Demo; 24 Tests erfolgreich. |
 | 2026-07-16 | Modul 03: 02-medium | Instrumentierter D&C-Werkzeugkasten mit drei Rekursionsbäumen und Demo; 25 Tests erfolgreich. |
 | 2026-07-16 | Modul 03: 03-final | Rekursive/iterative Dateisystem-Analyse auf 117 Verzeichnissen und 326 Dateien; 19 Tests und Benchmark erfolgreich. |
+| 2026-07-16 | Modul 03: Test-Durchlauf | 68/68 Tests; alle 10 Python-Dateien, Theoriebeispiele, Demos und vollständiger Benchmark erfolgreich. |
