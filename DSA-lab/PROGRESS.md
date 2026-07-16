@@ -7,8 +7,8 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 02 (Arrays & Strings): Test-Durchlauf durchführen.**
-> Dazu ausschließlich den Abschnitt „Modul 02" sowie die Arbeitsanweisungen
+> **Modul 03 (Rekursion & Divide and Conquer): Theorie erstellen.**
+> Dazu ausschließlich den Abschnitt „Modul 03" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
 *(Dieser Block wird nach jedem abgeschlossenen Task aktualisiert und zeigt immer
@@ -46,7 +46,7 @@ fünf Zellen `fertig` sind.
 | Nr. | Modul | Theorie | 01-basic | 02-medium | 03-final | Getestet | Formate | Notizen |
 |---|---|---|---|---|---|---|---|---|
 | 01 | Komplexitätsanalyse & Big-O | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 35/35 Unit Tests; alle 9 Code-Dateien und drei vollständigen Benchmark-/Auditläufe am 2026-07-16 erfolgreich |
-| 02 | Arrays & Strings | fertig | fertig | fertig | fertig | offen | Markdown, Python-Skripte, CSV, PNG | Zeitreihen-Toolkit ergänzt; 31 Tests sowie Benchmark mit 100.000 Messwerten und NumPy-Ergebnisvergleich erfolgreich |
+| 02 | Arrays & Strings | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 102/102 Tests; alle 10 Python-Dateien, Experimente, Generator, Demo und vollständiger NumPy-Benchmark am 2026-07-16 erfolgreich |
 | 03 | Rekursion & Divide and Conquer | offen | offen | offen | offen | offen | — | — |
 | 04 | Linked Lists | offen | offen | offen | offen | offen | — | — |
 | 05 | Stacks & Queues | offen | offen | offen | offen | offen | — | — |
@@ -88,3 +88,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-16 | Modul 02: 01-basic | Dynamisches Array auf festem ctypes-Puffer, Resize-Tracking, CSV und Kostenplot; 18 Tests erfolgreich. |
 | 2026-07-16 | Modul 02: 02-medium | Zehn Array-/String-Patterns mit Invarianten, Randfällen und Demo; 53 Tests erfolgreich. |
 | 2026-07-16 | Modul 02: 03-final | Reproduzierbares Zeitreihen-Toolkit, 31 Tests und NumPy-Benchmark mit 100.000 Messwerten erfolgreich. |
+| 2026-07-16 | Modul 02: Test-Durchlauf | 102/102 Tests; alle 10 Python-Dateien und vollständigen Experimente/Benchmarks erfolgreich. |
