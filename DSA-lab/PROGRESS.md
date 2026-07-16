@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 02 (Arrays & Strings): THEORIE.md erstellen.**
+> **Modul 02 (Arrays & Strings): Projekt 01-basic erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 02" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -46,7 +46,7 @@ fünf Zellen `fertig` sind.
 | Nr. | Modul | Theorie | 01-basic | 02-medium | 03-final | Getestet | Formate | Notizen |
 |---|---|---|---|---|---|---|---|---|
 | 01 | Komplexitätsanalyse & Big-O | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 35/35 Unit Tests; alle 9 Code-Dateien und drei vollständigen Benchmark-/Auditläufe am 2026-07-16 erfolgreich |
-| 02 | Arrays & Strings | offen | offen | offen | offen | offen | — | — |
+| 02 | Arrays & Strings | fertig | offen | offen | offen | offen | Markdown | Theorie: Arrays, Strings, Prefix Sums, Matrix- und In-Place-Patterns; alle Python-Beispiele ausgeführt |
 | 03 | Rekursion & Divide and Conquer | offen | offen | offen | offen | offen | — | — |
 | 04 | Linked Lists | offen | offen | offen | offen | offen | — | — |
 | 05 | Stacks & Queues | offen | offen | offen | offen | offen | — | — |
@@ -84,3 +84,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-16 | Modul 01: 02-medium | Zehn Detektivfälle mit versteckten Kosten, 70-Punkt-Benchmark und normalisiertem Plot; 15 Tests erfolgreich. |
 | 2026-07-16 | Modul 01: 03-final | CSV-Pipeline-Audit mit Seed, Ergebnisgleichheit und Vorher/Nachher-Report; 11 Tests, bis 139,97x Speedup. |
 | 2026-07-16 | Modul 01: Test-Durchlauf | 35/35 Tests; alle 9 Code-Dateien, Generatoren und drei vollständigen Benchmark-/Auditläufe erfolgreich. |
+| 2026-07-16 | Modul 02: Theorie | Umfassendes Array-/String-Skript erstellt; alle extrahierten Python-Beispiele gemeinsam ausgeführt. |
