@@ -7,9 +7,9 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 01 (Komplexitätsanalyse & Big-O): Test-Durchlauf durchführen.**
-> Alle Code-Dateien des Moduls ausführen und alle Tests starten. Fehler beheben,
-> Ergebnis dokumentieren und Modul 01 danach als vollständig fertig markieren.
+> **Modul 02 (Arrays & Strings): THEORIE.md erstellen.**
+> Dazu ausschließlich den Abschnitt „Modul 02" sowie die Arbeitsanweisungen
+> aus `Moduluebersicht_DSA.md` lesen.
 
 *(Dieser Block wird nach jedem abgeschlossenen Task aktualisiert und zeigt immer
 genau einen nächsten Schritt.)*
@@ -45,7 +45,7 @@ fünf Zellen `fertig` sind.
 
 | Nr. | Modul | Theorie | 01-basic | 02-medium | 03-final | Getestet | Formate | Notizen |
 |---|---|---|---|---|---|---|---|---|
-| 01 | Komplexitätsanalyse & Big-O | fertig | fertig | fertig | fertig | offen | Markdown, Python-Skripte, CSV | Theorie und drei Projekte erstellt; 35 Unit Tests sowie alle projektbezogenen Benchmark-Läufe erfolgreich |
+| 01 | Komplexitätsanalyse & Big-O | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 35/35 Unit Tests; alle 9 Code-Dateien und drei vollständigen Benchmark-/Auditläufe am 2026-07-16 erfolgreich |
 | 02 | Arrays & Strings | offen | offen | offen | offen | offen | — | — |
 | 03 | Rekursion & Divide and Conquer | offen | offen | offen | offen | offen | — | — |
 | 04 | Linked Lists | offen | offen | offen | offen | offen | — | — |
@@ -83,3 +83,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-16 | Modul 01: 01-basic | Laufzeit-Labor mit fünf Kurven, adaptivem Benchmark, CSV und Log-Log-Plot; 9 Tests erfolgreich. |
 | 2026-07-16 | Modul 01: 02-medium | Zehn Detektivfälle mit versteckten Kosten, 70-Punkt-Benchmark und normalisiertem Plot; 15 Tests erfolgreich. |
 | 2026-07-16 | Modul 01: 03-final | CSV-Pipeline-Audit mit Seed, Ergebnisgleichheit und Vorher/Nachher-Report; 11 Tests, bis 139,97x Speedup. |
+| 2026-07-16 | Modul 01: Test-Durchlauf | 35/35 Tests; alle 9 Code-Dateien, Generatoren und drei vollständigen Benchmark-/Auditläufe erfolgreich. |
