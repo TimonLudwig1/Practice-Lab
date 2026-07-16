@@ -1,0 +1,6 @@
+data/events.csv
+results/*.csv
+results/*.png
+results/*.md
+__pycache__/
+data/__pycache__/
