@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 05 (Stacks & Queues): Theorie-Skript erstellen.**
+> **Modul 05 (Stacks & Queues): Projekt 01-basic erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 05" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -49,7 +49,7 @@ fünf Zellen `fertig` sind.
 | 02 | Arrays & Strings | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 102/102 Tests; alle 10 Python-Dateien, Experimente, Generator, Demo und vollständiger NumPy-Benchmark am 2026-07-16 erfolgreich |
 | 03 | Rekursion & Divide and Conquer | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 68/68 Tests; alle 10 Python-Dateien, Theoriebeispiele, Demos, Generator und vollständiger Dateisystem-Benchmark am 2026-07-16 erfolgreich |
 | 04 | Linked Lists | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 131/131 Tests; alle 9 Python-Dateien, Demos und vollständige Cache-Simulation am 2026-07-17 erfolgreich |
-| 05 | Stacks & Queues | offen | offen | offen | offen | offen | — | — |
+| 05 | Stacks & Queues | fertig | offen | offen | offen | offen | Markdown | Umfassendes Theorie-Skript zu LIFO/FIFO, Implementierungsvarianten, Deque, Anwendungsmustern und realen Queue-Systemen; alle Python-Beispiele erfolgreich |
 | 06 | Hashing & Hash Maps | offen | offen | offen | offen | offen | — | — |
 | 07 | Sortieralgorithmen | offen | offen | offen | offen | offen | — | — |
 | 08 | Binary Search & Suchvarianten | offen | offen | offen | offen | offen | — | — |
@@ -99,3 +99,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-17 | Modul 04: 02-medium | Reversal, Runner-Mitte, Floyd-Metadaten und stabiler In-place-Merge mit Traces; 36 pytest-Fälle erfolgreich. |
 | 2026-07-17 | Modul 04: 03-final | O(1)-LRU-Cache mit Sentinel-Liste und Hash Map; 52/52 Tests sowie Standardsimulation mit 77,40 % Hit-Rate und 4,41x Speedup erfolgreich. |
 | 2026-07-17 | Modul 04: Test-Durchlauf | 131/131 Tests; alle 9 Python-Dateien, beide Demos und vollständige Cache-Simulation erfolgreich. |
+| 2026-07-17 | Modul 05: Theorie | Umfassendes Stacks-&-Queues-Skript erstellt; alle enthaltenen Python-Beispiele gemeinsam erfolgreich ausgeführt. |
