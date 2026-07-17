@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 05 (Stacks & Queues): Projekt 02-medium erstellen.**
+> **Modul 05 (Stacks & Queues): Projekt 03-final erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 05" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -49,7 +49,7 @@ fünf Zellen `fertig` sind.
 | 02 | Arrays & Strings | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 102/102 Tests; alle 10 Python-Dateien, Experimente, Generator, Demo und vollständiger NumPy-Benchmark am 2026-07-16 erfolgreich |
 | 03 | Rekursion & Divide and Conquer | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 68/68 Tests; alle 10 Python-Dateien, Theoriebeispiele, Demos, Generator und vollständiger Dateisystem-Benchmark am 2026-07-16 erfolgreich |
 | 04 | Linked Lists | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 131/131 Tests; alle 9 Python-Dateien, Demos und vollständige Cache-Simulation am 2026-07-17 erfolgreich |
-| 05 | Stacks & Queues | fertig | fertig | offen | offen | offen | Markdown, Python-Skripte | Arraybasierter Stack und Queue als fixer Ringpuffer mit eigenen Underflow-/Overflow-Fehlern; Demo und 24 Tests erfolgreich |
+| 05 | Stacks & Queues | fertig | fertig | fertig | offen | offen | Markdown, Python-Skripte | Stack/Ringpuffer sowie Ausdrucks-Rechner mit Tokenizer, Shunting-Yard, Postfix-Auswertung und Trace-Demo; 24 + 59 Tests erfolgreich |
 | 06 | Hashing & Hash Maps | offen | offen | offen | offen | offen | — | — |
 | 07 | Sortieralgorithmen | offen | offen | offen | offen | offen | — | — |
 | 08 | Binary Search & Suchvarianten | offen | offen | offen | offen | offen | — | — |
@@ -101,3 +101,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-17 | Modul 04: Test-Durchlauf | 131/131 Tests; alle 9 Python-Dateien, beide Demos und vollständige Cache-Simulation erfolgreich. |
 | 2026-07-17 | Modul 05: Theorie | Umfassendes Stacks-&-Queues-Skript erstellt; alle enthaltenen Python-Beispiele gemeinsam erfolgreich ausgeführt. |
 | 2026-07-17 | Modul 05: 01-basic | Arraybasierter Stack und fixer Queue-Ringpuffer mit LIFO/FIFO-Demo, Fehlerbehandlung und Wrap-around; 24 Tests erfolgreich. |
+| 2026-07-17 | Modul 05: 02-medium | Ausdrucks-Rechner mit Tokenizer, Klammervalidierung, Shunting-Yard, Postfix-Auswertung und Trace-Demo; 59 Tests erfolgreich. |
