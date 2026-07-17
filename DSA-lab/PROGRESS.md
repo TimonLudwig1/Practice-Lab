@@ -7,8 +7,8 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 04 (Linked Lists): Test-Durchlauf ausführen.**
-> Dazu ausschließlich den Abschnitt „Modul 04" sowie die Arbeitsanweisungen
+> **Modul 05 (Stacks & Queues): Theorie-Skript erstellen.**
+> Dazu ausschließlich den Abschnitt „Modul 05" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
 *(Dieser Block wird nach jedem abgeschlossenen Task aktualisiert und zeigt immer
@@ -48,7 +48,7 @@ fünf Zellen `fertig` sind.
 | 01 | Komplexitätsanalyse & Big-O | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 35/35 Unit Tests; alle 9 Code-Dateien und drei vollständigen Benchmark-/Auditläufe am 2026-07-16 erfolgreich |
 | 02 | Arrays & Strings | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 102/102 Tests; alle 10 Python-Dateien, Experimente, Generator, Demo und vollständiger NumPy-Benchmark am 2026-07-16 erfolgreich |
 | 03 | Rekursion & Divide and Conquer | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 68/68 Tests; alle 10 Python-Dateien, Theoriebeispiele, Demos, Generator und vollständiger Dateisystem-Benchmark am 2026-07-16 erfolgreich |
-| 04 | Linked Lists | fertig | fertig | fertig | fertig | offen | Markdown, Python-Skripte, CSV | O(1)-LRU-Cache aus eigener Doubly Linked List und Hash Map; 52/52 Tests, Standardsimulation mit 77,40 % Hit-Rate und 4,41x Speedup erfolgreich |
+| 04 | Linked Lists | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 131/131 Tests; alle 9 Python-Dateien, Demos und vollständige Cache-Simulation am 2026-07-17 erfolgreich |
 | 05 | Stacks & Queues | offen | offen | offen | offen | offen | — | — |
 | 06 | Hashing & Hash Maps | offen | offen | offen | offen | offen | — | — |
 | 07 | Sortieralgorithmen | offen | offen | offen | offen | offen | — | — |
@@ -98,3 +98,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-17 | Modul 04: 01-basic | Vollständige Singly Linked List mit Invariantenprüfung und Operationsdemo; 43 pytest-Fälle erfolgreich. |
 | 2026-07-17 | Modul 04: 02-medium | Reversal, Runner-Mitte, Floyd-Metadaten und stabiler In-place-Merge mit Traces; 36 pytest-Fälle erfolgreich. |
 | 2026-07-17 | Modul 04: 03-final | O(1)-LRU-Cache mit Sentinel-Liste und Hash Map; 52/52 Tests sowie Standardsimulation mit 77,40 % Hit-Rate und 4,41x Speedup erfolgreich. |
+| 2026-07-17 | Modul 04: Test-Durchlauf | 131/131 Tests; alle 9 Python-Dateien, beide Demos und vollständige Cache-Simulation erfolgreich. |
