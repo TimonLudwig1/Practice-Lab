@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 04 (Linked Lists): Projekt 02-medium erstellen.**
+> **Modul 04 (Linked Lists): Projekt 03-final erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 04" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -48,7 +48,7 @@ fünf Zellen `fertig` sind.
 | 01 | Komplexitätsanalyse & Big-O | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 35/35 Unit Tests; alle 9 Code-Dateien und drei vollständigen Benchmark-/Auditläufe am 2026-07-16 erfolgreich |
 | 02 | Arrays & Strings | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 102/102 Tests; alle 10 Python-Dateien, Experimente, Generator, Demo und vollständiger NumPy-Benchmark am 2026-07-16 erfolgreich |
 | 03 | Rekursion & Divide and Conquer | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 68/68 Tests; alle 10 Python-Dateien, Theoriebeispiele, Demos, Generator und vollständiger Dateisystem-Benchmark am 2026-07-16 erfolgreich |
-| 04 | Linked Lists | fertig | fertig | offen | offen | offen | Markdown, Python-Skripte | Theorie und vollständige Singly Linked List mit Head-/Tail-/Size-Invarianten; 43 pytest-Fälle und Demo erfolgreich |
+| 04 | Linked Lists | fertig | fertig | fertig | offen | offen | Markdown, Python-Skripte | Singly Linked List und vier Zeiger-Klassiker mit vollständigen Traces; zuletzt 36 pytest-Fälle erfolgreich |
 | 05 | Stacks & Queues | offen | offen | offen | offen | offen | — | — |
 | 06 | Hashing & Hash Maps | offen | offen | offen | offen | offen | — | — |
 | 07 | Sortieralgorithmen | offen | offen | offen | offen | offen | — | — |
@@ -96,3 +96,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-16 | Modul 03: Test-Durchlauf | 68/68 Tests; alle 10 Python-Dateien, Theoriebeispiele, Demos und vollständiger Benchmark erfolgreich. |
 | 2026-07-17 | Modul 04: Theorie | Umfassendes Linked-Lists-Skript erstellt; alle Python-Beispiele gemeinsam ausgeführt. |
 | 2026-07-17 | Modul 04: 01-basic | Vollständige Singly Linked List mit Invariantenprüfung und Operationsdemo; 43 pytest-Fälle erfolgreich. |
+| 2026-07-17 | Modul 04: 02-medium | Reversal, Runner-Mitte, Floyd-Metadaten und stabiler In-place-Merge mit Traces; 36 pytest-Fälle erfolgreich. |
