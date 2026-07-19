@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 06 (Hashing & Hash Maps): Projekt 01-basic erstellen.**
+> **Modul 06 (Hashing & Hash Maps): Projekt 02-medium erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 06" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -50,7 +50,7 @@ fünf Zellen `fertig` sind.
 | 03 | Rekursion & Divide and Conquer | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 68/68 Tests; alle 10 Python-Dateien, Theoriebeispiele, Demos, Generator und vollständiger Dateisystem-Benchmark am 2026-07-16 erfolgreich |
 | 04 | Linked Lists | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 131/131 Tests; alle 9 Python-Dateien, Demos und vollständige Cache-Simulation am 2026-07-17 erfolgreich |
 | 05 | Stacks & Queues | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 112/112 Tests; alle 11 Python-Dateien, Demos, Generator und vollständige 250-Job-Simulation am 2026-07-19 erfolgreich |
-| 06 | Hashing & Hash Maps | fertig | offen | offen | offen | offen | Markdown | Umfassendes Theorie-Skript zu Hash-Funktionen, Kollisionen, Load Factor, Rehashing, Python-Interna und Hash-Patterns; alle 12 Python-Beispiele erfolgreich |
+| 06 | Hashing & Hash Maps | fertig | fertig | offen | offen | offen | Markdown, Python-Skripte, CSV | Chained Hash Map mit Put/Get/Delete, Rehashing über Load Factor 0,75, Invarianten und Benchmark; 32 Tests erfolgreich |
 | 07 | Sortieralgorithmen | offen | offen | offen | offen | offen | — | — |
 | 08 | Binary Search & Suchvarianten | offen | offen | offen | offen | offen | — | — |
 | 09 | Two Pointers & Sliding Window | offen | offen | offen | offen | offen | — | — |
@@ -105,3 +105,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-17 | Modul 05: 03-final | Reproduzierbare Job-Queue-Simulation mit FIFO/Priorität, 250 Jobs, segmentierten Kennzahlen, CSV-Bericht und PNG-Vergleich; 29 Tests erfolgreich. |
 | 2026-07-19 | Modul 05: Test-Durchlauf | 112/112 Tests; alle 11 Python-Dateien, beide Demos, Generator und vollständige 250-Job-Simulation erfolgreich. |
 | 2026-07-19 | Modul 06: Theorie | Umfassendes Hashing-/Hash-Map-Skript erstellt; alle 12 enthaltenen Python-Beispiele gemeinsam erfolgreich ausgeführt. |
+| 2026-07-19 | Modul 06: 01-basic | Generische Chained Hash Map mit Rehashing, Invarianten, Kollisionsdemo und Benchmark gegen fixe Kapazität; 32 Tests erfolgreich. |

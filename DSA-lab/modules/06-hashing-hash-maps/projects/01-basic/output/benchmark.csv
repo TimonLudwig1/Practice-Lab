@@ -1,0 +1,9 @@
+strategy,item_count,capacity,load_factor,max_chain_length,build_ns_per_item,lookup_ns_per_item
+rehashing,100,256,0.390625,1,660.84,190.582
+fixed_capacity,100,16,6.25,7,300.83,236.418
+rehashing,500,1024,0.48828125,1,666.0,216.55
+fixed_capacity,500,16,31.25,32,497.75,442.8
+rehashing,1000,2048,0.48828125,1,604.542,216.6584
+fixed_capacity,1000,16,62.5,63,748.0,680.025
+rehashing,2500,4096,0.6103515625,1,798.95,219.96
+fixed_capacity,2500,16,156.25,157,1505.4,1469.62328
