@@ -7,8 +7,8 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 05 (Stacks & Queues): Test-Durchlauf durchführen.**
-> Dazu ausschließlich den Abschnitt „Modul 05" sowie die Arbeitsanweisungen
+> **Modul 06 (Hashing & Hash Maps): Theorie-Skript erstellen.**
+> Dazu ausschließlich den Abschnitt „Modul 06" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
 *(Dieser Block wird nach jedem abgeschlossenen Task aktualisiert und zeigt immer
@@ -49,7 +49,7 @@ fünf Zellen `fertig` sind.
 | 02 | Arrays & Strings | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 102/102 Tests; alle 10 Python-Dateien, Experimente, Generator, Demo und vollständiger NumPy-Benchmark am 2026-07-16 erfolgreich |
 | 03 | Rekursion & Divide and Conquer | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 68/68 Tests; alle 10 Python-Dateien, Theoriebeispiele, Demos, Generator und vollständiger Dateisystem-Benchmark am 2026-07-16 erfolgreich |
 | 04 | Linked Lists | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 131/131 Tests; alle 9 Python-Dateien, Demos und vollständige Cache-Simulation am 2026-07-17 erfolgreich |
-| 05 | Stacks & Queues | fertig | fertig | fertig | fertig | offen | Markdown, Python-Skripte, CSV, PNG | Drei Projekte fertig; Job-Queue-Vergleich auf 250 Jobs zeigt Fairness-Trade-off zwischen FIFO und stabiler Priorisierung; bisher 24 + 59 + 29 Tests erfolgreich |
+| 05 | Stacks & Queues | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 112/112 Tests; alle 11 Python-Dateien, Demos, Generator und vollständige 250-Job-Simulation am 2026-07-19 erfolgreich |
 | 06 | Hashing & Hash Maps | offen | offen | offen | offen | offen | — | — |
 | 07 | Sortieralgorithmen | offen | offen | offen | offen | offen | — | — |
 | 08 | Binary Search & Suchvarianten | offen | offen | offen | offen | offen | — | — |
@@ -103,3 +103,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-17 | Modul 05: 01-basic | Arraybasierter Stack und fixer Queue-Ringpuffer mit LIFO/FIFO-Demo, Fehlerbehandlung und Wrap-around; 24 Tests erfolgreich. |
 | 2026-07-17 | Modul 05: 02-medium | Ausdrucks-Rechner mit Tokenizer, Klammervalidierung, Shunting-Yard, Postfix-Auswertung und Trace-Demo; 59 Tests erfolgreich. |
 | 2026-07-17 | Modul 05: 03-final | Reproduzierbare Job-Queue-Simulation mit FIFO/Priorität, 250 Jobs, segmentierten Kennzahlen, CSV-Bericht und PNG-Vergleich; 29 Tests erfolgreich. |
+| 2026-07-19 | Modul 05: Test-Durchlauf | 112/112 Tests; alle 11 Python-Dateien, beide Demos, Generator und vollständige 250-Job-Simulation erfolgreich. |
