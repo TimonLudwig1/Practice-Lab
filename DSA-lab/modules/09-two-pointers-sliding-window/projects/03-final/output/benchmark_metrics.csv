@@ -1,0 +1,12 @@
+metric,value
+record_count,12000
+window_size,120
+z_threshold,5.0
+naive_median_ms,58.819834
+streaming_median_ms,15.315833
+speedup,3.840
+true_positives,20
+false_positives,0
+false_negatives,0
+precision,1.000000
+recall,1.000000
