@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 07 (Sortieralgorithmen): vollständigen Test-Durchlauf ausführen.**
+> **Modul 08 (Binary Search & Suchvarianten): Theorie-Skript erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 07" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -51,7 +51,7 @@ fünf Zellen `fertig` sind.
 | 04 | Linked Lists | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 131/131 Tests; alle 9 Python-Dateien, Demos und vollständige Cache-Simulation am 2026-07-17 erfolgreich |
 | 05 | Stacks & Queues | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 112/112 Tests; alle 11 Python-Dateien, Demos, Generator und vollständige 250-Job-Simulation am 2026-07-19 erfolgreich |
 | 06 | Hashing & Hash Maps | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 113/113 Tests; alle 13 Python-Dateien, 12 Theorieblöcke, Demos, Benchmarks, Generator und vollständige 4.000-Zeilen-Log-Pipeline am 2026-07-19 erfolgreich |
-| 07 | Sortieralgorithmen | fertig | fertig | fertig | fertig | offen | Markdown, Python-Skripte, CSV, PNG | Drei Projekte fertig: instrumentierte Sortierverfahren, Benchmark und stabile externe CSV-Sortierung mit 20 Runs und zwei Merge-Pässen; 73 + 55 + 37 Tests erfolgreich |
+| 07 | Sortieralgorithmen | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 165/165 Tests; alle 12 Python-Dateien, 15 Theorieblöcke, Demo, vollständiger 120-Punkt-Benchmark und externe 5.000-Zeilen-Sortierung am 2026-07-19 erfolgreich |
 | 08 | Binary Search & Suchvarianten | offen | offen | offen | offen | offen | — | — |
 | 09 | Two Pointers & Sliding Window | offen | offen | offen | offen | offen | — | — |
 | 10 | Bäume & Binary Search Trees | offen | offen | offen | offen | offen | — | — |
@@ -113,3 +113,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-19 | Modul 07: 01-basic | Bubble, Selection, Insertion, Merge und Quick Sort mit Metriken, Traces und Seed-basierten Property-Tests; 73 Tests erfolgreich. |
 | 2026-07-19 | Modul 07: 02-medium | Systematischer Benchmark von sechs Verfahren über vier Eingabeformen und fünf Größen mit CSV, Vier-Panel-Plot und Theoriebericht; 55 Tests erfolgreich. |
 | 2026-07-19 | Modul 07: 03-final | Stabile externe CSV-Sortierung unter künstlicher 250-Zeilen-Speichergrenze mit 20 Runs, begrenztem k-Way-Merge, Integritätsprüfung und Laufbericht; 37 Tests erfolgreich. |
+| 2026-07-19 | Modul 07: Test-Durchlauf | 165/165 Tests; alle 12 Python-Dateien, 15 Theorieblöcke, Demo, vollständiger Benchmark und externe Sortierpipeline erfolgreich. |

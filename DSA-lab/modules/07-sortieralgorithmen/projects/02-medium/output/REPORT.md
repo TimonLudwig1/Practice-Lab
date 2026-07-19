@@ -6,9 +6,9 @@ aus den im CSV dokumentierten Wiederholungen.
 
 | Eingabe | schnellste gemessene Variante | Median ms | Insertion-Vergleiche | Selection-Vergleiche |
 |---|---|---:|---:|---:|
-| random | python_timsort | 0.943 | 645017 | 1279200 |
-| nearly_sorted | python_timsort | 0.575 | 84317 | 1279200 |
-| reversed | python_timsort | 0.193 | 1279200 | 1279200 |
+| random | python_timsort | 0.962 | 645017 | 1279200 |
+| nearly_sorted | python_timsort | 0.592 | 84317 | 1279200 |
+| reversed | python_timsort | 0.195 | 1279200 | 1279200 |
 | many_duplicates | quick_3way | 0.353 | 560015 | 1279200 |
 
 ## Interpretation gegen die Theorie
