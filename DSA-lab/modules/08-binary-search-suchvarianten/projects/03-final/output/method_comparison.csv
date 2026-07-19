@@ -1,0 +1,4 @@
+method,threshold,recall,false_positive_rate,precision,true_positives,false_positives,evaluations,candidate_count
+binary_exact,0.57983508,0.79774536,0.04982818,0.87363834,1203,174,13,5001
+uniform_grid,0.58000000,0.79708223,0.04954181,0.87418182,1202,173,1002,1002
+exhaustive_exact,0.57983508,0.79774536,0.04982818,0.87363834,1203,174,5001,5001

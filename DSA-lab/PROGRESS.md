@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 08 (Binary Search & Suchvarianten): Projekt 03-final erstellen.**
+> **Modul 08 (Binary Search & Suchvarianten): vollständigen Test-Durchlauf ausführen.**
 > Dazu ausschließlich den Abschnitt „Modul 08" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -52,7 +52,7 @@ fünf Zellen `fertig` sind.
 | 05 | Stacks & Queues | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 112/112 Tests; alle 11 Python-Dateien, Demos, Generator und vollständige 250-Job-Simulation am 2026-07-19 erfolgreich |
 | 06 | Hashing & Hash Maps | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 113/113 Tests; alle 13 Python-Dateien, 12 Theorieblöcke, Demos, Benchmarks, Generator und vollständige 4.000-Zeilen-Log-Pipeline am 2026-07-19 erfolgreich |
 | 07 | Sortieralgorithmen | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 165/165 Tests; alle 12 Python-Dateien, 15 Theorieblöcke, Demo, vollständiger 120-Punkt-Benchmark und externe 5.000-Zeilen-Sortierung am 2026-07-19 erfolgreich |
-| 08 | Binary Search & Suchvarianten | fertig | fertig | fertig | offen | offen | Markdown, Python-Skripte | Binary Search mit Invarianten sowie Antwortsuche für Versandkapazität, Integer-Wurzel und Matrixrang; 65 + 81 Tests und 1.050 reproduzierbare Referenzfälle erfolgreich |
+| 08 | Binary Search & Suchvarianten | fertig | fertig | fertig | fertig | offen | Markdown, Python-Skripte, CSV, PNG | Drei Projekte fertig: Invarianten-Suche, Antwortsuche und exakte Klassifikator-Schwellenoptimierung mit 13 statt 1.002 Rasterauswertungen; 65 + 81 + 49 Tests erfolgreich |
 | 09 | Two Pointers & Sliding Window | offen | offen | offen | offen | offen | — | — |
 | 10 | Bäume & Binary Search Trees | offen | offen | offen | offen | offen | — | — |
 | 11 | Heaps & Priority Queues | offen | offen | offen | offen | offen | — | — |
@@ -117,3 +117,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-19 | Modul 08: Theorie | Umfassendes Binary-Search-Skript mit Intervall-Simulationen, Korrektheitsinvarianten, Suchvarianten und Antwortsuche erstellt; alle 17 Python-Beispiele erfolgreich. |
 | 2026-07-19 | Modul 08: 01-basic | Exakte Suche, First/Last Occurrence und Insert Position mit zwei Intervallverträgen, Invarianten-Traces und bisect-Referenzprüfung; 65 Tests erfolgreich. |
 | 2026-07-19 | Modul 08: 02-medium | Gemeinsame first-true-Suche für minimale Versandkapazität, Integer-Wurzel und k-kleinstes Matrixelement mit Monotonie-Traces und 1.050 Referenzfällen; 81 Tests erfolgreich. |
+| 2026-07-19 | Modul 08: 03-final | Reproduzierbare Schwellenoptimierung auf 5.000 Klassifikator-Scores mit FPR-Nebenbedingung, Binary Search, Rastervergleich, CSV-Bericht und Metrikplot; 49 Tests erfolgreich. |
