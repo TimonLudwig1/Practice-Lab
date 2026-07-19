@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 09 (Two Pointers & Sliding Window): Projekt 01-basic erstellen.**
+> **Modul 09 (Two Pointers & Sliding Window): Projekt 02-medium erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 09" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -53,7 +53,7 @@ fünf Zellen `fertig` sind.
 | 06 | Hashing & Hash Maps | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 113/113 Tests; alle 13 Python-Dateien, 12 Theorieblöcke, Demos, Benchmarks, Generator und vollständige 4.000-Zeilen-Log-Pipeline am 2026-07-19 erfolgreich |
 | 07 | Sortieralgorithmen | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 165/165 Tests; alle 12 Python-Dateien, 15 Theorieblöcke, Demo, vollständiger 120-Punkt-Benchmark und externe 5.000-Zeilen-Sortierung am 2026-07-19 erfolgreich |
 | 08 | Binary Search & Suchvarianten | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 195/195 Tests; alle 11 Python-Dateien, 17 Theorieblöcke, beide Demos, Generator und vollständige 5.000-Zeilen-Schwellenpipeline am 2026-07-19 erfolgreich |
-| 09 | Two Pointers & Sliding Window | fertig | offen | offen | offen | offen | Markdown | Umfassendes Theorie-Skript zu gegen-/gleichläufigen Zeigern, festen/variablen Fenstern, Hash-Map-Zustand und Rolling Windows; alle 13 Python-Beispiele erfolgreich |
+| 09 | Two Pointers & Sliding Window | fertig | fertig | offen | offen | offen | Markdown, Python-Skripte, CSV | Sechs Referenz-/Musterpaare für Two Pointers und Sliding Window mit 2.400 Property-Fällen und vollständigem Benchmark; 57 Tests erfolgreich |
 | 10 | Bäume & Binary Search Trees | offen | offen | offen | offen | offen | — | — |
 | 11 | Heaps & Priority Queues | offen | offen | offen | offen | offen | — | — |
 | 12 | Graphen I: Repräsentation & Traversierung | offen | offen | offen | offen | offen | — | — |
@@ -120,3 +120,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-19 | Modul 08: 03-final | Reproduzierbare Schwellenoptimierung auf 5.000 Klassifikator-Scores mit FPR-Nebenbedingung, Binary Search, Rastervergleich, CSV-Bericht und Metrikplot; 49 Tests erfolgreich. |
 | 2026-07-19 | Modul 08: Test-Durchlauf | 195/195 Tests; alle 11 Python-Dateien, 17 Theorieblöcke, beide Demos, Generator und vollständige Schwellenpipeline erfolgreich. |
 | 2026-07-19 | Modul 09: Theorie | Umfassendes Two-Pointers-/Sliding-Window-Skript mit Zeiger- und Fenster-Simulationen, Invarianten, Amortisierung und Rolling-Statistiken erstellt; alle 13 Python-Beispiele erfolgreich. |
+| 2026-07-19 | Modul 09: 01-basic | Je drei Two-Pointers-/Sliding-Window-Aufgaben mit Brute-Force-Referenzen, 2.400 Property-Fällen und Sechs-Fälle-Benchmark; 57 Tests erfolgreich. |
