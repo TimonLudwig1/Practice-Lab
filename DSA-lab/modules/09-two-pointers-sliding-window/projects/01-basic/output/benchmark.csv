@@ -1,7 +1,7 @@
 pattern,exercise,size,brute_ms,optimized_ms,speedup,equivalent,note
-two_pointers,pair_sum,2500,70.253250,0.115459,608.469,True,O(n²) versus O(n); absent target forces the full search
-two_pointers,max_container,2200,117.037375,0.271500,431.077,True,O(n²) pair enumeration versus O(n) boundary elimination
-two_pointers,in_place_filter,100000,2.288292,3.964875,0.577,True,both O(n); write pointer avoids an additional result list
-sliding_window,rolling_sums,5000,9.547917,0.207000,46.125,True,O(nk) recomputation versus O(n) entering/leaving updates
-sliding_window,longest_unique_substring,1500,96.911333,0.130583,742.144,True,O(n²) starts versus O(n) last-seen window
-sliding_window,minimum_length,2500,71.209416,0.172083,413.809,True,O(n²) absent-target scan versus O(n) monotone window
+two_pointers,pair_sum,2500,68.800500,0.117083,587.622,True,O(n²) versus O(n); absent target forces the full search
+two_pointers,max_container,2200,117.398083,0.254917,460.535,True,O(n²) pair enumeration versus O(n) boundary elimination
+two_pointers,in_place_filter,100000,2.237625,3.816625,0.586,True,both O(n); write pointer avoids an additional result list
+sliding_window,rolling_sums,5000,9.671084,0.227458,42.518,True,O(nk) recomputation versus O(n) entering/leaving updates
+sliding_window,longest_unique_substring,1500,95.504000,0.144417,661.307,True,O(n²) starts versus O(n) last-seen window
+sliding_window,minimum_length,2500,68.191458,0.184125,370.354,True,O(n²) absent-target scan versus O(n) monotone window

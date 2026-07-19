@@ -7,8 +7,8 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 09 (Two Pointers & Sliding Window): vollständigen Test-Durchlauf ausführen.**
-> Dazu ausschließlich den Abschnitt „Modul 09" sowie die Arbeitsanweisungen
+> **Modul 10 (Bäume & Binary Search Trees): Theorie-Skript erstellen.**
+> Dazu ausschließlich den Abschnitt „Modul 10" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
 *(Dieser Block wird nach jedem abgeschlossenen Task aktualisiert und zeigt immer
@@ -53,7 +53,7 @@ fünf Zellen `fertig` sind.
 | 06 | Hashing & Hash Maps | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 113/113 Tests; alle 13 Python-Dateien, 12 Theorieblöcke, Demos, Benchmarks, Generator und vollständige 4.000-Zeilen-Log-Pipeline am 2026-07-19 erfolgreich |
 | 07 | Sortieralgorithmen | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 165/165 Tests; alle 12 Python-Dateien, 15 Theorieblöcke, Demo, vollständiger 120-Punkt-Benchmark und externe 5.000-Zeilen-Sortierung am 2026-07-19 erfolgreich |
 | 08 | Binary Search & Suchvarianten | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 195/195 Tests; alle 11 Python-Dateien, 17 Theorieblöcke, beide Demos, Generator und vollständige 5.000-Zeilen-Schwellenpipeline am 2026-07-19 erfolgreich |
-| 09 | Two Pointers & Sliding Window | fertig | fertig | fertig | fertig | offen | Markdown, Python-Skripte, CSV, PNG | Grundmuster, zustandsreiche Fenster und Streaming-Anomalieerkennung mit vorherigem Rolling Window; 57 + 40 + 44 Tests, 4.600 Referenzfälle sowie 20/20 erkannte Anomalien ohne Fehlalarm erfolgreich |
+| 09 | Two Pointers & Sliding Window | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 141/141 Tests; alle 10 Python-Dateien, 13 Theorieblöcke, Benchmark, Demo, Generator und vollständige 12.000-Punkte-Anomaliepipeline am 2026-07-19 erfolgreich |
 | 10 | Bäume & Binary Search Trees | offen | offen | offen | offen | offen | — | — |
 | 11 | Heaps & Priority Queues | offen | offen | offen | offen | offen | — | — |
 | 12 | Graphen I: Repräsentation & Traversierung | offen | offen | offen | offen | offen | — | — |
@@ -123,3 +123,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-19 | Modul 09: 01-basic | Je drei Two-Pointers-/Sliding-Window-Aufgaben mit Brute-Force-Referenzen, 2.400 Property-Fällen und Sechs-Fälle-Benchmark; 57 Tests erfolgreich. |
 | 2026-07-19 | Modul 09: 02-medium | Minimales Deckungsfenster, maximale Einsen mit k Flips und Anagrammfenster mit expliziten Hash-Map-/Counter-Invarianten und 2.200 Referenzfällen; 40 Tests erfolgreich. |
 | 2026-07-19 | Modul 09: 03-final | Reproduzierbare Streaming-Anomalieerkennung auf 12.000 Messwerten mit vorherigem 120er-Fenster, naiver Referenz, CSV-Berichten und PNG-Plot; 44 Tests, 20/20 Treffer ohne Fehlalarm und 3,84x Speedup erfolgreich. |
+| 2026-07-19 | Modul 09: Test-Durchlauf | 141/141 Tests; alle 10 Python-Dateien, Benchmark, Demo, Generator und vollständige 12.000-Punkte-Anomaliepipeline mit 20/20 Treffern ohne Fehlalarm erfolgreich. |

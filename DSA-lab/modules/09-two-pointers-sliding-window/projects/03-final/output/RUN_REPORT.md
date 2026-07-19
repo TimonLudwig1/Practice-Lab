@@ -21,9 +21,9 @@ Werts in seine eigene Baseline. Eine Anomalie liegt bei
 
 ## Laufzeitvergleich
 
-- Naive Neuberechnung, Median: 58.820 ms
-- O(1)-Rolling-Update, Median: 15.316 ms
-- Beschleunigung: 3.84x
+- Naive Neuberechnung, Median: 59.638 ms
+- O(1)-Rolling-Update, Median: 15.151 ms
+- Beschleunigung: 3.94x
 
 Beide Verfahren erzeugen dieselben Anomalieflags sowie innerhalb enger Toleranz
 dieselben Mittelwerte und Standardabweichungen. Die Referenz summiert für jeden

@@ -5,12 +5,12 @@ Messung wird die Ergebnisgleichheit jeder Referenz-/Musterlösung geprüft.
 
 | Aufgabe | n | Brute Force (ms) | Muster (ms) | Faktor |
 |---|---:|---:|---:|---:|
-| pair_sum | 2.500 | 70.253 | 0.115 | 608.47x |
-| max_container | 2.200 | 117.037 | 0.272 | 431.08x |
-| in_place_filter | 100.000 | 2.288 | 3.965 | 0.58x |
-| rolling_sums | 5.000 | 9.548 | 0.207 | 46.13x |
-| longest_unique_substring | 1.500 | 96.911 | 0.131 | 742.14x |
-| minimum_length | 2.500 | 71.209 | 0.172 | 413.81x |
+| pair_sum | 2.500 | 68.800 | 0.117 | 587.62x |
+| max_container | 2.200 | 117.398 | 0.255 | 460.53x |
+| in_place_filter | 100.000 | 2.238 | 3.817 | 0.59x |
+| rolling_sums | 5.000 | 9.671 | 0.227 | 42.52x |
+| longest_unique_substring | 1.500 | 95.504 | 0.144 | 661.31x |
+| minimum_length | 2.500 | 68.191 | 0.184 | 370.35x |
 
 Die quadratischen Referenzen für Paarsumme, Wassercontainer, eindeutigen
 Substring und unerreichbare Zielsumme zeigen den strukturellen Vorteil der
