@@ -12,9 +12,9 @@ eindeutigen Ereignissen.
 
 Beide Engines liefern für jeden Benchmark-Präfix exakt dieselben Top-K-Werte,
 Duplikate und Session-Zuordnungen. Für 4000 Eingabezeilen benötigt die
-Hash-Engine 1.727 ms, die sortierbasierte Referenz
-3.896 ms. Das entspricht in diesem Lauf einem Faktor von
-2.26 zugunsten der Hash-Variante.
+Hash-Engine 1.731 ms, die sortierbasierte Referenz
+3.942 ms. Das entspricht in diesem Lauf einem Faktor von
+2.28 zugunsten der Hash-Variante.
 
 Absolute Zeiten sind systemabhängig. Der strukturelle Unterschied ist stabil:
 Die Hash-Engine aggregiert und sessionisiert in einem erwarteten O(n)-Durchlauf;

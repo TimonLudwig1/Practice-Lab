@@ -1,10 +1,11 @@
 """Tests for optimized and naive hash-map patterns."""
 
+import importlib.util
 from pathlib import Path
+import sys
 
 import pytest
 
-from benchmark import run_benchmark, write_csv
 from patterns import (
     DuplicateDetector,
     duplicate_flags_hash,
@@ -16,6 +17,23 @@ from patterns import (
     two_sum_hash,
     two_sum_naive,
 )
+
+
+# Project directories are intentionally standalone and are not importable Python
+# packages because their names start with numbers. Load this project's benchmark
+# under a unique name so a module called ``benchmark`` from 01-basic cannot be
+# reused from ``sys.modules`` during the combined module-wide test run.
+_BENCHMARK_PATH = Path(__file__).with_name("benchmark.py")
+_BENCHMARK_SPEC = importlib.util.spec_from_file_location(
+    "module_06_pattern_benchmark", _BENCHMARK_PATH
+)
+if _BENCHMARK_SPEC is None or _BENCHMARK_SPEC.loader is None:
+    raise ImportError(f"cannot load benchmark module from {_BENCHMARK_PATH}")
+_BENCHMARK_MODULE = importlib.util.module_from_spec(_BENCHMARK_SPEC)
+sys.modules[_BENCHMARK_SPEC.name] = _BENCHMARK_MODULE
+_BENCHMARK_SPEC.loader.exec_module(_BENCHMARK_MODULE)
+run_benchmark = _BENCHMARK_MODULE.run_benchmark
+write_csv = _BENCHMARK_MODULE.write_csv
 
 
 TWO_SUM_CASES = [
