@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 10 (Bäume & Binary Search Trees): Theorie-Skript erstellen.**
+> **Modul 10 (Bäume & Binary Search Trees): Projekt 01-basic erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 10" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -54,7 +54,7 @@ fünf Zellen `fertig` sind.
 | 07 | Sortieralgorithmen | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 165/165 Tests; alle 12 Python-Dateien, 15 Theorieblöcke, Demo, vollständiger 120-Punkt-Benchmark und externe 5.000-Zeilen-Sortierung am 2026-07-19 erfolgreich |
 | 08 | Binary Search & Suchvarianten | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 195/195 Tests; alle 11 Python-Dateien, 17 Theorieblöcke, beide Demos, Generator und vollständige 5.000-Zeilen-Schwellenpipeline am 2026-07-19 erfolgreich |
 | 09 | Two Pointers & Sliding Window | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 141/141 Tests; alle 10 Python-Dateien, 13 Theorieblöcke, Benchmark, Demo, Generator und vollständige 12.000-Punkte-Anomaliepipeline am 2026-07-19 erfolgreich |
-| 10 | Bäume & Binary Search Trees | offen | offen | offen | offen | offen | — | — |
+| 10 | Bäume & Binary Search Trees | fertig | offen | offen | offen | offen | Markdown | Baumterminologie, vier Traversierungen, BST-Invariante und -Operationen, Delete-Fälle, Degeneration, Balancekonzepte und Data-Science-Bezüge; 16 Python-Beispiele erfolgreich |
 | 11 | Heaps & Priority Queues | offen | offen | offen | offen | offen | — | — |
 | 12 | Graphen I: Repräsentation & Traversierung | offen | offen | offen | offen | offen | — | — |
 | 13 | Graphen II: Kürzeste Wege, Union-Find & MST | offen | offen | offen | offen | offen | — | — |
@@ -124,3 +124,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-19 | Modul 09: 02-medium | Minimales Deckungsfenster, maximale Einsen mit k Flips und Anagrammfenster mit expliziten Hash-Map-/Counter-Invarianten und 2.200 Referenzfällen; 40 Tests erfolgreich. |
 | 2026-07-19 | Modul 09: 03-final | Reproduzierbare Streaming-Anomalieerkennung auf 12.000 Messwerten mit vorherigem 120er-Fenster, naiver Referenz, CSV-Berichten und PNG-Plot; 44 Tests, 20/20 Treffer ohne Fehlalarm und 3,84x Speedup erfolgreich. |
 | 2026-07-19 | Modul 09: Test-Durchlauf | 141/141 Tests; alle 10 Python-Dateien, Benchmark, Demo, Generator und vollständige 12.000-Punkte-Anomaliepipeline mit 20/20 Treffern ohne Fehlalarm erfolgreich. |
+| 2026-07-19 | Modul 10: Theorie | Umfassendes Baum-/BST-Skript mit gemeinsamem Traversierungsbeispiel, Suchinvariante, drei Delete-Fällen, Balancekonzepten und Data-Science-Bezügen erstellt; alle 16 Python-Beispiele erfolgreich. |
