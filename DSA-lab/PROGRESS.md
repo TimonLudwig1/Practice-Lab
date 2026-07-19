@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 08 (Binary Search & Suchvarianten): Projekt 01-basic erstellen.**
+> **Modul 08 (Binary Search & Suchvarianten): Projekt 02-medium erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 08" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -52,7 +52,7 @@ fünf Zellen `fertig` sind.
 | 05 | Stacks & Queues | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 112/112 Tests; alle 11 Python-Dateien, Demos, Generator und vollständige 250-Job-Simulation am 2026-07-19 erfolgreich |
 | 06 | Hashing & Hash Maps | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 113/113 Tests; alle 13 Python-Dateien, 12 Theorieblöcke, Demos, Benchmarks, Generator und vollständige 4.000-Zeilen-Log-Pipeline am 2026-07-19 erfolgreich |
 | 07 | Sortieralgorithmen | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 165/165 Tests; alle 12 Python-Dateien, 15 Theorieblöcke, Demo, vollständiger 120-Punkt-Benchmark und externe 5.000-Zeilen-Sortierung am 2026-07-19 erfolgreich |
-| 08 | Binary Search & Suchvarianten | fertig | offen | offen | offen | offen | Markdown | Umfassendes Theorie-Skript mit Invarianten, Grenzsuchen, Antwortsuche, rotierten Arrays und Exponential Search; alle 17 Python-Beispiele erfolgreich |
+| 08 | Binary Search & Suchvarianten | fertig | fertig | offen | offen | offen | Markdown, Python-Skripte | Exakte Suche sowie Lower/Upper Bound mit expliziten Invarianten, strukturierten Traces und 500 reproduzierbaren Property-Fällen gegen bisect; 65 Tests erfolgreich |
 | 09 | Two Pointers & Sliding Window | offen | offen | offen | offen | offen | — | — |
 | 10 | Bäume & Binary Search Trees | offen | offen | offen | offen | offen | — | — |
 | 11 | Heaps & Priority Queues | offen | offen | offen | offen | offen | — | — |
@@ -115,3 +115,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-19 | Modul 07: 03-final | Stabile externe CSV-Sortierung unter künstlicher 250-Zeilen-Speichergrenze mit 20 Runs, begrenztem k-Way-Merge, Integritätsprüfung und Laufbericht; 37 Tests erfolgreich. |
 | 2026-07-19 | Modul 07: Test-Durchlauf | 165/165 Tests; alle 12 Python-Dateien, 15 Theorieblöcke, Demo, vollständiger Benchmark und externe Sortierpipeline erfolgreich. |
 | 2026-07-19 | Modul 08: Theorie | Umfassendes Binary-Search-Skript mit Intervall-Simulationen, Korrektheitsinvarianten, Suchvarianten und Antwortsuche erstellt; alle 17 Python-Beispiele erfolgreich. |
+| 2026-07-19 | Modul 08: 01-basic | Exakte Suche, First/Last Occurrence und Insert Position mit zwei Intervallverträgen, Invarianten-Traces und bisect-Referenzprüfung; 65 Tests erfolgreich. |
