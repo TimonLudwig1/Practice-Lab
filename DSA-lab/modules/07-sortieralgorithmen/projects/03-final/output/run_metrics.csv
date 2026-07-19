@@ -1,0 +1,10 @@
+metric,value
+record_count,5000
+memory_limit_records,250
+merge_fan_in,8
+initial_runs,20
+merge_passes,2
+runs_by_pass,20 -> 3 -> 1
+max_chunk_records,250
+max_heap_entries,8
+verification_ok,True
