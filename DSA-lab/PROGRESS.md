@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 12 (Graphen I: Repräsentation & Traversierung): Projekt 03-final erstellen.**
+> **Modul 12 (Graphen I: Repräsentation & Traversierung): Test-Durchlauf ausführen.**
 > Dazu ausschließlich den Abschnitt „Modul 12" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -56,7 +56,7 @@ fünf Zellen `fertig` sind.
 | 09 | Two Pointers & Sliding Window | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 141/141 Tests; alle 10 Python-Dateien, 13 Theorieblöcke, Benchmark, Demo, Generator und vollständige 12.000-Punkte-Anomaliepipeline am 2026-07-19 erfolgreich |
 | 10 | Bäume & Binary Search Trees | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 120/120 Tests; alle 10 Python-Dateien, 16 Theoriebeispiele, beide Demos, Generator und vollständiger Decision-Tree-Vergleich mit 94,0 % Testgenauigkeit am 2026-07-20 erfolgreich |
 | 11 | Heaps & Priority Queues | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 148/148 Tests; alle 11 Python-Dateien, 17 Theoriebeispiele, beide Demos, 18 Benchmark-Fälle, Generator und vollständige 300-Job-Scheduler-Simulation am 2026-07-20 erfolgreich |
-| 12 | Graphen I: Repräsentation & Traversierung | fertig | fertig | fertig | offen | offen | Markdown, Python-Skripte | Theorie mit 16 Beispielen; Graph-Grundgerüst und Aufgabenkatalog für Zyklen, zwei Toposorts, Bipartitheit und Inseln mit Traces; Demos und bisher 105 Tests am 2026-07-20 erfolgreich |
+| 12 | Graphen I: Repräsentation & Traversierung | fertig | fertig | fertig | fertig | offen | Markdown, Python-Skripte, CSV | Theorie, Graph-Grundgerüst, Aufgabenkatalog und Seed-1203-Pipeline-DAG; 24 Tasks, 39 Kanten, 113-Minuten-Kritischer-Pfad, maximal 18/24 Tasks nicht verfügbar; bisher 155 Tests erfolgreich |
 | 13 | Graphen II: Kürzeste Wege, Union-Find & MST | offen | offen | offen | offen | offen | — | — |
 | 14 | Greedy-Algorithmen | offen | offen | offen | offen | offen | — | — |
 | 15 | Backtracking | offen | offen | offen | offen | offen | — | — |
@@ -137,3 +137,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-20 | Modul 12: Theorie | Umfassendes Graph-Skript zu Adjazenzliste/-matrix, BFS/DFS, Komponenten, Zykluserkennung, topologischer Sortierung und Bipartitheit erstellt; alle 16 Python-Beispiele gemeinsam erfolgreich ausgeführt. |
 | 2026-07-20 | Modul 12: 01-basic | Generische deterministische Graphklasse mit gerichteter/ungerichteter Adjazenzliste, BFS, rekursiver/iterativer DFS, Zusammenhangskomponenten und Invariantenprüfung; Demo, Syntaxprüfung und 49 Tests erfolgreich. |
 | 2026-07-20 | Modul 12: 02-medium | Eigenständiger Graph-Aufgabenkatalog für gerichtete/ungerichtete Zyklen, Kahn-/DFS-Toposort, Bipartitheit und 4-fach verbundene Inseln mit dokumentierten Traces; Demo und 56 Tests erfolgreich. |
+| 2026-07-20 | Modul 12: 03-final | Reproduzierbare Seed-1203-Abhängigkeitsanalyse mit 24 Tasks, 39 DAG-Kanten, Toposort, Ausführungswellen, 113-Minuten-Kritischem-Pfad und Ausfallrangliste; vier Ergebnisdateien und 50 Tests erfolgreich. |
