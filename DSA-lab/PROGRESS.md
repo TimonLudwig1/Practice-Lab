@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 11 (Heaps & Priority Queues): Projekt 01-basic erstellen.**
+> **Modul 11 (Heaps & Priority Queues): Projekt 02-medium erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 11" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -55,7 +55,7 @@ fünf Zellen `fertig` sind.
 | 08 | Binary Search & Suchvarianten | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 195/195 Tests; alle 11 Python-Dateien, 17 Theorieblöcke, beide Demos, Generator und vollständige 5.000-Zeilen-Schwellenpipeline am 2026-07-19 erfolgreich |
 | 09 | Two Pointers & Sliding Window | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 141/141 Tests; alle 10 Python-Dateien, 13 Theorieblöcke, Benchmark, Demo, Generator und vollständige 12.000-Punkte-Anomaliepipeline am 2026-07-19 erfolgreich |
 | 10 | Bäume & Binary Search Trees | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 120/120 Tests; alle 10 Python-Dateien, 16 Theoriebeispiele, beide Demos, Generator und vollständiger Decision-Tree-Vergleich mit 94,0 % Testgenauigkeit am 2026-07-20 erfolgreich |
-| 11 | Heaps & Priority Queues | fertig | offen | offen | offen | offen | Markdown | Priority-Queue-Motivation, Binary Heap im Array, Sift-Up/-Down, lineares Heapify, Heap Sort, heapq, Top-K, k-Way-Merge, laufender Median sowie Algorithmus- und Systembezüge; 17 Python-Beispiele erfolgreich |
+| 11 | Heaps & Priority Queues | fertig | fertig | offen | offen | offen | Markdown, Python-Skripte | Theorie mit 17 Python-Beispielen; vollständiger Min-Heap-Eigenbau mit Push, Pop, Peek, linearem Heapify, Heap Sort, Demo und 51 erfolgreichen Tests gegen heapq und sorted |
 | 12 | Graphen I: Repräsentation & Traversierung | offen | offen | offen | offen | offen | — | — |
 | 13 | Graphen II: Kürzeste Wege, Union-Find & MST | offen | offen | offen | offen | offen | — | — |
 | 14 | Greedy-Algorithmen | offen | offen | offen | offen | offen | — | — |
@@ -130,3 +130,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-20 | Modul 10: 03-final | Eigener Decision-Tree-Klassifikator mit Gini, rekursiven Splits, Max-Tiefe und Seed-Datensatz; 38 Tests, vollständiger Vergleich und für beide Modelle 94,0 % Testgenauigkeit bei 0/300 abweichenden Vorhersagen. |
 | 2026-07-20 | Modul 10: Test-Durchlauf | 120/120 Tests; alle 10 Python-Dateien, beide Demos, Generator und vollständiger Decision-Tree-Vergleich mit erneut 94,0 % Testgenauigkeit erfolgreich. |
 | 2026-07-20 | Modul 11: Theorie | Umfassendes Heap-/Priority-Queue-Skript mit Push-/Pop-/Heapify-Simulationen, O(n)-Argument, Heap Sort, heapq und drei Kernmustern erstellt; alle 17 Python-Beispiele gemeinsam erfolgreich ausgeführt. |
+| 2026-07-20 | Modul 11: 01-basic | Arraybasierter Min-Heap mit Push, Pop, Peek, Bottom-up-Heapify und Heap Sort; Demo, Syntaxprüfung und 51 Tests inklusive Property-Vergleichen gegen heapq und sorted erfolgreich. |
