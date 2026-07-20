@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 10 (Bäume & Binary Search Trees): Projekt 02-medium erstellen.**
+> **Modul 10 (Bäume & Binary Search Trees): Projekt 03-final erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 10" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -54,7 +54,7 @@ fünf Zellen `fertig` sind.
 | 07 | Sortieralgorithmen | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 165/165 Tests; alle 12 Python-Dateien, 15 Theorieblöcke, Demo, vollständiger 120-Punkt-Benchmark und externe 5.000-Zeilen-Sortierung am 2026-07-19 erfolgreich |
 | 08 | Binary Search & Suchvarianten | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 195/195 Tests; alle 11 Python-Dateien, 17 Theorieblöcke, beide Demos, Generator und vollständige 5.000-Zeilen-Schwellenpipeline am 2026-07-19 erfolgreich |
 | 09 | Two Pointers & Sliding Window | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 141/141 Tests; alle 10 Python-Dateien, 13 Theorieblöcke, Benchmark, Demo, Generator und vollständige 12.000-Punkte-Anomaliepipeline am 2026-07-19 erfolgreich |
-| 10 | Bäume & Binary Search Trees | fertig | fertig | offen | offen | offen | Markdown, Python-Skripte | Theorie mit 16 Python-Beispielen; vollständiger BST-Eigenbau mit vier Traversierungen, ASCII-Visualisierung, Demo und 33 erfolgreichen Tests |
+| 10 | Bäume & Binary Search Trees | fertig | fertig | fertig | offen | offen | Markdown, Python-Skripte | Theorie mit 16 Python-Beispielen; BST-Eigenbau mit 33 Tests; Aufgabenkatalog zu Höhe, Balance, BST-Validierung, LCA und Serialisierung mit Rekursionsskizzen, Demo und 49 Tests |
 | 11 | Heaps & Priority Queues | offen | offen | offen | offen | offen | — | — |
 | 12 | Graphen I: Repräsentation & Traversierung | offen | offen | offen | offen | offen | — | — |
 | 13 | Graphen II: Kürzeste Wege, Union-Find & MST | offen | offen | offen | offen | offen | — | — |
@@ -126,3 +126,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-19 | Modul 09: Test-Durchlauf | 141/141 Tests; alle 10 Python-Dateien, Benchmark, Demo, Generator und vollständige 12.000-Punkte-Anomaliepipeline mit 20/20 Treffern ohne Fehlalarm erfolgreich. |
 | 2026-07-19 | Modul 10: Theorie | Umfassendes Baum-/BST-Skript mit gemeinsamem Traversierungsbeispiel, Suchinvariante, drei Delete-Fällen, Balancekonzepten und Data-Science-Bezügen erstellt; alle 16 Python-Beispiele erfolgreich. |
 | 2026-07-20 | Modul 10: 01-basic | Vollständiger BST-Eigenbau mit Insert, Suche, Delete, Min/Max, vier Traversierungen und ASCII-Visualisierung; Demo, Syntaxprüfung und 33 pytest-Fälle erfolgreich. |
+| 2026-07-20 | Modul 10: 02-medium | Rekursiver Aufgabenkatalog für Höhe, linearen Balance-Check, BST-Validierung, allgemeinen LCA und JSON-Serialisierung; Demo, Syntaxprüfung und 49 Tests erfolgreich. |
