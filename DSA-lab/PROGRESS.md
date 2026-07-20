@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 12 (Graphen I: Repräsentation & Traversierung): Projekt 01-basic erstellen.**
+> **Modul 12 (Graphen I: Repräsentation & Traversierung): Projekt 02-medium erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 12" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -56,7 +56,7 @@ fünf Zellen `fertig` sind.
 | 09 | Two Pointers & Sliding Window | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 141/141 Tests; alle 10 Python-Dateien, 13 Theorieblöcke, Benchmark, Demo, Generator und vollständige 12.000-Punkte-Anomaliepipeline am 2026-07-19 erfolgreich |
 | 10 | Bäume & Binary Search Trees | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 120/120 Tests; alle 10 Python-Dateien, 16 Theoriebeispiele, beide Demos, Generator und vollständiger Decision-Tree-Vergleich mit 94,0 % Testgenauigkeit am 2026-07-20 erfolgreich |
 | 11 | Heaps & Priority Queues | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 148/148 Tests; alle 11 Python-Dateien, 17 Theoriebeispiele, beide Demos, 18 Benchmark-Fälle, Generator und vollständige 300-Job-Scheduler-Simulation am 2026-07-20 erfolgreich |
-| 12 | Graphen I: Repräsentation & Traversierung | fertig | offen | offen | offen | offen | Markdown | Umfassendes Theorie-Skript zu Repräsentationen, BFS/DFS, Komponenten, Zykluserkennung, topologischer Sortierung und Bipartitheit; alle 16 Python-Beispiele am 2026-07-20 erfolgreich |
+| 12 | Graphen I: Repräsentation & Traversierung | fertig | fertig | offen | offen | offen | Markdown, Python-Skripte | Theorie mit 16 Python-Beispielen; Graph-Grundgerüst mit gerichteter/ungerichteter Adjazenzliste, BFS, rekursiver/iterativer DFS und Komponenten; Demo und 49 Tests am 2026-07-20 erfolgreich |
 | 13 | Graphen II: Kürzeste Wege, Union-Find & MST | offen | offen | offen | offen | offen | — | — |
 | 14 | Greedy-Algorithmen | offen | offen | offen | offen | offen | — | — |
 | 15 | Backtracking | offen | offen | offen | offen | offen | — | — |
@@ -135,3 +135,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-20 | Modul 11: 03-final | Nicht-präemptiver FIFO-/Priority-Scheduler auf 300 Seed-Jobs mit Klassenmetriken, zwei CSV-Berichten und PNG-Plot; 33 Tests erfolgreich, kritischer Mean Wait von 552,88 auf 10,00 gesenkt. |
 | 2026-07-20 | Modul 11: Test-Durchlauf | 148/148 Tests; alle 11 Python-Dateien, beide Demos, 18 Benchmark-Fälle, Generator und vollständige 300-Job-Scheduler-Simulation erfolgreich. |
 | 2026-07-20 | Modul 12: Theorie | Umfassendes Graph-Skript zu Adjazenzliste/-matrix, BFS/DFS, Komponenten, Zykluserkennung, topologischer Sortierung und Bipartitheit erstellt; alle 16 Python-Beispiele gemeinsam erfolgreich ausgeführt. |
+| 2026-07-20 | Modul 12: 01-basic | Generische deterministische Graphklasse mit gerichteter/ungerichteter Adjazenzliste, BFS, rekursiver/iterativer DFS, Zusammenhangskomponenten und Invariantenprüfung; Demo, Syntaxprüfung und 49 Tests erfolgreich. |
