@@ -1,0 +1,2 @@
+observations,entities,periods,possible_balanced_cells,missing_cells,coverage_rate,duplicate_entity_time_keys,min_periods_per_entity,mean_periods_per_entity,max_periods_per_entity,balanced_panel
+580,80,8,640,60,0.90625,0,4,7.25,8,False

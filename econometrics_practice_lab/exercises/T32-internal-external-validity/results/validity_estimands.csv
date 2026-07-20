@@ -1,0 +1,2 @@
+population_ate,sample_ate,unweighted_trial_estimate,internal_estimation_error,external_validity_gap,total_error_for_population,generalized_ipw_estimate,generalized_error_for_population
+4.06445290137358,4.794480467866844,4.690268093523613,-0.10421237434323061,0.7300275664932636,0.625815192150033,3.9059952246422327,-0.1584576767313477

@@ -1,0 +1,4 @@
+method,did_estimate,cluster_standard_error
+Pooled without household controls,3.1965977590234536,0.43706761404003985
+Household dummy FE,-2.6199776849859386,0.1313346228454388
+Within estimator,-2.619977684985966,0.12283396930408087

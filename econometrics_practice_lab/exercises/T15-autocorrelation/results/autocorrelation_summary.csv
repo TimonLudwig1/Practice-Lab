@@ -1,0 +1,2 @@
+lag1_residual_correlation,durbin_watson,ljung_box_lag,ljung_box_statistic,ljung_box_p_value
+0.7686197677718979,0.4595456139769481,7,435.55921955038923,5.597255629043363e-90

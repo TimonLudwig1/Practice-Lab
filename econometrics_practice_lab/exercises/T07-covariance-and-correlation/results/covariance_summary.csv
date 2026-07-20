@@ -1,0 +1,4 @@
+x,y,covariance,correlation
+income_eur,leisure_spending_eur,185466.39584952,0.63083820580104
+income_thousand_eur,leisure_spending_eur,185.46639584951998,0.63083820580104
+income_eur,commute_minutes,-7289.712368467379,-0.47929647475424964

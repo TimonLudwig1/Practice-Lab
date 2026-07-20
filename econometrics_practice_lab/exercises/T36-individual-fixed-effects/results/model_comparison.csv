@@ -1,0 +1,3 @@
+model,training_coefficient,standard_error,true_coefficient
+Pooled OLS,4.120146816534214,0.18016926029212674,1.8
+Individual fixed effects,1.7058025561750523,0.09723063472197539,1.8

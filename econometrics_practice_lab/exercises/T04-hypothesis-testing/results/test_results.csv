@@ -1,0 +1,2 @@
+n,null_mean,sample_mean,sample_sd,standard_error,t_statistic,degrees_of_freedom,critical_value_two_sided,p_value_two_sided,ci_95_low,ci_95_high,reject_h0
+80,30.0,30.847840528785724,6.881763801576389,0.7694045832711089,1.1019436941500222,79,1.9904502102301282,0.27383204768899133,29.31637901426172,32.37930204330973,False

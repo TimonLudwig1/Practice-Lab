@@ -1,0 +1,6 @@
+method,effect_estimate
+OLS,2.985313793302093
+Valid IV,1.9891846396387285
+Invalid IV,4.469080103655776
+Oracle OLS with motivation,1.986915343446331
+True causal effect,2.0

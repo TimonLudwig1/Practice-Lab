@@ -1,0 +1,2 @@
+observations,event_rate,mean_of_binary_outcome,empirical_variance_ddof0,p_times_one_minus_p,majority_class_accuracy,constant_probability_brier,oracle_probability_brier
+900,0.21333333333333335,0.21333333333333335,0.16782222222222223,0.16782222222222223,0.7866666666666666,0.16782222222222223,0.1464216953184065

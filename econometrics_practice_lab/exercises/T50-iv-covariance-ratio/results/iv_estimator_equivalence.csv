@@ -1,0 +1,7 @@
+method,estimate
+OLS with experience,2.037076436640449
+Unconditional covariance ratio,1.9639072208337178
+Residualized covariance ratio,1.545999297856911
+Controlled reduced form / first stage,1.545999297856912
+Manual two-stage least squares,1.545999297856912
+Oracle OLS with ability,1.4862635638039385

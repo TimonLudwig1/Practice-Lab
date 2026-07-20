@@ -1,0 +1,4 @@
+test,statistic_type,statistic,df_numerator,df_denominator,p_value,critical_value_5_percent,reject_at_5_percent
+training = 0,t,5.627196932286372,1,295,4.25862221047015e-08,1.9680381148901405,True
+experience = education,F,10.111675446994303,1,295,0.0016300911911842355,3.873174021661625,True
+certifications = training = 0,F,23.037496624627487,2,295,5.051148929724517e-10,3.0263610143063038,True

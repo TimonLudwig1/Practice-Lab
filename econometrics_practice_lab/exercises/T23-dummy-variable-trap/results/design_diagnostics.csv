@@ -1,0 +1,4 @@
+design,rows,columns,rank,rank_deficient,smallest_singular_value,condition_number
+Intercept + all dummies,180,5,4,True,4.939023491887898e-15,9.943527707776986e+16
+Reference Bus,180,4,4,False,3.924120963656416,125.14683158650213
+No intercept + all dummies,180,4,4,False,2.942790477542073,166.8337428465687

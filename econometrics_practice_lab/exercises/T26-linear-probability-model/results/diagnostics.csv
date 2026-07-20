@@ -1,0 +1,2 @@
+sample_min_fitted,sample_max_fitted,sample_share_outside_0_1,extended_min_prediction,extended_max_prediction,extended_share_outside_0_1,breusch_pagan_lm,breusch_pagan_lm_pvalue,breusch_pagan_f,breusch_pagan_f_pvalue
+-0.10747352921284657,1.1814188935302172,0.2342857142857143,-0.2852810665512131,1.4776413124461114,0.43521594684385384,8.61887027722431,0.0033269812487525703,8.701382196987053,0.0032860765914723452

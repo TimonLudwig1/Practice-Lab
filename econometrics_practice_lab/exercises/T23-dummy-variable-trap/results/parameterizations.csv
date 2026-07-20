@@ -1,0 +1,19 @@
+parameterization,term,estimate
+Invalid pseudoinverse,const,60.022007616716294
+Invalid pseudoinverse,mode_Bike,27.004048498587846
+Invalid pseudoinverse,mode_Bus,12.916455310169447
+Invalid pseudoinverse,mode_Car,20.101503807959034
+Invalid pseudoinverse,commute_minutes,-0.4097873532464159
+Invalid shifted,const,70.0220076167163
+Invalid shifted,mode_Bike,17.004048498587846
+Invalid shifted,mode_Bus,2.9164553101694466
+Invalid shifted,mode_Car,10.101503807959034
+Invalid shifted,commute_minutes,-0.4097873532464159
+Reference Bus,const,72.93846292688596
+Reference Bus,mode_Bike,14.087593188418413
+Reference Bus,mode_Car,7.185048497789567
+Reference Bus,commute_minutes,-0.40978735324671234
+No intercept,mode_Bike,87.02605611530427
+No intercept,mode_Bus,72.93846292688592
+No intercept,mode_Car,80.12351142467534
+No intercept,commute_minutes,-0.4097873532466172

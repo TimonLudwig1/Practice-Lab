@@ -1,0 +1,2 @@
+max_abs_within_treated,max_abs_within_efficiency,invalid_design_columns,invalid_design_rank,rank_deficient,dummy_within_coefficient_difference
+0.0,0.0,121,120,True,2.7533531010703882e-14

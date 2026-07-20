@@ -1,0 +1,3 @@
+parameter,estimate,standard_error,true_value
+intercept,50.64079437675195,1.1338583417174488,50.0
+training_hours,2.164357953191649,0.07594731579199886,2.2
