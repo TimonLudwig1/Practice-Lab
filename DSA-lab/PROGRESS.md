@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 13 (Graphen II: Kürzeste Wege, Union-Find & MST): Theorie-Skript erstellen.**
+> **Modul 13 (Graphen II: Kürzeste Wege, Union-Find & MST): Projekt 01-basic erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 13" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -57,7 +57,7 @@ fünf Zellen `fertig` sind.
 | 10 | Bäume & Binary Search Trees | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 120/120 Tests; alle 10 Python-Dateien, 16 Theoriebeispiele, beide Demos, Generator und vollständiger Decision-Tree-Vergleich mit 94,0 % Testgenauigkeit am 2026-07-20 erfolgreich |
 | 11 | Heaps & Priority Queues | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 148/148 Tests; alle 11 Python-Dateien, 17 Theoriebeispiele, beide Demos, 18 Benchmark-Fälle, Generator und vollständige 300-Job-Scheduler-Simulation am 2026-07-20 erfolgreich |
 | 12 | Graphen I: Repräsentation & Traversierung | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 155/155 Tests; alle 10 Python-Dateien, 16 Theorieblöcke, beide Demos und vollständige Seed-1203-Pipeline mit 24 Tasks, 39 Kanten und 113-Minuten-Kritischem-Pfad am 2026-07-20 erfolgreich |
-| 13 | Graphen II: Kürzeste Wege, Union-Find & MST | offen | offen | offen | offen | offen | — | — |
+| 13 | Graphen II: Kürzeste Wege, Union-Find & MST | fertig | offen | offen | offen | offen | Markdown | Umfassendes Theorie-Skript zu gewichteten Graphen, Dijkstra, Bellman-Ford, Union-Find, Kruskal, Prim und A*-Einordnung; alle 19 Python-Beispiele am 2026-07-20 erfolgreich |
 | 14 | Greedy-Algorithmen | offen | offen | offen | offen | offen | — | — |
 | 15 | Backtracking | offen | offen | offen | offen | offen | — | — |
 | 16 | Dynamic Programming | offen | offen | offen | offen | offen | — | — |
@@ -139,3 +139,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-20 | Modul 12: 02-medium | Eigenständiger Graph-Aufgabenkatalog für gerichtete/ungerichtete Zyklen, Kahn-/DFS-Toposort, Bipartitheit und 4-fach verbundene Inseln mit dokumentierten Traces; Demo und 56 Tests erfolgreich. |
 | 2026-07-20 | Modul 12: 03-final | Reproduzierbare Seed-1203-Abhängigkeitsanalyse mit 24 Tasks, 39 DAG-Kanten, Toposort, Ausführungswellen, 113-Minuten-Kritischem-Pfad und Ausfallrangliste; vier Ergebnisdateien und 50 Tests erfolgreich. |
 | 2026-07-20 | Modul 12: Test-Durchlauf | 155/155 Tests; alle 10 Python-Dateien, 16 Theorieblöcke, beide Demos und vollständige Seed-1203-Pipeline mit 24 Tasks, 39 Kanten und 113-Minuten-Kritischem-Pfad erfolgreich. |
+| 2026-07-20 | Modul 13: Theorie | Umfassendes Skript zu gewichteten Graphen, Dijkstra mit vollständiger Handrechnung, Bellman-Ford, Union-Find mit beiden Optimierungen, Kruskal, Prim und A*-Einordnung erstellt; alle 19 Python-Beispiele gemeinsam erfolgreich ausgeführt. |
