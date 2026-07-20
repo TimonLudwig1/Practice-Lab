@@ -1,0 +1,7 @@
+policy,priority,priority_name,count,mean_wait,median_wait,p95_wait,max_wait,mean_turnaround
+fifo,1,critical,60,552.8833,556.5000,1038.3000,1108,558.7833
+fifo,2,standard,150,572.9933,531.0000,1064.0500,1112,578.1867
+fifo,3,batch,90,583.2333,571.5000,1069.3500,1124,588.5333
+priority,1,critical,60,10.0000,8.0000,29.1000,34,15.9000
+priority,2,standard,150,500.1933,533.0000,648.5500,664,505.3867
+priority,3,batch,90,1105.0000,1125.5000,1156.1000,1162,1110.3000

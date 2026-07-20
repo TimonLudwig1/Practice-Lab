@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 11 (Heaps & Priority Queues): Projekt 03-final erstellen.**
+> **Modul 11 (Heaps & Priority Queues): Test-Durchlauf ausführen.**
 > Dazu ausschließlich den Abschnitt „Modul 11" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -55,7 +55,7 @@ fünf Zellen `fertig` sind.
 | 08 | Binary Search & Suchvarianten | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 195/195 Tests; alle 11 Python-Dateien, 17 Theorieblöcke, beide Demos, Generator und vollständige 5.000-Zeilen-Schwellenpipeline am 2026-07-19 erfolgreich |
 | 09 | Two Pointers & Sliding Window | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 141/141 Tests; alle 10 Python-Dateien, 13 Theorieblöcke, Benchmark, Demo, Generator und vollständige 12.000-Punkte-Anomaliepipeline am 2026-07-19 erfolgreich |
 | 10 | Bäume & Binary Search Trees | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 120/120 Tests; alle 10 Python-Dateien, 16 Theoriebeispiele, beide Demos, Generator und vollständiger Decision-Tree-Vergleich mit 94,0 % Testgenauigkeit am 2026-07-20 erfolgreich |
-| 11 | Heaps & Priority Queues | fertig | fertig | fertig | offen | offen | Markdown, Python-Skripte, CSV | Theorie mit 17 Python-Beispielen; Min-Heap-Eigenbau mit 51 Tests; Pattern-Katalog für Top-K Frequent, k-Way-Merge und Running Median mit Demo, 64 Tests und 18 erfolgreichen Benchmark-Vergleichen |
+| 11 | Heaps & Priority Queues | fertig | fertig | fertig | fertig | offen | Markdown, Python-Skripte, CSV, PNG | Theorie mit 17 Beispielen; Min-Heap mit 51 Tests; Pattern-Katalog mit 64 Tests; Priority-vs.-FIFO-Scheduler auf 300 Seed-Jobs mit 33 Tests, CSV-Berichten und Plot; kritischer Mean Wait von 552,88 auf 10,00 gesenkt |
 | 12 | Graphen I: Repräsentation & Traversierung | offen | offen | offen | offen | offen | — | — |
 | 13 | Graphen II: Kürzeste Wege, Union-Find & MST | offen | offen | offen | offen | offen | — | — |
 | 14 | Greedy-Algorithmen | offen | offen | offen | offen | offen | — | — |
@@ -132,3 +132,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-20 | Modul 11: Theorie | Umfassendes Heap-/Priority-Queue-Skript mit Push-/Pop-/Heapify-Simulationen, O(n)-Argument, Heap Sort, heapq und drei Kernmustern erstellt; alle 17 Python-Beispiele gemeinsam erfolgreich ausgeführt. |
 | 2026-07-20 | Modul 11: 01-basic | Arraybasierter Min-Heap mit Push, Pop, Peek, Bottom-up-Heapify und Heap Sort; Demo, Syntaxprüfung und 51 Tests inklusive Property-Vergleichen gegen heapq und sorted erfolgreich. |
 | 2026-07-20 | Modul 11: 02-medium | Deterministisches Top-K Frequent, iteratorbasiertes k-Way-Merge und Running Median mit zwei Heaps; Demo, Syntaxprüfung, 64 Tests und 18 Benchmark-Vergleiche bis 125,62x erfolgreich. |
+| 2026-07-20 | Modul 11: 03-final | Nicht-präemptiver FIFO-/Priority-Scheduler auf 300 Seed-Jobs mit Klassenmetriken, zwei CSV-Berichten und PNG-Plot; 33 Tests erfolgreich, kritischer Mean Wait von 552,88 auf 10,00 gesenkt. |
