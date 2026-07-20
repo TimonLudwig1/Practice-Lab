@@ -1,0 +1,79 @@
+if signal_x <= 0.466431 (n=900, gain=0.028490)
+|   L: if signal_y <= -1.011979 (n=559, gain=0.059252)
+|   L: |   L: if context <= -0.244390 (n=129, gain=0.122121)
+|   L: |   L: |   L: if context <= -1.315308 (n=61, gain=0.032048)
+|   L: |   L: |   L: |   L: predict=1 (n=8, gini=0.4688, counts={0:3, 1:5})
+|   L: |   L: |   L: else context > -1.315308
+|   L: |   L: |   L: |   R: predict=1 (n=53, gini=0.0000, counts={1:53})
+|   L: |   L: else context > -0.244390
+|   L: |   L: |   R: if signal_x <= -0.710616 (n=68, gain=0.294630)
+|   L: |   L: |   R: |   L: if context <= 0.398255 (n=35, gain=0.121912)
+|   L: |   L: |   R: |   L: |   L: predict=0 (n=8, gini=0.4688, counts={0:5, 1:3})
+|   L: |   L: |   R: |   L: else context > 0.398255
+|   L: |   L: |   R: |   L: |   R: predict=1 (n=27, gini=0.0713, counts={0:1, 1:26})
+|   L: |   L: |   R: else signal_x > -0.710616
+|   L: |   L: |   R: |   R: if context <= 1.080017 (n=33, gain=0.019590)
+|   L: |   L: |   R: |   R: |   L: predict=0 (n=24, gini=0.0000, counts={0:24})
+|   L: |   L: |   R: |   R: else context > 1.080017
+|   L: |   L: |   R: |   R: |   R: predict=0 (n=9, gini=0.3457, counts={0:7, 1:2})
+|   L: else signal_y > -1.011979
+|   L: |   R: if context <= 0.178862 (n=430, gain=0.113715)
+|   L: |   R: |   L: if signal_y <= -0.685501 (n=238, gain=0.002435)
+|   L: |   R: |   L: |   L: if signal_y <= -0.864876 (n=23, gain=0.046532)
+|   L: |   R: |   L: |   L: |   L: predict=0 (n=10, gini=0.0000, counts={0:10})
+|   L: |   R: |   L: |   L: else signal_y > -0.864876
+|   L: |   R: |   L: |   L: |   R: predict=0 (n=13, gini=0.4260, counts={0:9, 1:4})
+|   L: |   R: |   L: else signal_y > -0.685501
+|   L: |   R: |   L: |   R: if context <= -0.101631 (n=215, gain=0.001230)
+|   L: |   R: |   L: |   R: |   L: predict=0 (n=179, gini=0.0854, counts={0:171, 1:8})
+|   L: |   R: |   L: |   R: else context > -0.101631
+|   L: |   R: |   L: |   R: |   R: predict=0 (n=36, gini=0.1975, counts={0:32, 1:4})
+|   L: |   R: else context > 0.178862
+|   L: |   R: |   R: if signal_x <= -0.700263 (n=192, gain=0.319097)
+|   L: |   R: |   R: |   L: if context <= 0.513803 (n=100, gain=0.005716)
+|   L: |   R: |   R: |   L: |   L: predict=1 (n=35, gini=0.2449, counts={0:5, 1:30})
+|   L: |   R: |   R: |   L: else context > 0.513803
+|   L: |   R: |   R: |   L: |   R: predict=1 (n=65, gini=0.0596, counts={0:2, 1:63})
+|   L: |   R: |   R: else signal_x > -0.700263
+|   L: |   R: |   R: |   R: if signal_x <= -0.102457 (n=92, gain=0.011522)
+|   L: |   R: |   R: |   R: |   L: predict=0 (n=42, gini=0.0907, counts={0:40, 1:2})
+|   L: |   R: |   R: |   R: else signal_x > -0.102457
+|   L: |   R: |   R: |   R: |   R: predict=0 (n=50, gini=0.3200, counts={0:40, 1:10})
+else signal_x > 0.466431
+|   R: if signal_y <= -0.307973 (n=341, gain=0.221847)
+|   R: |   L: if context <= -0.318989 (n=157, gain=0.120127)
+|   R: |   L: |   L: if signal_y <= -0.994954 (n=62, gain=0.400458)
+|   R: |   L: |   L: |   L: if signal_y <= -1.211793 (n=34, gain=0.005623)
+|   R: |   L: |   L: |   L: |   L: predict=1 (n=26, gini=0.0000, counts={1:26})
+|   R: |   L: |   L: |   L: else signal_y > -1.211793
+|   R: |   L: |   L: |   L: |   R: predict=1 (n=8, gini=0.2188, counts={0:1, 1:7})
+|   R: |   L: |   L: else signal_y > -0.994954
+|   R: |   L: |   L: |   R: if context <= -0.941798 (n=28, gain=0.018367)
+|   R: |   L: |   L: |   R: |   L: predict=0 (n=10, gini=0.3200, counts={0:8, 1:2})
+|   R: |   L: |   L: |   R: else context > -0.941798
+|   R: |   L: |   L: |   R: |   R: predict=0 (n=18, gini=0.0000, counts={0:18})
+|   R: |   L: else context > -0.318989
+|   R: |   L: |   R: if signal_y <= -1.855857 (n=95, gain=0.006420)
+|   R: |   L: |   R: |   L: predict=0 (n=8, gini=0.3750, counts={0:6, 1:2})
+|   R: |   L: |   R: else signal_y > -1.855857
+|   R: |   L: |   R: |   R: if signal_x <= 0.809028 (n=87, gain=0.008430)
+|   R: |   L: |   R: |   R: |   L: predict=0 (n=8, gini=0.3750, counts={0:6, 1:2})
+|   R: |   L: |   R: |   R: else signal_x > 0.809028
+|   R: |   L: |   R: |   R: |   R: predict=0 (n=79, gini=0.0494, counts={0:77, 1:2})
+|   R: else signal_y > -0.307973
+|   R: |   R: if noise <= -0.055285 (n=184, gain=0.003686)
+|   R: |   R: |   L: if noise <= -1.446294 (n=84, gain=0.005669)
+|   R: |   R: |   L: |   L: predict=1 (n=14, gini=0.2449, counts={0:2, 1:12})
+|   R: |   R: |   L: else noise > -1.446294
+|   R: |   R: |   L: |   R: predict=1 (n=70, gini=0.0000, counts={1:70})
+|   R: |   R: else noise > -0.055285
+|   R: |   R: |   R: if noise <= 0.291057 (n=100, gain=0.010249)
+|   R: |   R: |   R: |   L: if context <= -0.321559 (n=26, gain=0.048343)
+|   R: |   R: |   R: |   L: |   L: predict=1 (n=9, gini=0.4938, counts={0:4, 1:5})
+|   R: |   R: |   R: |   L: else context > -0.321559
+|   R: |   R: |   R: |   L: |   R: predict=1 (n=17, gini=0.2076, counts={0:2, 1:15})
+|   R: |   R: |   R: else noise > 0.291057
+|   R: |   R: |   R: |   R: if signal_x <= 0.620363 (n=74, gain=0.008068)
+|   R: |   R: |   R: |   R: |   L: predict=1 (n=8, gini=0.3750, counts={0:2, 1:6})
+|   R: |   R: |   R: |   R: else signal_x > 0.620363
+|   R: |   R: |   R: |   R: |   R: predict=1 (n=66, gini=0.0868, counts={0:3, 1:63})
