@@ -7,8 +7,8 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 10 (Bäume & Binary Search Trees): Test-Durchlauf ausführen.**
-> Dazu ausschließlich den Abschnitt „Modul 10" sowie die Arbeitsanweisungen
+> **Modul 11 (Heaps & Priority Queues): Theorie-Skript erstellen.**
+> Dazu ausschließlich den Abschnitt „Modul 11" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
 *(Dieser Block wird nach jedem abgeschlossenen Task aktualisiert und zeigt immer
@@ -54,7 +54,7 @@ fünf Zellen `fertig` sind.
 | 07 | Sortieralgorithmen | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 165/165 Tests; alle 12 Python-Dateien, 15 Theorieblöcke, Demo, vollständiger 120-Punkt-Benchmark und externe 5.000-Zeilen-Sortierung am 2026-07-19 erfolgreich |
 | 08 | Binary Search & Suchvarianten | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 195/195 Tests; alle 11 Python-Dateien, 17 Theorieblöcke, beide Demos, Generator und vollständige 5.000-Zeilen-Schwellenpipeline am 2026-07-19 erfolgreich |
 | 09 | Two Pointers & Sliding Window | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 141/141 Tests; alle 10 Python-Dateien, 13 Theorieblöcke, Benchmark, Demo, Generator und vollständige 12.000-Punkte-Anomaliepipeline am 2026-07-19 erfolgreich |
-| 10 | Bäume & Binary Search Trees | fertig | fertig | fertig | fertig | offen | Markdown, Python-Skripte, CSV | Theorie mit 16 Python-Beispielen; BST-Eigenbau mit 33 Tests; Baum-Aufgabenkatalog mit 49 Tests; eigener Decision Tree mit Gini, Seed-Datensatz, 38 Tests und identischem 94,0-%-Testergebnis wie scikit-learn |
+| 10 | Bäume & Binary Search Trees | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 120/120 Tests; alle 10 Python-Dateien, 16 Theoriebeispiele, beide Demos, Generator und vollständiger Decision-Tree-Vergleich mit 94,0 % Testgenauigkeit am 2026-07-20 erfolgreich |
 | 11 | Heaps & Priority Queues | offen | offen | offen | offen | offen | — | — |
 | 12 | Graphen I: Repräsentation & Traversierung | offen | offen | offen | offen | offen | — | — |
 | 13 | Graphen II: Kürzeste Wege, Union-Find & MST | offen | offen | offen | offen | offen | — | — |
@@ -128,3 +128,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-20 | Modul 10: 01-basic | Vollständiger BST-Eigenbau mit Insert, Suche, Delete, Min/Max, vier Traversierungen und ASCII-Visualisierung; Demo, Syntaxprüfung und 33 pytest-Fälle erfolgreich. |
 | 2026-07-20 | Modul 10: 02-medium | Rekursiver Aufgabenkatalog für Höhe, linearen Balance-Check, BST-Validierung, allgemeinen LCA und JSON-Serialisierung; Demo, Syntaxprüfung und 49 Tests erfolgreich. |
 | 2026-07-20 | Modul 10: 03-final | Eigener Decision-Tree-Klassifikator mit Gini, rekursiven Splits, Max-Tiefe und Seed-Datensatz; 38 Tests, vollständiger Vergleich und für beide Modelle 94,0 % Testgenauigkeit bei 0/300 abweichenden Vorhersagen. |
+| 2026-07-20 | Modul 10: Test-Durchlauf | 120/120 Tests; alle 10 Python-Dateien, beide Demos, Generator und vollständiger Decision-Tree-Vergleich mit erneut 94,0 % Testgenauigkeit erfolgreich. |
