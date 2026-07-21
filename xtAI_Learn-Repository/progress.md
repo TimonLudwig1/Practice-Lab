@@ -89,7 +89,7 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 03 Data Science 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `598a668`, `b723e1d` |
 | 04 Machine Learning 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `92ab92d`, `d172564`, `028b8a5`, `90817ad` |
 | 05 Machine Learning 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `af83312`, `f56b29f`, `4c879f7`, `5f8afc3` |
-| 06 Theorie der KI 1 | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `033b87a`, `1d3e467`, `<neu>` |
+| 06 Theorie der KI 1 | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `033b87a`, `1d3e467`, `f1bc5b3` |
 | **07 Theorie der KI 2** | **offen — als Nächstes** | offen | offen | — |
 | 08–21 | offen | offen | offen | — |
 
