@@ -1,6 +1,6 @@
 # Modulliste — xtAI (eXtended Artificial Intelligence), Uni Würzburg
 
-Alle Module in **didaktischer Lernreihenfolge** (nicht wie im Modulhandbuch). Die Nummern entsprechen den Ordnernamen unter `module/`.
+Alle Module in **didaktischer Lernreihenfolge** (nicht wie im Modulhandbuch). Die Nummern entsprechen den Ordnernamen unter `modules/`.
 
 ## Block A — Fundament
 

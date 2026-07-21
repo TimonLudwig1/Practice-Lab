@@ -4,25 +4,25 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 # Heruntergeladene Datensätze nicht committen
-**/daten/*.csv
-**/daten/*.zip
-**/daten/*.tsv
-**/daten/*.db
-**/daten/*.txt
-**/daten/*.conllu
-**/daten/*.model
-**/daten/*.vocab
-**/daten/*.npz
-**/daten/*.gz
-**/daten/*.jpg
-**/daten/*.jpeg
-**/daten/*.png
-!**/daten/README.md
-**/daten/SMSSpamCollection
-**/daten/readme*
-**/daten/FashionMNIST/
-**/daten/eurosat/
-**/daten/EuroSAT/
+**/datasets/*.csv
+**/datasets/*.zip
+**/datasets/*.tsv
+**/datasets/*.db
+**/datasets/*.txt
+**/datasets/*.conllu
+**/datasets/*.model
+**/datasets/*.vocab
+**/datasets/*.npz
+**/datasets/*.gz
+**/datasets/*.jpg
+**/datasets/*.jpeg
+**/datasets/*.png
+!**/datasets/README.md
+**/datasets/SMSSpamCollection
+**/datasets/readme*
+**/datasets/FashionMNIST/
+**/datasets/eurosat/
+**/datasets/EuroSAT/
 
 # Projekt-Ausgaben
-**/ergebnisse/
+**/results/

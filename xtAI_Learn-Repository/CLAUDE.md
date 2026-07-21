@@ -10,8 +10,8 @@ Ich bin **Anfänger bezüglich der Tooling-Details** (Jupyter, Umgebungen etc.),
 
 Für **jedes Modul** aus `module-liste.md` (bzw. der Modulübersicht) erstellst du einen eigenen Ordner mit:
 
-1. **Einer Erklärungs-Datei** (`README.md` oder `skript.md`) — wie Vorlesungsfolien in Textform: von den Basics bis zu Advanced-Themen, am Ende Literatur und weiterführende Quellen.
-2. **Drei Lernprojekten**, aufsteigend in Schwierigkeit (basic → medium → final). Format wählst du pro Projekt selbst (siehe unten).
+1. **Einer Erklärungs-Datei** (`README.md` oder `skript.md`) — wie Vorlesungsfolien in Textform: von den Basics bis zu Advanced-Themen, am Ende Literatur und weiterführende Quellen. Die Erklärungsdatei, und oder readme.d sollen zuerst auf englisch verfasst und darunter eine deutsch übersetzte Version enthalten. Keine emojis verwenden.
+2. **Drei Lernprojekten**, aufsteigend in Schwierigkeit (basic → medium → final). Format wählst du pro Projekt selbst (siehe unten). Die Sprache in den projekten selbst, soll ausschließlich englisch sein. 
 
 Arbeite **ein Modul nach dem anderen vollständig ab**, bevor du zum nächsten übergehst. Nach jedem fertigen Modul: kurze Statusmeldung an mich und weiter, außer ich sage etwas anderes.
 
@@ -19,13 +19,13 @@ Arbeite **ein Modul nach dem anderen vollständig ab**, bevor du zum nächsten �
 
 ## Ordnerstruktur
 
-Lege pro Modul einen Ordner unter `module/` an. Benenne ihn mit laufender Nummer + sprechendem Kürzel, z. B.:
+Lege pro Modul einen Ordner unter `modules/` an. Benenne ihn mit laufender Nummer + sprechendem Kürzel, z. B.:
 
 ```
-module/
+modules/
   01-introduction-in-ai/
     README.md              <- das Lernskript
-    projekte/
+    projects/
       01-basic/
       02-medium/
       03-final/
@@ -63,7 +63,7 @@ Schreibe es so, dass ich es allein durcharbeiten kann, ohne Vorlesung. Struktur:
 
 ## Die drei Lernprojekte pro Modul
 
-Für jedes Modul drei Projekte, jeweils in eigenem Unterordner mit einer eigenen `README.md`, die enthält: Ziel, Vorwissen, Schritt-für-Schritt-Aufgabenstellung, was am Ende funktionieren soll, und **eine Musterlösung oder Lösungshinweise** (getrennt, damit ich erst selbst probieren kann — z. B. in `loesung/` oder als ausklappbarer Abschnitt).
+Für jedes Modul drei Projekte, jeweils in eigenem Unterordner mit einer eigenen `README.md`, die enthält: Ziel, Vorwissen, Schritt-für-Schritt-Aufgabenstellung, was am Ende funktionieren soll, und **eine Musterlösung oder Lösungshinweise** (getrennt, damit ich erst selbst probieren kann — z. B. in `solution/` oder als ausklappbarer Abschnitt).
 
 - **01 – basic**: Sanfter Einstieg. Führt das zentrale Konzept praktisch ein. Klein, in sich abgeschlossen, in unter ~1–2 Stunden machbar. Viel Anleitung.
 - **02 – medium**: Baut auf dem Basic-Projekt auf, kombiniert mehrere Konzepte des Moduls. Weniger Anleitung, mehr Eigenleistung.

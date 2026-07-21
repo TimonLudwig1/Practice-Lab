@@ -36,7 +36,7 @@ source .venv/bin/activate
 jupyter lab
 ```
 
-`jupyter lab` öffnet automatisch deinen Browser mit einer Dateiübersicht. Dort navigierst du z. B. zu `module/01-introduction-in-ai/projekte/01-basic/` und öffnest das Notebook per Doppelklick.
+`jupyter lab` öffnet automatisch deinen Browser mit einer Dateiübersicht. Dort navigierst du z. B. zu `modules/01-introduction-in-ai/projects/01-basic/` und öffnest das Notebook per Doppelklick.
 
 - **Zelle ausführen**: `Shift + Enter`
 - **Alles neu ausführen**: Menü *Run → Run All Cells*
@@ -47,7 +47,7 @@ jupyter lab
 Manche Projekte sind normale `.py`-Dateien. Die führst du im Terminal aus (bei aktivierter venv):
 
 ```bash
-python module/01-introduction-in-ai/projekte/02-medium/tictactoe.py
+python modules/01-introduction-in-ai/projects/02-medium/tictactoe.py
 ```
 
 ## 4. Wenn etwas nicht klappt
@@ -58,7 +58,7 @@ python module/01-introduction-in-ai/projekte/02-medium/tictactoe.py
 
 ## 5. Was liegt wo?
 
-- `module/` — ein Ordner pro Modul, jeweils mit Lernskript (`README.md`) und `projekte/`
+- `modules/` — ein Ordner pro Modul, jeweils mit Lernskript (`README.md`) und `projects/`
 - `progress.md` — was fertig ist und was als Nächstes gebaut wird
 - `module-liste.md` — alle Module des Studiengangs in Lernreihenfolge
 - `requirements.txt` — die Liste aller Python-Bibliotheken
