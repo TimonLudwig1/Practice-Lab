@@ -52,9 +52,9 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 ## Englisch-Umstellung (laufender Auftrag, Vorrang vor Modul 22)
 
 > ### NEXT ACTION dieses Auftrags
-> **Modul 05, Projekt 01-basic: `mlp_from_scratch.ipynb` + `solution/solution.ipynb` auf Englisch.**
-> Die **vier READMEs von Modul 05 sind fertig** (Modul-Skript 653 Zeilen bilingual + 3 Projekt-READMEs). Es fehlen nur noch die 6 Notebooks: P01 (MLP von Hand, numpy, schnell) → P02 (**CNN Fashion-MNIST, torch/MPS, ca. 5-10 min Laufzeit** — Hitze beachten) → P03 (Clustering, CPU, <1 min).
-> Zielzahlen: P01 Gradient-Check < 1e-7 (Referenz ~1e-10), Test-Accuracy >= 0.94 (Referenz 0.95); P02 Parameter-Assert **66 570**, CNN 0.90-0.91 vs MLP 0.86-0.88; P03 GMM-full bester ARI ~0.6, ~2 Hauptsegmente.
+> **Modul 05, Projekt 02-medium: `image_classification_cnn.ipynb` + `solution/solution.ipynb` auf Englisch.**
+> Die vier READMEs und **P01 sind fertig** (P01 verifiziert: Gradient-Check **6.49e-11**, Test-Accuracy **0.950** — exakt die README-Referenzwerte). Es fehlen P02 (**CNN Fashion-MNIST, torch/MPS, ca. 5-10 min Laufzeit** — Hitze beachten, Daten liegen schon in `02-medium/solution/datasets/`) und P03 (Clustering, CPU, <1 min).
+> Zielzahlen: P02 Parameter-Assert **66 570**, CNN 0.90-0.91 vs MLP 0.86-0.88 Test-Accuracy nach 3 Epochen auf dem 20k-Subset; P03 GMM-full bester ARI ~0.6, ~2 Hauptsegmente.
 > Rezept siehe „Arbeitsablauf pro Notebook" weiter unten.
 
 **Auftrag:** Jede README bekommt den vollständigen englischen Text als Block **über** dem bestehenden deutschen. Die Projektinhalte selbst (Notebooks, .py) werden **ausschließlich englisch**, inklusive Bezeichnern. Datei- und Ordnernamen ebenfalls englisch. Die verbindliche Regel steht in `CLAUDE.md` im Abschnitt **„Sprachregel"**.
@@ -86,7 +86,7 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 02 Data Science 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `0cae09f`, `374a81e`, `6c7e61f`, `80ca895` |
 | 03 Data Science 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `598a668`, `b723e1d` |
 | 04 Machine Learning 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `92ab92d`, `d172564`, `028b8a5`, `90817ad` |
-| **05 Machine Learning 2** | ✓ | ✓ 3/3 | **0/6 — als Nächstes P01** | `af83312` |
+| **05 Machine Learning 2** | ✓ | ✓ 3/3 | **2/6 — als Nächstes P02 (CNN)** | `af83312` |
 | 06–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)
