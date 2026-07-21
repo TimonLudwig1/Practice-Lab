@@ -1,0 +1,5 @@
+vertices,edges,seed,mst_weight,kruskal_median_us,prim_median_us,same_edge_set
+25,60,1301,475.000,30.417,21.709,true
+75,250,1302,1377.000,182.959,93.459,true
+150,600,1303,2506.000,469.500,221.958,true
+300,1500,1304,3626.000,1428.833,618.500,true
