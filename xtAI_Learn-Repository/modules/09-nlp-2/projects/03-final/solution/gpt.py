@@ -1,24 +1,24 @@
-"""Musterlösung — ein Zeichen-Level-GPT von Grund auf.
+"""Reference solution — a character-level GPT from scratch.
 
-Ein Decoder-only-Transformer (GPT-Architektur, Radford et al. 2018) auf
-Zeichen-Ebene, autoregressiv auf *Tiny Shakespeare* trainiert. Bewusst kompakt
-gehalten, damit das Training in wenigen Minuten auf CPU/MPS/CUDA läuft, aber
-architektonisch vollständig:
+A decoder-only transformer (GPT architecture, Radford et al. 2018) on the
+character level, trained autoregressively on *Tiny Shakespeare*. Deliberately kept
+compact so that training runs in a few minutes on CPU/MPS/CUDA, but
+architecturally complete:
 
-  Token-Embedding + gelernte Positional-Embeddings
-  -> N x [ Pre-LayerNorm -> kausale Multi-Head-Self-Attention -> Residual
-           Pre-LayerNorm -> Feed-Forward (GELU) -> Residual ]
-  -> finale LayerNorm -> lineare Projektion auf das Vokabular (weight tying)
+  token embedding + learned positional embeddings
+  -> N x [ pre-LayerNorm -> causal multi-head self-attention -> residual
+           pre-LayerNorm -> feed-forward (GELU) -> residual ]
+  -> final LayerNorm -> linear projection onto the vocabulary (weight tying)
 
-Trainingsziel: nächste-Zeichen-Vorhersage (Cross-Entropy). Generierung:
-autoregressives Sampling mit Temperatur und optionalem top-k.
+Training objective: next-character prediction (cross entropy). Generation:
+autoregressive sampling with temperature and optional top-k.
 
-    python gpt.py            # trainiert und generiert eine Textprobe
-    python gpt.py --help     # Hyperparameter
+    python gpt.py            # trains and generates a text sample
+    python gpt.py --help     # hyperparameters
 
-Kernbezug zu Projekt 02: dieselbe Scaled-Dot-Product-Attention, jetzt mit einer
-**kausalen Maske** (jedes Token darf nur nach links schauen) — das macht das Modell
-autoregressiv.
+Core link to project 02: the same scaled dot-product attention, now with a
+**causal mask** (every token may only look to the left) — that makes the model
+autoregressive.
 """
 import argparse
 import math
@@ -30,7 +30,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # --------------------------------------------------------------------------- #
-# Daten: Tiny Shakespeare (Zeichen-Level)
+# Data: Tiny Shakespeare (character level)
 # --------------------------------------------------------------------------- #
 DATA_URL = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
 DATA_PATH = os.path.join(os.path.dirname(__file__), "datasets", "tinyshakespeare.txt")
@@ -39,7 +39,7 @@ DATA_PATH = os.path.join(os.path.dirname(__file__), "datasets", "tinyshakespeare
 def load_text():
     if not os.path.exists(DATA_PATH):
         os.makedirs(os.path.dirname(DATA_PATH), exist_ok=True)
-        print("Lade Tiny Shakespeare ...")
+        print("Downloading Tiny Shakespeare ...")
         req = urllib.request.Request(DATA_URL, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=60) as r:
             text = r.read().decode("utf-8")
@@ -52,7 +52,7 @@ def load_text():
 
 
 class CharTokenizer:
-    """Bijektive Zeichen <-> Integer-Abbildung (Zeichen-Level-Vokabular)."""
+    """Bijective character <-> integer mapping (character-level vocabulary)."""
 
     def __init__(self, text):
         self.chars = sorted(set(text))
@@ -71,22 +71,22 @@ class CharTokenizer:
 
 
 # --------------------------------------------------------------------------- #
-# Modell
+# Model
 # --------------------------------------------------------------------------- #
 class CausalSelfAttention(nn.Module):
-    """Multi-Head-Self-Attention mit kausaler Maske (Blick nur nach links)."""
+    """Multi-head self-attention with a causal mask (look only to the left)."""
 
     def __init__(self, n_embd, n_head, block_size, dropout):
         super().__init__()
         assert n_embd % n_head == 0
         self.n_head = n_head
         self.d_k = n_embd // n_head
-        # Q, K, V in einer Projektion (Effizienz), plus Ausgangsprojektion
+        # Q, K, V in a single projection (efficiency), plus the output projection
         self.qkv = nn.Linear(n_embd, 3 * n_embd)
         self.proj = nn.Linear(n_embd, n_embd)
         self.attn_drop = nn.Dropout(dropout)
         self.resid_drop = nn.Dropout(dropout)
-        # untere Dreiecksmatrix als (nicht gelernte) kausale Maske
+        # lower triangular matrix as the (non-learned) causal mask
         self.register_buffer(
             "mask", torch.tril(torch.ones(block_size, block_size)).view(1, 1, block_size, block_size)
         )
@@ -98,18 +98,18 @@ class CausalSelfAttention(nn.Module):
         q = q.view(B, T, self.n_head, self.d_k).transpose(1, 2)
         k = k.view(B, T, self.n_head, self.d_k).transpose(1, 2)
         v = v.view(B, T, self.n_head, self.d_k).transpose(1, 2)
-        # Scaled-Dot-Product-Attention mit kausaler Maskierung
+        # scaled dot-product attention with causal masking
         att = (q @ k.transpose(-2, -1)) / math.sqrt(self.d_k)     # (B, n_head, T, T)
         att = att.masked_fill(self.mask[:, :, :T, :T] == 0, float("-inf"))
         att = F.softmax(att, dim=-1)
         att = self.attn_drop(att)
         y = att @ v                                              # (B, n_head, T, d_k)
-        y = y.transpose(1, 2).contiguous().view(B, T, C)         # Köpfe zusammenführen
+        y = y.transpose(1, 2).contiguous().view(B, T, C)         # merge the heads
         return self.resid_drop(self.proj(y))
 
 
 class Block(nn.Module):
-    """Transformer-Block im Pre-LayerNorm-Stil (GPT-2)."""
+    """Transformer block in the pre-LayerNorm style (GPT-2)."""
 
     def __init__(self, n_embd, n_head, block_size, dropout):
         super().__init__()
@@ -124,8 +124,8 @@ class Block(nn.Module):
         )
 
     def forward(self, x):
-        x = x + self.attn(self.ln1(x))     # Residual um Attention (Pre-LN)
-        x = x + self.mlp(self.ln2(x))      # Residual um Feed-Forward
+        x = x + self.attn(self.ln1(x))     # residual around attention (pre-LN)
+        x = x + self.mlp(self.ln2(x))      # residual around the feed-forward
         return x
 
 
@@ -135,7 +135,7 @@ class GPT(nn.Module):
         super().__init__()
         self.block_size = block_size
         self.tok_emb = nn.Embedding(vocab_size, n_embd)
-        self.pos_emb = nn.Embedding(block_size, n_embd)   # gelernte Positionen
+        self.pos_emb = nn.Embedding(block_size, n_embd)   # learned positions
         self.drop = nn.Dropout(dropout)
         self.blocks = nn.ModuleList([
             Block(n_embd, n_head, block_size, dropout) for _ in range(n_layer)
@@ -166,15 +166,15 @@ class GPT(nn.Module):
 
     @torch.no_grad()
     def generate(self, idx, max_new_tokens, temperature=1.0, top_k=None):
-        """Autoregressives Sampling. idx: (B, T0) Kontext-IDs."""
+        """Autoregressive sampling. idx: (B, T0) context IDs."""
         self.eval()
         for _ in range(max_new_tokens):
-            idx_cond = idx[:, -self.block_size:]              # Kontext auf block_size kürzen
+            idx_cond = idx[:, -self.block_size:]              # crop the context to block_size
             logits, _ = self(idx_cond)
-            logits = logits[:, -1, :] / temperature           # nur letztes Zeitschritt
+            logits = logits[:, -1, :] / temperature           # only the last time step
             if top_k is not None:
                 v, _ = torch.topk(logits, top_k)
-                logits[logits < v[:, [-1]]] = float("-inf")   # alles außer top-k -> -inf
+                logits[logits < v[:, [-1]]] = float("-inf")   # everything except top-k -> -inf
             probs = F.softmax(logits, dim=-1)
             next_id = torch.multinomial(probs, num_samples=1)
             idx = torch.cat([idx, next_id], dim=1)
@@ -225,14 +225,14 @@ def main():
 
     text = load_text()
     tok = CharTokenizer(text)
-    print(f"Zeichen im Korpus: {len(text):,}   Vokabular: {tok.vocab_size}")
+    print(f"Characters in the corpus: {len(text):,}   vocabulary: {tok.vocab_size}")
     data = torch.tensor(tok.encode(text), dtype=torch.long)
     n = int(0.9 * len(data))
     splits = {"train": data[:n], "val": data[n:]}
 
     model = GPT(tok.vocab_size, n_embd=args.n_embd, n_head=args.n_head,
                 n_layer=args.n_layer, block_size=args.block_size).to(device)
-    print(f"Parameter: {sum(p.numel() for p in model.parameters()):,}")
+    print(f"Parameters: {sum(p.numel() for p in model.parameters()):,}")
 
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr)
     for it in range(1, args.iters + 1):
@@ -245,9 +245,9 @@ def main():
             l = estimate_loss(model, splits, args.block_size, args.batch_size, device)
             print(f"Iter {it:5d} | train {l['train']:.3f} | val {l['val']:.3f}")
 
-    # Generieren
-    print("\n" + "=" * 60 + "\nGenerierte Textprobe (Temperatur 0.8, top-k 40):\n" + "=" * 60)
-    context = torch.zeros((1, 1), dtype=torch.long, device=device)   # Start: Zeichen 0 (newline)
+    # Generate
+    print("\n" + "=" * 60 + "\nGenerated text sample (temperature 0.8, top-k 40):\n" + "=" * 60)
+    context = torch.zeros((1, 1), dtype=torch.long, device=device)   # start: character 0 (newline)
     out = model.generate(context, max_new_tokens=500, temperature=0.8, top_k=40)
     print(tok.decode(out[0].tolist()))
 
