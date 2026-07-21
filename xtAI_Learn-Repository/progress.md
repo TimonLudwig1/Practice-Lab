@@ -52,7 +52,7 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 ## Englisch-Umstellung (laufender Auftrag, Vorrang vor Modul 22)
 
 > ### NEXT ACTION dieses Auftrags
-> **Modul 09 „NLP 2": Modul-README + 3 Projekt-READMEs bilingual, dann die Projekte.**
+> **Modul 09 „NLP 2": READMEs FERTIG (`35e7123`), P01-Notebook FERTIG+ausgeführt (`83af0b6`, LSTM 0.788/Train 0.993/BoW 0.860). Als Nächstes: die .py-Projekte P02 (`attention.py`/`transformer.py`/`data.py`/`train.py`/`test_attention.py` + solution/) und P03 (`solution/gpt.py`) auf Englisch — Docstrings/Kommentare/prints/Bezeichner. Danach Testsuiten erneut laufen lassen (`__main__`/nbconvert).**
 > **Modul 08 ist komplett.** Modul 09 hat wieder das 06/07/08-Format: **Notebook nur P01**, P02+P03 sind .py-Projekte (LSTM-Sentiment, SDPA/MHA/Encoder von Hand, Char-GPT from scratch).
 > Zielzahlen Modul 09: P01 **BoW 0.86 schlaegt LSTM 0.79** (neuronal ist datenhungrig); P02 synthet. Negations-Task **BoW 0.50 vs Transformer 1.00**, 8/8 Tests; P03 Char-GPT auf Tiny-Shakespeare Val-Loss 4.2 -> **1.77** in ~1:50 min auf MPS.
 > **Achtung Laufzeit/Hitze:** Modul 09 trainiert echte torch-Modelle (P01 ~34 s MPS, P03 ~2 min MPS). torch 2.12.1 liegt im Repo-.venv, MPS verfuegbar. Daten: UCI Sentiment (Download), Tiny-Shakespeare (Download).
