@@ -33,8 +33,8 @@ Compared with project 01 there is markedly **less guidance**: you get intermedia
 
 ## What should work in the end
 
-- The CV ROC-AUC of all models lies between about 0.95 (an unscaled kNN baseline would be worse, but with a pipeline all should be above 0.95) and about 0.99 (gradient boosting/logistic regression typically in front).
-- The tuned model reaches ROC-AUC at least 0.98 and F1 at least 0.95 on the test set.
+- The CV ROC-AUC lies between about 0.92 (the single decision tree — the only model clearly off the pace, exactly as script 2.2 predicts: single trees are unstable) and about 0.996 (logistic regression and SVM in front, gradient boosting just behind at about 0.992).
+- The tuned model reaches ROC-AUC at least 0.98 and F1 at least 0.95 on the test set (reference: logistic regression wins the tuning with a CV of 0.9959 and reaches 0.9954 on the test set).
 - Permutation importance highlights plausible `worst` features.
 - You can justify in your own words why the test set was touched only once.
 
