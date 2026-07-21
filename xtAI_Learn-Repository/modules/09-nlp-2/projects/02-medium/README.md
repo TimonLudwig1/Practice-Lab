@@ -1,4 +1,97 @@
-# Projekt 02 (medium) — Self-Attention & ein Mini-Transformer von Hand
+# Project 02 (medium) — Self-attention & a mini transformer by hand
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Module 09 — NLP 2** · Format: **Python project** (several modules + test suite)
+
+## Why this format?
+
+You only understand attention once you multiply the matrices yourself. As a
+**codebase** (instead of a notebook) you cleanly separate the building blocks —
+attention, encoder block, model, data, training, tests — and implement exactly the
+parts that libraries (`nn.MultiheadAttention`, `nn.TransformerEncoderLayer`)
+otherwise hide. The **test suite** checks your implementation against PyTorch's
+reference and against the mathematical properties (softmax normalization, masking).
+
+## Goal
+
+You build the **core computation of the transformer from scratch** and use it to
+train a small encoder-only classifier. Concretely:
+
+- **Scaled dot-product attention** $\operatorname{softmax}\!\big(\tfrac{QK^\top}{\sqrt{d_k}}\big)V$
+  including masking — checked against `F.scaled_dot_product_attention`.
+- **Multi-head attention**: projection into $h$ heads, parallel attention, merging.
+- **Sinusoidal positional encoding** and a **transformer encoder block**
+  (MHA → residual → LayerNorm → FFN → residual → LayerNorm).
+- **The aha moment (connecting to project 01):** a synthetic *negation* dataset in
+  which the label depends on the interaction "not + polarity word". A **unigram BoW
+  model fails** (test accuracy ≈ 0.50, pure chance), because no *single* word
+  reveals the label — the **transformer solves it** (≈ 1.00), because attention can
+  link the negator with the following word. Exactly the "not … good" limit from
+  project 01, now cracked.
+
+## Prior knowledge
+
+- **Script** part 4 (self-attention, multi-head, positional encoding, encoder block).
+- **PyTorch** (`nn.Module`, `nn.Linear`, broadcasting, `view`/`transpose`).
+- Project 01 (embeddings, padding masks, training loop).
+
+## Project structure
+
+```
+02-medium/
+  attention.py       # SDPA + MultiHeadAttention            <- YOU (task 1 + 2)
+  transformer.py     # positional encoding + encoder block   <- YOU (task 3)
+                     #   (TransformerClassifier is given)
+  data.py            # synthetic negation dataset             (given)
+  train.py           # training + BoW comparison + attention  (given)
+  test_attention.py  # test suite (8 tests)                   (given)
+  solution/          # complete, tested reference solution
+```
+
+## Assignment
+
+Little is given, much is up to you — the hard parts are yours. Every function has a
+`# TODO` block listing the necessary steps as bullet points (only *inspiration*, no
+finished code).
+
+1. **`scaled_dot_product_attention`** in `attention.py`: the formula including
+   masking (`-inf` before the softmax) and the softmax over the key axis.
+2. **`MultiHeadAttention.forward`** in `attention.py`: project, split into heads
+   (helper given), attention per head, merge, output projection.
+3. **`sinusoidal_positional_encoding`** and **`TransformerEncoderBlock.forward`** in
+   `transformer.py`: the sine/cosine encoding and the two sublayers with residual +
+   LayerNorm.
+
+**How to proceed:**
+
+```bash
+source ../../../../.venv/bin/activate
+python test_attention.py     # red -> fill in the TODOs -> all 8 tests green
+python train.py              # trains the transformer, compares against BoW
+```
+
+## What should work in the end
+
+- `python test_attention.py` → **all 8 tests green** (SDPA == PyTorch, softmax
+  normalization, causal & padding masking, MHA shapes, positional encoding, encoder
+  block shape, padding invariance of the classifier).
+- `python train.py` → transformer **test accuracy ≈ 1.00**, unigram BoW **≈ 0.50**;
+  at the end a small attention matrix in which the tokens look strongly at the
+  **negator**.
+
+## Reference solution
+
+Complete in [`solution/`](solution/) (identical structure, all tests green). Try it
+yourself first — the root files raise `NotImplementedError` until you fill in the
+TODOs.
+
+> **Reference** (fixed seed): 8/8 tests green; transformer 1.000, BoW 0.503;
+> training ~1 min on CPU, seconds on MPS/CUDA.
+
+---
+
+# Projekt 02 (medium) — Self-Attention & ein Mini-Transformer von Hand (deutsche Fassung)
 
 **Modul 09 — NLP 2** · Format: **Python-Projekt** (mehrere Module + Testsuite)
 
