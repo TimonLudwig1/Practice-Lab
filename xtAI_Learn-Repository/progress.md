@@ -83,7 +83,7 @@ Pro Modul: Modul-`README.md` + alle Projekt-`README.md` bekommen den englischen 
 | 01 | ✓ | ✓ (3/3) | ✓ (4/4, ausgeführt, Zahlen == README: BFS 29/54, A* 29/35, greedy 31/32; Spam-Accuracy 0.9857) |
 | 02 | ✓ | ✓ (3/3) | ✓ (6/6, ausgeführt; 165 fehlende Stunden, r 0.405/0.627, Abnahme grün) |
 | 03 | ✓ | ✓ (3/3) | ✓ (6/6, ausgeführt; SQL 5 Checks, Bootstrap-KI [3.49, 20.47], R2 0.394/0.453/0.794, MAE 859<952<1458) |
-| 04 | ✓ | ✓ (3/3) | **offen (0/6)** ← hier weitermachen |
+| 04 | ✓ | ✓ (3/3) | **teilweise (2/6)** ← hier weitermachen |
 | 05–21 | offen | offen | offen |
 
 **Modul 04 — Stand:** READMEs (Modul + 3 Projekte) fertig; im deutschen Block ein Tippfehler korrigiert („klener" → „kleiner", Abschnitt 2.3). Keine Generator-Kopplung in diesem Modul (alle Daten kommen aus sklearn/seaborn). NOCH OFFEN: alle 6 Notebooks — `knn_from_scratch`, `model_race`, `income_prediction` (je + solution). Zielzahlen: P01 unskaliert 0.77 vs. skaliert 0.95, k=1 Train 1.0/Test 0.92, k=151 beide ~0.75; P02 CV-ROC-AUC > 0.95, Test-AUC >= 0.98, F1 >= 0.95; P03 CV-PR-AUC LogReg 0.76 / RF 0.71 / GB 0.83, Test-PR-AUC 0.83, Recall 0.87, Precision 0.60, Kostenschwelle ~0.44, Fairness Recall Female 0.80 vs. Male 0.91. **P03 braucht Internet beim ersten Lauf** (fetch_openml adult, cached in ~/scikit_learn_data).
