@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 13 (Graphen II: Kürzeste Wege, Union-Find & MST): Projekt 03-final erstellen.**
+> **Modul 13 (Graphen II: Kürzeste Wege, Union-Find & MST): Test-Durchlauf ausführen.**
 > Dazu ausschließlich den Abschnitt „Modul 13" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -60,7 +60,7 @@ fünf Zellen `fertig` sind.
 | 10 | Bäume & Binary Search Trees | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 120/120 Tests; alle 10 Python-Dateien, 16 Theoriebeispiele, beide Demos, Generator und vollständiger Decision-Tree-Vergleich mit 94,0 % Testgenauigkeit am 2026-07-20 erfolgreich |
 | 11 | Heaps & Priority Queues | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 148/148 Tests; alle 11 Python-Dateien, 17 Theoriebeispiele, beide Demos, 18 Benchmark-Fälle, Generator und vollständige 300-Job-Scheduler-Simulation am 2026-07-20 erfolgreich |
 | 12 | Graphen I: Repräsentation & Traversierung | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 155/155 Tests; alle 10 Python-Dateien, 16 Theorieblöcke, beide Demos und vollständige Seed-1203-Pipeline mit 24 Tasks, 39 Kanten und 113-Minuten-Kritischem-Pfad am 2026-07-20 erfolgreich |
-| 13 | Graphen II: Kürzeste Wege, Union-Find & MST | fertig | fertig | fertig | offen | offen | Markdown, Python-Skripte, CSV | Theorie, Dijkstra/Union-Find und Seed-MST-Werkstatt; Kruskal/Prim auf vier identischen Graphen mit gleichen Gewichten und Kantenmengen, zweisprachige README, Benchmark und bisher 132 Tests erfolgreich |
+| 13 | Graphen II: Kürzeste Wege, Union-Find & MST | fertig | fertig | fertig | fertig | offen | Markdown, Python-Skripte, CSV, PNG | Theorie, Dijkstra/Union-Find, MST-Werkstatt und Seed-1313-Routingnetz; 192 Knoten/356 Straßen, eigene Dijkstra-Routen, Sperrungsanalyse mit +5,2 %/+96,3 % und dreiteilige Visualisierung; bisher 188 Tests erfolgreich |
 | 14 | Greedy-Algorithmen | offen | offen | offen | offen | offen | — | — |
 | 15 | Backtracking | offen | offen | offen | offen | offen | — | — |
 | 16 | Dynamic Programming | offen | offen | offen | offen | offen | — | — |
@@ -145,3 +145,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-20 | Modul 13: Theorie | Umfassendes Skript zu gewichteten Graphen, Dijkstra mit vollständiger Handrechnung, Bellman-Ford, Union-Find mit beiden Optimierungen, Kruskal, Prim und A*-Einordnung erstellt; alle 19 Python-Beispiele gemeinsam erfolgreich ausgeführt. |
 | 2026-07-20 | Modul 13: 01-basic | Gewichtete Graphklasse, Dijkstra mit Heap-Tie-Breaker, Relaxierungs-Trace und Pfadrekonstruktion sowie Union-Find mit Path Compression, Union by Rank, Komponentengrößen und Invarianten; Demo und 58 Tests erfolgreich. |
 | 2026-07-21 | Modul 13: 02-medium | Kruskal-/Prim-Werkstatt mit unabhängigem MST-Verifizierer und vier identischen Seed-Graphen bis 300 Knoten/1.500 Kanten; gleiche MST-Gewichte und Kantenmengen, CSV-/Markdown-Benchmark, zweisprachige README und 74 Tests erfolgreich. |
+| 2026-07-21 | Modul 13: 03-final | Seed-1313-Gitterstraßennetz mit 192 Knoten/356 Straßen, selbst implementiertem Dijkstra, Einzelstraßen-/Barrierenanalyse (+5,2 %/+96,3 %), zwei CSVs, englischem Bericht, dreiteiliger PNG-Visualisierung, zweisprachiger README und 56 Tests erfolgreich. |

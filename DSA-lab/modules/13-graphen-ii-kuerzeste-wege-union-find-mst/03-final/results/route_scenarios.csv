@@ -1,0 +1,4 @@
+scenario,reached,travel_time,delay,delay_percent,hops,settled_nodes,closed_roads,closed_nodes,path
+baseline,true,47.298,0.000,0.000,17,159,,,r11c0|r10c0|r10c1|r10c2|r10c3|r10c4|r10c5|r10c6|r10c7|r10c8|r10c9|r11c9|r11c10|r11c11|r11c12|r11c13|r11c14|r11c15
+single_route_road,true,49.760,2.462,5.205,19,172,r10c7-r10c8,,r11c0|r10c0|r9c0|r9c1|r9c2|r9c3|r9c4|r9c5|r9c6|r9c7|r9c8|r9c9|r9c10|r9c11|r10c11|r11c11|r11c12|r11c13|r11c14|r11c15
+north_gap_barrier,true,92.846,45.548,96.300,37,192,r1c7-r1c8|r2c7-r2c8|r3c7-r3c8|r4c7-r4c8|r5c7-r5c8|r6c7-r6c8|r7c7-r7c8|r8c7-r8c8|r9c7-r9c8|r10c7-r10c8|r11c7-r11c8,,r11c0|r10c0|r9c0|r8c0|r7c0|r7c1|r6c1|r5c1|r4c1|r4c2|r4c3|r4c4|r4c5|r3c5|r3c6|r2c6|r2c7|r1c7|r0c7|r0c8|r0c9|r1c9|r2c9|r3c9|r4c9|r5c9|r6c9|r7c9|r8c9|r9c9|r9c10|r9c11|r10c11|r11c11|r11c12|r11c13|r11c14|r11c15
