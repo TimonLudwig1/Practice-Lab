@@ -2,7 +2,7 @@
 
 Dieses Repository ist eine **Lernwerkstatt**. Deine Aufgabe als Claude Code ist es,
 für jedes der 17 Module aus `Moduluebersicht_DSA.md` selbstständig hochwertiges
-Lernmaterial zu erzeugen: ein umfassendes Theorie-Skript (`THEORIE.md`) plus drei
+Lernmaterial zu erzeugen: ein umfassendes Theorie-Skript (`THEORY.md`) plus drei
 aufeinander aufbauende Projekte (01-basic, 02-medium, 03-final).
 
 Der Nutzer arbeitet mit teuren Modellen. **Token-Effizienz ist oberstes Gebot.**
@@ -52,7 +52,7 @@ Der Nutzer arbeitet mit teuren Modellen. **Token-Effizienz ist oberstes Gebot.**
 5. **Didaktik:** Jedes Theorie-Skript folgt der Struktur Intuition → Simulation →
    Formalisierung. Erklärend statt auflistend — Ziel ist Verständnis.
 6. **Sprache (verbindlich):** Jede neu erstellte oder bearbeitete erklärende
-   Markdown-Datei, insbesondere `THEORIE.md` und `README.md`, enthält zuerst die
+   Markdown-Datei, insbesondere `THEORY.md` und `README.md`, enthält zuerst die
    vollständige englische Fassung und darunter die vollständige deutsche
    Übersetzung. Sämtlicher Text in Code und Notebooks ist ausschließlich
    Englisch; das umfasst Bezeichner, Kommentare, Docstrings, String-Literale,

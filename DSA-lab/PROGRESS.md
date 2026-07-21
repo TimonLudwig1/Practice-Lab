@@ -35,7 +35,7 @@ genau einen nächsten Schritt.)*
 7. **Git-Commit nach jedem Task** mit sprechender Message, z. B.
    `modul-04: 02-medium fertig`.
 8. **Sprachformat ab 2026-07-21:** Jede neu erstellte oder bearbeitete erklärende
-   Markdown-Datei, insbesondere `THEORIE.md` und `README.md`, enthält zuerst die
+   Markdown-Datei, insbesondere `THEORY.md` und `README.md`, enthält zuerst die
    vollständige englische Fassung und darunter die vollständige deutsche
    Übersetzung. Sämtlicher Text in Code und Notebooks ist ausschließlich
    Englisch; das umfasst Bezeichner, Kommentare, Docstrings, String-Literale,
@@ -152,3 +152,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-21 | Modul 13: Test-Durchlauf | 188/188 Tests; alle 10 Python-Dateien, 19 Theorieblöcke, Dijkstra-/Union-Find-Demo, vier MST-Benchmarkfälle und vollständiges Seed-1313-Routing mit 192 Knoten/356 Straßen und +5,2 %/+96,3 % Sperrungsverzögerung erfolgreich. |
 | 2026-07-21 | Modul 14: Theorie | Umfassendes Greedy-Skript mit Greedy-Choice-Property, optimaler Teilstruktur, Exchange-Argument, Gegenbeispielmethodik, Interval Scheduling, Münzwechsel, fraktionalem Rucksack, Huffman-Codierung, Meeting-Räumen und Greedy-vs.-DP; alle 21 Python-Beispiele gemeinsam erfolgreich ausgeführt. |
 | 2026-07-21 | Modul 14: Sprachkorrektur | `Agents.md` und Tracker auf Englisch-vor-Deutsch für erklärende Markdown-Dateien sowie ausschließlich englischen Code-/Notebook-Text präzisiert; Theorie vollständig zweisprachig umgebaut und alle 42 Python-Blöcke gemeinsam erfolgreich ausgeführt. |
+| 2026-07-21 | Module 01–14: Theorie-Migration | Alle vorhandenen Theorie-Skripte vollständig auf Englisch-vor-Deutsch umgestellt und von `THEORIE.md` zu `THEORY.md` umbenannt; 212 Python-Blöcke je Sprachhälfte byteidentisch, syntaktisch gültig und ohne deutschen Code-/Ausgabetext geprüft. |

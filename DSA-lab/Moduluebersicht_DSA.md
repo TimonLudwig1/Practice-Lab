@@ -33,7 +33,7 @@ Jedes Theorie-Skript folgt strikt der Drei-Ebenen-Struktur:
 ### Struktur pro Modul
 ```
 modules/NN-modul-slug/
-├── THEORIE.md            # umfassendes Theorie-Skript (Intuition → Simulation → Formalisierung)
+├── THEORY.md            # umfassendes Theorie-Skript (Intuition → Simulation → Formalisierung)
 ├── data/                 # nur falls das Modul Datensätze braucht
 │   └── generate_data.py  # fixer Random Seed, Begründung als Kommentar
 └── projects/
@@ -42,7 +42,7 @@ modules/NN-modul-slug/
     └── 03-final/         # Praxisnah: realistisches Problem, wenn möglich mit Data-Science-Bezug
 ```
 
-- **THEORIE.md** ist umfassend und erklärend, nicht stichpunktartig. Ziel ist
+- **THEORY.md** ist umfassend und erklärend, nicht stichpunktartig. Ziel ist
   *Verständnis*. Alle im Modulabschnitt gelisteten Inhalte werden abgedeckt.
 - **Projektformat** frei wählbar (Jupyter Notebook, Python-Skripte, Markdown-Walkthrough) —
   je nachdem, was didaktisch am besten passt. Entscheidung kurz in der Projekt-README begründen.
@@ -93,7 +93,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 01 — Komplexitätsanalyse & Big-O
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Warum Effizienz zählt: dasselbe Problem, drei Lösungen, drastisch verschiedene Laufzeiten
 - Empirische Laufzeitmessung in Python (Messreihen über wachsende Eingabegrößen, Plot der Wachstumskurven)
 - Wachstumsklassen: O(1), O(log n), O(n), O(n log n), O(n²), O(2ⁿ), O(n!) — mit je einem konkreten Algorithmusbeispiel
@@ -116,7 +116,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 02 — Arrays & Strings
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Statische vs. dynamische Arrays; wie Python-Listen intern funktionieren (Over-Allocation, amortisiertes Append)
 - Kostenmodell der wichtigsten Listenoperationen (Index-Zugriff, Append, Insert, Delete, Suche)
 - Mehrdimensionale Arrays; Bezug zu NumPy (Contiguous Memory, warum Vektorisierung schnell ist — konzeptionell)
@@ -138,7 +138,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 03 — Rekursion & Divide and Conquer
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Rekursion als Selbstähnlichkeit: Basisfall, Rekursionsfall, Fortschrittsgarantie
 - Der Call Stack: Simulation eines Rekursionsablaufs Frame für Frame (Trace-Diagramme)
 - Rekursionsbäume zeichnen und Kosten daran ablesen
@@ -161,7 +161,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 04 — Linked Lists
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Motivation: Was können Linked Lists, was Arrays nicht können (und umgekehrt)
 - Singly Linked List: Knoten, Referenzen, Kopf; Simulation aller Grundoperationen mit Zeigerdiagrammen
 - Doubly Linked List, Sentinel-Knoten als Vereinfachungstechnik
@@ -183,7 +183,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 05 — Stacks & Queues
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - LIFO und FIFO als Denkmodelle; Alltagsanalogien und Simulation der Operationen
 - Implementierungsvarianten: Stack auf Array, Queue auf Linked List, Ringpuffer, zwei Stacks als Queue
 - Deque als Verallgemeinerung; `collections.deque` und warum Listen als Queues ineffizient sind
@@ -204,7 +204,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 06 — Hashing & Hash Maps
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Das Kernversprechen: Suche in O(1) — und warum das fast zu gut klingt, um wahr zu sein
 - Hash-Funktionen: Anforderungen, einfache Beispiele, Simulation der Verteilung von Schlüsseln auf Buckets
 - Kollisionen und Auflösung: Chaining vs. Open Addressing (Linear Probing), Simulation beider Verfahren
@@ -226,7 +226,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 07 — Sortieralgorithmen
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Warum Sortieren das Lehrbuchproblem schlechthin ist (Vergleichbarkeit der Paradigmen)
 - Elementare Verfahren: Bubble, Selection, Insertion Sort — je mit Schritt-für-Schritt-Simulation auf einem kleinen Array
 - Effiziente Verfahren: Merge Sort und Quicksort (Partitionierung im Detail, Pivot-Wahl, Worst Case)
@@ -249,7 +249,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 08 — Binary Search & Suchvarianten
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Vom Telefonbuch zur Halbierungsidee; Simulation der Intervallverkleinerung Schritt für Schritt
 - Die Invariante als Korrektheitswerkzeug; die klassischen Off-by-One-Fallen (`left <= right` vs. `left < right`)
 - Varianten: erstes/letztes Vorkommen, Insert-Position, `bisect`-Modul
@@ -271,7 +271,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 09 — Two Pointers & Sliding Window
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Warum diese Muster existieren: von O(n²)-Brute-Force zu O(n) durch Ausnutzung von Struktur
 - Two Pointers: gegenläufig (sortierte Arrays, Paarsuche) und gleichläufig (In-Place-Filterung) — je mit Zeiger-Simulation
 - Sliding Window: festes Fenster (gleitende Summen) und variables Fenster (Wachsen/Schrumpfen mit Bedingung)
@@ -293,7 +293,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 10 — Bäume & Binary Search Trees
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Hierarchien als Datenmodell: vom Dateisystem zum Entscheidungsbaum
 - Terminologie (Wurzel, Blatt, Tiefe, Höhe) und rekursive Natur von Bäumen
 - Traversierungen: Preorder, Inorder, Postorder, Level-Order — jede per Simulation an demselben Beispielbaum
@@ -315,7 +315,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 11 — Heaps & Priority Queues
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Motivation: „Gib mir immer das Wichtigste zuerst" — warum sortierte Listen dafür zu teuer sind
 - Der Binary Heap als Array: Eltern-Kind-Arithmetik, Heap-Eigenschaft
 - Sift-Up und Sift-Down mit Schritt-für-Schritt-Simulation; Heapify in O(n) (intuitives Argument)
@@ -337,7 +337,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 12 — Graphen I: Repräsentation & Traversierung
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Graphen als universelles Modell: soziale Netzwerke, Abhängigkeiten, Straßennetze, Feature-Beziehungen
 - Terminologie (gerichtet/ungerichtet, gewichtet, Grad, Pfad, Zyklus, Zusammenhang)
 - Repräsentationen: Adjazenzliste vs. Adjazenzmatrix — Kostenvergleich und Wahlkriterien
@@ -360,7 +360,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 13 — Graphen II: Kürzeste Wege, Union-Find & MST
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Gewichtete Graphen: warum BFS nicht mehr reicht
 - Dijkstra mit Priority Queue: vollständige Simulation an einem Beispielgraphen (Distanztabelle Schritt für Schritt); Voraussetzung nichtnegativer Gewichte
 - Bellman-Ford: Idee der Kantenrelaxierung, negative Zyklen erkennen (kompakter als Dijkstra behandelt)
@@ -382,7 +382,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 14 — Greedy-Algorithmen
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Die Greedy-Idee: lokal optimal entscheiden und nie zurückblicken
 - Wann Greedy funktioniert — und die Beweislast: Gegenbeispiele konstruieren als Kernkompetenz
 - Klassiker mit Simulation: Interval Scheduling (Auswahl nach frühestem Ende), Münzwechsel (wann Greedy scheitert), fraktionales Rucksackproblem
@@ -404,7 +404,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 15 — Backtracking
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Systematisches Ausprobieren mit Rückzug: der Suchbaum als mentales Modell
 - Anatomie eines Backtracking-Algorithmus: Wahl, Constraint-Prüfung, Rekursion, Rückgängigmachen
 - Simulation an N-Damen: Suchbaum zeichnen, Pruning sichtbar machen
@@ -426,7 +426,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 16 — Dynamic Programming
 
-**Inhalte (THEORIE.md):**
+**Inhalte (THEORY.md):**
 - Der Kern: überlappende Teilprobleme + optimale Substruktur; Fibonacci als Einstiegs-Simulation (Rekursionsbaum mit Doppelberechnungen sichtbar machen)
 - Memoization (Top-Down) vs. Tabulation (Bottom-Up): dieselbe Idee, zwei Richtungen — beide simuliert
 - Das DP-Vorgehensmodell: Zustand definieren, Rekurrenz aufstellen, Basisfälle, Auswertungsreihenfolge, Speicheroptimierung
@@ -449,7 +449,7 @@ Die Reihenfolge ist didaktisch: Jedes Modul setzt nur Inhalte vorangegangener Mo
 
 ## Modul 17 — Capstone: DSA im Data-Science-Kontext
 
-**Inhalte (THEORIE.md — hier kompakter, eher Einordnung als neue Theorie):**
+**Inhalte (THEORY.md — hier kompakter, eher Einordnung als neue Theorie):**
 - Synthese: Welche Struktur/welches Paradigma für welches Problem — Entscheidungsleitfaden als Referenz
 - Wo DSA in DS-Werkzeugen steckt: Hashing in Joins und GroupBy, Sortierung in Indizes, Bäume in Modellen, Graphen in Pipelines, Heaps in Top-K-Queries
 - Interview-Vorbereitung: typischer Ablauf technischer Interviews, lautes Denken, Muster-Erkennung, Komplexität kommunizieren

@@ -1,3 +1,1360 @@
+# Module 02 — Arrays & Strings
+
+Arrays are among the most basic data structures. They combine a simple idea – elements
+are in a fixed order – with a decisive property: an index can be used to access a
+position directly. Python lists appear flexible and convenient, but are internally based
+on exactly this array principle.
+
+Strings are also indexable sequences. In contrast to lists, however, they are immutable.
+This one design decision changes which operations are favorable and which silently
+create many copies.
+
+This script follows three levels:
+
+1. **Intuition:** Why contiguous storage allows direct access and why growth or
+   immutability require special strategies.
+2. **Simulation:** How shifts, resizes, prefix sums, in-place patterns and matrix
+   traversals proceed step by step.
+3. **Formalization:** Which invariants and complexities are behind the most important
+   operations and array patterns.
+
+In the end, you should be able to justify the cost of any usual list operation, use
+prefix sums safely and explain why NumPy processes numerical arrays much more
+efficiently than general Python lists.
+
+---
+
+## 1. Intuition: Numbered drawers
+
+### 1.1 Direct access through fixed positions
+
+Imagine a cabinet with drawers of the same size, right next to each other. Each drawer
+has a number. To open drawer 700, you don't have to search the first 699. You calculate
+their position from starting point, number and drawer width:
+
+\[
+\text{Address}(i)=\text{Start address}+i\cdot\text{Element width}.
+\]
+
+This is the core idea of an array. Because each field has the same width and the fields
+are coherent, index access costs constant time regardless of the array length.
+
+A linked list works differently: your elements can be distributed and point to the next
+one. Access to position 700 requires the following of up to 700 references. Arrays
+exchange flexible local changes for quick position access.
+
+### 1.2 Why inserting in the middle is expensive
+
+If the drawers are completely occupied and a new drawer should be inserted at position
+2, all later drawers must move one position to the right.
+
+From
+
+\[
+[A,B,C,D,E]
+\]
+
+will be gradually:
+
+| Step | Condition |
+|---:|---|
+| Start | [A, B, C, D, E, _] |
+| Move E | [A, B, C, D, _, E] |
+| Move D | [A, B, C, _, D, E] |
+| Move C | [A, B, _, C, D, E] |
+| Use X | [A, B, X, C, D, E] |
+
+The closer the insertion position is at the beginning, the more elements are moved.
+Direct index access remains cheap; structural changes within the array are linear.
+
+### 1.3 The capacity problem
+
+A static array has a fixed number of fields. If it is full, it cannot be guaranteed to
+reserve additional storage directly behind it. A dynamic array solves the problem by
+three steps:
+
+1. reserve a larger contiguous buffer;
+2. Copy existing elements,
+3. release the old buffer.
+
+If the buffer would only grow by exactly one field for each append, the copy costs would
+arise for \(n\) apps
+
+\[
+1+2+3+\dots+(n-1)=\Theta(n^2).
+\]
+
+Instead, dynamic arrays reserve more space than currently required. This over-allocation
+usually makes later apps constant and resizes rare.
+
+### 1.4 Strings: A labeled sign instead of a board
+
+A list is like a writing board: a single field can be changed. A string resembles a
+printed shield. If a sign is to be different, a new sign will be made.
+
+~~~python
+values = ["D", "S", "A"]
+values[0] = "X"
+
+text = "DSA"
+# text[0] = "X"  # TypeError: strings are immutable
+changed = "X" + text[1:]
+~~~
+
+This immutability has advantages: Strings are safe to use as a dictionary key, can be
+shared and do not change surprisingly. But it also means that apparent changes create
+new objects.
+
+---
+
+## 2. Simulation: How Python Lists Grow
+
+### 2.1 Static and dynamic array
+
+A static array does not separate **Length** and **Capacity**: Both are fixed. In a
+dynamic array, the terms mean:
+
+- **Length:** Number of actually saved elements.
+- **Capacity:** Number of elements for which the current buffer provides space.
+
+The invariant always applies
+
+\[
+0\le \text{Length}\le \text{Capacity}.
+\]
+
+Python provides a dynamic array with list. A list does not internally store all any
+Python objects directly in a row, but references to these objects. The references have a
+uniform width; the actual objects can be located at other storage points.
+
+Conceptually:
+
+~~~text
+list buffer: [ref] [ref" [ref") [free] [free]
+                 \     |     /
+objects:          42 "DSA" Customer(...)
+
+length = 3
+capacity = 5
+~~~
+
+Therefore, the same list may contain values of different types. However, this creates
+additional indirection and property costs for numerical calculations.
+
+### 2.2 Resize with doubling by hand
+
+For the simulation we use a simplified growth rule: With full buffer the capacity is
+doubled. Real Python versions use other, smaller growth factors; the principle remains
+the same.
+
+| append | Length before | Capacity before | Action | Copies | Capacity afterwards |
+|---:|---:|---:|---|---:|---:|
+| A | 0 | 1 | Write directly | 0 | 1 |
+| B | 1 | 1 | Resize | 1 | 2 |
+| C | 2 | 2 | Resize | 2 | 4 |
+| D | 3 | 4 | Write directly | 0 | 4 |
+| E | 4 | 4 | Resize | 4 | 8 |
+| F | 5 | 8 | Write directly | 0 | 8 |
+
+A single resize is linear, because all existing references are copied. Over a long
+append sequence, however, the copying quantities form the geometric sum
+
+\[
+1+2+4+\dots < 2n.
+\]
+
+Together with \(n\) write operations, the overall work for \(n\) apps remains linear. An
+app therefore costs **amortized \(\Theta(1)\)**.
+
+### 2.3 Watch over-allocation in CPython
+
+Python does not publish internal capacity as a normal list property. But with
+sys.getsizeof you can see when the memory block gets bigger:
+
+~~~python
+import sys
+
+
+def observe_list_growth(limit=80):
+    """Print points at which a list's allocated size changes."""
+    values = []
+    previous_bytes = sys.getsizeof(values)
+    print(f"length={len(values):2d}, bytes={previous_bytes}")
+
+    for value in range(limit):
+        values.append(value)
+        current_bytes = sys.getsizeof(values)
+        if current_bytes != previous_bytes:
+            print(f"length={len(values):2d}, bytes={current_bytes}")
+            previous_bytes = current_bytes
+
+
+observe_list_growth()
+~~~
+
+The output byte values depend on Python version and platform. The pattern is relevant:
+The size does not change after every append, but rather abruptly. Between two jumps the
+list uses already reserved free places.
+
+sys.getsizeof also measures only the list object with reference buffer, not recursively
+the memory of all referenced objects.
+
+### 2.4 Insert step by step
+
+~~~python
+values = [10, 20, 30, 40]
+values.insert(1, 15)
+~~~
+
+For insertion position 1, the references are moved from right to left:
+
+| Operation | Buffer |
+|---|---|
+| Start | [10, 20, 30, 40, _] |
+| 40 by index 4 | [10, 20, 30, _, 40] |
+| 30 by index 3 | [10, 20, _, 30, 40] |
+| 20 by index 2 | [10, _, 20, 30, 40] |
+| 15 by index 1 | [10, 15, 20, 30, 40] |
+
+For length \(n\) and position \(i\) approximately \(n-i\) references are moved. This
+follows \(O(n-i)\), in the worst case \(O(n)\).
+
+### 2.5 Delete step by step
+
+The removal from the center creates the reverse shift:
+
+~~~python
+values = [10, 15, 20, 30, 40]
+del values[1]
+~~~
+
+| Operation | logical content |
+|---|---|
+| Start | [10, 15, 20, 30, 40] |
+| 20 by index 1 | [10, 20, 20, 30, 40] |
+| 30 by index 2 | [10, 20, 30, 30, 40] |
+| 40 by index 3 | [10, 20, 30, 40, 40] |
+| Reduce length | [10, 20, 30, 40] |
+
+pop() at the end does not require such shift and is amortized constant. pop(0) shifts
+almost the entire list and is linear.
+
+### 2.6 compare runtimes empirically
+
+The following experiment compares append at the end with insert at the beginning. The
+list is re-created for each measurement so that both functions get the same initial
+state:
+
+~~~python
+from statistics import median
+from time import perf_counter
+
+
+def measure_operation(operation, size, repeats=9):
+    """Return median runtime for one operation on a fresh list."""
+    durations = []
+    for _ in range(repeats):
+        values = list(range(size))
+        start = perf_counter()
+        operation(values)
+        durations.append(perf_counter() - start)
+    return median(durations)
+
+
+sizes = [1_000, 2_000, 4_000, 8_000, 16_000]
+for size in sizes:
+    append_time = measure_operation(lambda values: values.append(-1), size)
+    front_time = measure_operation(lambda values: values.insert(0, -1), size)
+    print(size, append_time, front_time)
+~~~
+
+A single append measurement point can randomly contain a resize. A batch benchmark is
+often more meaningful about many operations. insert(0, x) shows the linear displacement
+work already per operation.
+
+---
+
+## 3. The cost model of the Python list
+
+### 3.1 Overview
+
+For a list of length \(n\) in CPython typically apply:
+
+| Operation | typical time | Reasons |
+|---|---:|---|
+| values[i] | \(\Theta(1)\) | The address of the reference will be calculated |
+| values[i] = x | \(\Theta(1)\) | replace a reference |
+| len(values) | \(\Theta(1)\) | Save length |
+| append(x) | amortised \(\Theta(1)\) | mostly free space, rare resize |
+| pop() | amortised \(\Theta(1)\) | last element, no shift |
+| insert(i, x) | \(O(n-i)\) | Moving Suffix |
+| pop(i), del values[i] | \(O(n-i)\) | Moving Suffix |
+| x in values | \(O(n)\) | Sequential comparison |
+| values.index(x) | \(O(n)\) | sequential search |
+| values.count(x) | \(\Theta(n)\) | All elements will be tested |
+| values[a:b] | \(\Theta(k)\) | \(k\) Copying references |
+| values.copy() | \(\Theta(n)\) | flat copy of all references |
+| values.extend(other) | \(\Theta(m)\) amortised | \(m\) Attach references |
+| values + other | \(\Theta(n+m)\) | Create and copy new list |
+| values.reverse() | \(\Theta(n)\) | Swap elements in-place |
+| reversed(values) | \(\Theta(1)\) Setup | Iterator, no list copy |
+| sort() | \(O(n\log n)\) Worst Case | Timsort, in-place |
+| Sorted(values) | \(O(n\log n)\) Worst Case | new sorted list |
+
+\(k\) is the Slice length and \(m\) the length of the second container.
+
+### 3.2 Index access is not search
+
+~~~python
+indexed_values = list(range(1_000))
+value = indexed_values[700]
+~~~
+
+is a direct access and constant.
+
+~~~python
+target = 700
+position = indexed_values.index(target)
+~~~
+
+must compare values until target is found. Best case is \(\Theta(1)\), worst case
+\(\Theta(n)\).
+
+The index is a known position. Search first determines which position belongs to a
+value.
+
+### 3.3 Negative indices
+
+Python translates a negative index conceptually by
+
+\[
+i_{\text{Normalized}}=n+i.
+\]
+
+values[-1] becomes values[n-1]. The calculation remains constant; a negative index does
+not trigger a reverse flow.
+
+### 3.4 Slicing copied
+
+~~~python
+prefix = values[:100]
+suffix = values[100:]
+copy = values[:]
+~~~
+
+Each expression creates a new list. A slice in a loop can therefore cause an unexpected
+sum of copy costs:
+
+~~~python
+def consume_by_slicing(values):
+    """Repeatedly copy shrinking suffixes."""
+    remaining = values
+    total = 0
+    while remaining:
+        total += remaining[0]
+        remaining = remaining[1:]
+    return total
+~~~
+
+The copied lengths are \(n-1,n-2,\dots,1\). The time is \(\Theta(n^2)\), although only
+one visible while loop exists.
+
+### 3.5 Shallow Copy and shared objects
+
+A list copy copies references, not recursively the referenced objects:
+
+~~~python
+original = [[1, 2], [3, 4]]
+copied = original.copy()
+copied[0].append(99)
+
+assert original == [[1, 2, 99], [3, 4]]
+assert copied[0] is original[0]
+~~~
+
+The outer lists are different, the inner lists are shared. For completely independent
+nested structures, a targeted deep copy is required depending on the data type.
+
+---
+
+## 4. Multidimensional arrays and memory layout
+
+### 4.1 A matrix as a list of lines
+
+Python does not have a built-in special matrix type. A common representation is a list
+of lines:
+
+~~~python
+matrix = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9],
+]
+
+assert matrix[1][2] == 6
+~~~
+
+The first index selects a row list, the second an element in it. The lines are
+independent python lists and do not even have to have the same length. For matrix
+algorithms, rectangular form should therefore be explicitly checked.
+
+~~~python
+def validate_rectangular(matrix):
+    """Raise ValueError if rows have different lengths."""
+    if not matrix:
+        return
+    width = len(matrix[0])
+    if any(len(row) != width for row in matrix):
+        raise ValueError("matrix must be rectangular")
+~~~
+
+### 4.2 The Alias Trap in Initialization
+
+~~~python
+wrong = [[0] * 3] * 3
+wrong[0][0] = 7
+~~~
+
+The result is:
+
+~~~text
+[[7, 0, 0],
+ [7, 0, 0],
+ [7, 0, 0]]
+~~~
+
+The multiplication has referenced the same internal list three times. Right:
+
+~~~python
+correct = [[0 for _ in range(3)] for _ in range(3)]
+correct[0][0] = 7
+
+assert correct == [
+    [7, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+]
+~~~
+
+Each run of the outer comprehension creates a new row list.
+
+### 4.3 Row-Major traversal
+
+For a real contiguous two-dimensional array in Row Major layout, the values of a row are
+directly in succession:
+
+~~~text
+Matrix:            linear memory:
+[a b c]            [a b c d e f]
+[d e f]
+~~~
+
+For \(r\) rows and \(c\) columns, element \((i,j)\) has the linear index
+
+\[
+i\cdot c+j.
+\]
+
+A line-by-line traversal follows this layout:
+
+~~~python
+def row_major_sum(matrix):
+    """Sum a rectangular matrix row by row."""
+    validate_rectangular(matrix)
+    total = 0
+    for row in matrix:
+        for value in row:
+            total += value
+    return total
+~~~
+
+For coherent numerical arrays, this order usually uses the CPU cache better than column-
+wise jumps. With Python lists of lists, storage is less compact, but the line run
+remains the natural pattern.
+
+### 4.4 Why NumPy Is Different
+
+A python list of numerical values stores references to individual Python objects. Each
+object bears type and administrative information.
+
+On the other hand, a NumPy array with dtype int64 stores similar 64-bit values compactly
+in a typed data buffer:
+
+~~~text
+Python list: [ref] -> PyInt object
+             [ref] -> PyInt object
+             [ref] -> PyInt object
+
+NumPy int64: [8 bytes][8 bytes ][8 byte]
+~~~
+
+This presentation brings three key advantages:
+
+1. **Less memory overhead:** Values lie directly and equally wide in the buffer.
+2. **Better Cache Locality:** Neighboring values are loaded together into fast cache
+   lines.
+3. **Vectorization:** A loop runs in compiled code over many values instead of
+   performing Python bytecode and dynamic type checks for each element.
+
+### 4.5 Python loop against NumPy vectorization
+
+~~~python
+import numpy as np
+
+
+def python_square(values):
+    """Square Python numbers in an explicit loop."""
+    return [value * value for value in values]
+
+
+def numpy_square(values):
+    """Square a typed NumPy array in compiled code."""
+    return values * values
+
+
+python_values = list(range(1_000))
+numpy_values = np.arange(1_000, dtype=np.int64)
+
+assert python_square(python_values) == numpy_square(numpy_values).tolist()
+~~~
+
+Both variants perform conceptually \(n\) multiplications and are \(\Theta(n)\). NumPy
+does not win through a better Big-O class, but through compact data, low interpreter
+costs, optimized machine instructions and SIMD if necessary.
+
+Vectorization is not free:
+
+- Generating or converting an array takes time and memory.
+- Interim expressions can create temporary arrays.
+- For very small data, Python setup or NumPy call costs can dominate.
+- An unsuitable dtype can overflow or consume unnecessary memory.
+
+The correct statement is therefore not "NumPy is always faster", but: For sufficiently
+large, homogeneous numerical data, NumPy can perform the same linear work with
+significantly smaller constant costs.
+
+### 4.6 Views and Contigue Memory
+
+Many NumPy slices are views on the same data buffer:
+
+~~~python
+array = np.array([10, 20, 30, 40])
+view = array[1:3]
+view[0] = 99
+
+assert array.tolist() == [10, 99, 30, 40]
+~~~
+
+This is different from the list slicing that creates a new list. Whether a NumPy array
+is C-contiguous depends on form and strides. Transposed or sliced views may have
+disconnected access patterns, although they do not copy data.
+
+---
+
+## 5. Strings as immutable sequences
+
+### 5.1 Indexing, Slicing and Replace
+
+Strings support many sequence operations:
+
+~~~python
+text = "algorithm"
+
+assert text[0] == "a"
+assert text[-1] == "m"
+assert text[1:4] == "lgo"
+assert len(text) == 9
+~~~
+
+Index access and len are constant. A slice of length \(k\) creates a new string and
+costs \(\Theta(k)\). A change is made from unchanged parts to a new string:
+
+~~~python
+def replace_character(text, index, replacement):
+    """Return text with one position replaced."""
+    if len(replacement) != 1:
+        raise ValueError("replacement must be one character")
+    if not 0 <= index < len(text):
+        raise IndexError("index out of range")
+    return text[:index] + replacement + text[index + 1 :]
+~~~
+
+The function copies in total proportional to the text length and requires \(\Theta(n)\)
+time and \(\Theta(n)\) space for the result.
+
+### 5.2 Repeated Concatenation
+
+~~~python
+def concatenate_in_loop(parts):
+    """Build text through repeated concatenation."""
+    result = ""
+    for part in parts:
+        result += part
+    return result
+~~~
+
+Strings are immutable. Conceptually, each concatenation can copy the previous content
+and the new part into a new buffer. With \(n\) equal length parts, potentially quadratic
+total copies are created.
+
+CPython optimizes certain local += patterns if the old string is not referenced
+elsewhere. This implementation optimization is not a good basis for general or portable
+algorithm design.
+
+### 5.3 Collect and run once join
+
+~~~python
+def join_parts(parts):
+    """Join all text parts in one planned allocation."""
+    return "".join(parts)
+~~~
+
+join knows all parts, can determine the total length, reserve a matching result buffer
+and copy each character essentially once. If \(L\) is the sum of all sublengths, runtime
+is \(\Theta(L)\).
+
+The separator is in front of join:
+
+~~~python
+words = ["data", "structures", "algorithms"]
+sentence = " ".join(words)
+
+assert sentence == "data structures algorithms"
+~~~
+
+### 5.4 The right input size for text
+
+For string algorithms, the number of words is often not enough as a size. Two lists can
+contain ten words each, but have very different overall character lengths. A precise
+analysis uses, for example:
+
+- \(p\): number of parts,
+- \(L\): Sum of all characters in these parts.
+
+join works in \(\Theta(L)\), not just \(\Theta(p)\).
+
+### 5.5 Unicode and practical limits
+
+Python strings consist conceptually of Unicode code points. A visible graph can consist
+of several code points, such as a letter and a combining accent. len therefore does not
+reliably measure the number of visually perceived characters.
+
+For algorithmic tasks with ASCII small letters, an array of 26 counters can suffice. For
+general Unicode, a hash map of the actual characters is usually more appropriate.
+
+---
+
+## 6. Basic pattern I: In-place operations
+
+### 6.1 What "in-place" means
+
+An in-place algorithm changes the existing container and uses only constant or at least
+no proportional auxiliary storage.
+
+~~~python
+def reverse_in_place(values):
+    """Reverse a mutable sequence using two indices."""
+    left = 0
+    right = len(values) - 1
+
+    while left < right:
+        values[left], values[right] = values[right], values[left]
+        left += 1
+        right -= 1
+~~~
+
+Trace for [A, B, C, D, E]:
+
+| Step | left | right | Condition |
+|---:|---:|---:|---|
+| Start | 0 | 4 | [A, B, C, D, E] |
+| Exchange | 1 | 3 | [E, B, C, D, A] |
+| Exchange | 2 | 2 | [E, D, C, B, A] |
+| End | — | — | [E, D, C, B, A] |
+
+The loop invariant is:
+
+> Before each run all positions are outside the interval
+> [left, right] already at their final reversed position.
+
+Two positions are final per run. Therefore, the loop ends after at most \(\lfloor
+n/2\rfloor\) swapping. Time: \(\Theta(n)\), Auxiliary Space: \(\Theta(1)\).
+
+### 6.2 Rotation by three reversals
+
+A right-hand rotation around \(k\) positions should
+
+\[
+[A,B,C,D,E,F,G]
+\]
+
+for \(k=3\) in
+
+\[
+[E,F,G,A,B,C,D]
+\]
+
+It's all right.
+
+Without additional array works:
+
+1. reverse the entire list,
+2. reverse the first \(k\) elements,
+3. reverse the rest.
+
+~~~python
+def reverse_range(values, left, right):
+    """Reverse an inclusive range in place."""
+    while left < right:
+        values[left], values[right] = values[right], values[left]
+        left += 1
+        right -= 1
+
+
+def rotate_right(values, steps):
+    """Rotate values to the right in O(n) time and O(1) extra space."""
+    if not values:
+        return
+
+    steps %= len(values)
+    reverse_range(values, 0, len(values) - 1)
+    reverse_range(values, 0, steps - 1)
+    reverse_range(values, steps, len(values) - 1)
+~~~
+
+Simulation:
+
+| Phase | Condition |
+|---|---|
+| Start | [A, B, C, D, E, F, G] |
+| To reverse everything | [G, F, E, D, C, B, A] |
+| Prefix of length 3 | [E, F, G, D, C, B, A] |
+| Turn the rest around | [E, F, G, A, B, C, D] |
+
+Each element is moved constantly often. The total runtime remains \(\Theta(n)\).
+
+### 6.3 Trade-off: mutation against memory
+
+In-place saves an additional array, but changes the input. This is only correct if
+callers expect this mutation. A clear API names mutation in the function name or
+documentation and often returns None, such as list.sort.
+
+---
+
+## 7. Basic pattern II: prefix sums
+
+### 7.1 Motivation: many area totals
+
+Daily sales are given:
+
+\[
+[4,2,7,1,3,6].
+\]
+
+A single sum of index 1 to 4 can be calculated directly:
+
+\[
+2+7+1+3=13.
+\]
+
+In many queries, however, the naive method repeats the same additions over and over
+again. prefix sums move this work into a one-time preparation.
+
+### 7.2 Structure with Sentinel
+
+We define prefix so that prefix[i] contains the sum of the first \(i\) elements.
+prefix[0] is 0:
+
+| read value | Prefix array |
+|---:|---|
+| Start | [0] |
+| 4 | [0, 4] |
+| 2 | [0, 4, 6] |
+| 7 | [0, 4, 6, 13] |
+| 1 | [0, 4, 6, 13, 14] |
+| 3 | [0, 4, 6, 13, 14, 17] |
+| 6 | [0, 4, 6, 13, 14, 17, 23] |
+
+~~~python
+def build_prefix_sums(values):
+    """Return prefix sums with a leading zero sentinel."""
+    prefix = [0]
+    for value in values:
+        prefix.append(prefix[-1] + value)
+    return prefix
+~~~
+
+### 7.3 Area query by subtraction
+
+For the included interval [left, right]:
+
+\[
+\text{Total}(left,right)
+=prefix[right+1]-prefix[left].
+\]
+
+prefix[right+1] contains everything up to and including right. prefix[left] contains
+exactly the portion before left and is deducted.
+
+~~~python
+def range_sum(prefix, left, right):
+    """Return the inclusive range sum from a prefix array."""
+    value_count = len(prefix) - 1
+    if not 0 <= left <= right < value_count:
+        raise IndexError("invalid inclusive range")
+    return prefix[right + 1] - prefix[left]
+
+
+sales = [4, 2, 7, 1, 3, 6]
+sales_prefix = build_prefix_sums(sales)
+
+assert range_sum(sales_prefix, 1, 4) == 13
+assert range_sum(sales_prefix, 0, 5) == 23
+~~~
+
+### 7.4 Correctness invariant
+
+After processing the first \(i\) values:
+
+\[
+prefix[i]=\sum_{j=0}^{i-1} values[j].
+\]
+
+The start value prefix[0]=0 meets the statement for zero processed values. When
+attaching prefix[-1]+value, exactly the next value is added. Thus, the invariant
+inductive applies to all prefix positions.
+
+### 7.5 Complexity and Break-even
+
+- Structure: \(\Theta(n)\) Time and \(\Theta(n)\) Additional memory.
+- A query: \(\Theta(1)\).
+- \(q\) Total queries: \(\Theta(n+q)\).
+
+Naive range sums can cost up to \(\Theta(n)\) per query, total \(\Theta(qn)\). prefix
+sums are particularly worthwhile for many queries on unchanged data.
+
+If a value changes, all subsequent prefix values are affected. For frequent updates and
+queries, other structures such as Fenwick Trees or Segment Trees are more suitable;
+these follow in later DSA contexts.
+
+---
+
+## 8. Basic pattern III: matrix traversal
+
+### 8.1 Full line run
+
+~~~python
+def matrix_positions(matrix):
+    """Return all positions and values in row-major order."""
+    validate_rectangular(matrix)
+    positions = []
+    for row_index, row in enumerate(matrix):
+        for column_index, value in enumerate(row):
+            positions.append((row_index, column_index, value))
+    return positions
+~~~
+
+For \(r\) rows and \(c\) columns \(rc\) elements are visited. The runtime is
+\(\Theta(rc)\). Since the function returns all positions, the output \(\Theta(rc)\) also
+requires memory.
+
+### 8.2 Four neighbors of a grid field
+
+Many matrix problems treat a grid as implicit graphs. Instead of saving a neighboring
+list for each field, valid neighbors are calculated from four direction vectors:
+
+~~~python
+DIRECTIONS = ((-1, 0), (1, 0), (0, -1), (0, 1))
+
+
+def orthogonal_neighbors(matrix, row, column):
+    """Return valid up, down, left, and right neighbors."""
+    validate_rectangular(matrix)
+    if not matrix or not matrix[0]:
+        return []
+
+    row_count = len(matrix)
+    column_count = len(matrix[0])
+    if not 0 <= row < row_count or not 0 <= column < column_count:
+        raise IndexError("matrix position out of range")
+
+    neighbors = []
+    for row_delta, column_delta in DIRECTIONS:
+        next_row = row + row_delta
+        next_column = column + column_delta
+        if 0 <= next_row < row_count and 0 <= next_column < column_count:
+            neighbors.append((next_row, next_column))
+    return neighbors
+~~~
+
+Each position has at most four orthogonal neighbors. The calculation for a field is
+therefore \(\Theta(1)\).
+
+### 8.3 explicitly treat boundary conditions
+
+Matrix algorithms often fail not at the basic idea, but at:
+
+- empty matrix,
+- empty lines,
+- non-rectangular lines;
+- a single row or column;
+- false comparisons at the last valid position.
+
+The dimensions should be determined once and all indices should be checked against
+\(0\le row<r\) or \(0\le column<c\).
+
+---
+
+## 9. Classic array and string patterning
+
+### 9.1 Deduplication of a sorted array
+
+Duplicates stand side by side in a sorted array. A read index runs through all values, a
+write index marks the next position for a new unique value.
+
+~~~python
+def deduplicate_sorted(values):
+    """Deduplicate a sorted list in place and return its logical length."""
+    if not values:
+        return 0
+
+    write = 1
+    for read in range(1, len(values)):
+        if values[read] != values[write - 1]:
+            values[write] = values[read]
+            write += 1
+    return write
+~~~
+
+Trace for [1, 1, 2, 2, 4]:
+
+| read | read value | write before | Action | valid prefix |
+|---:|---:|---:|---|---|
+| 1 | 1 | 1 | Duplicate | [1] |
+| 2 | 2 | 1 | Write to Index 1 | [1, 2] |
+| 3 | 2 | 2 | Duplicate | [1, 2] |
+| 4 | 2 | 2 | Duplicate | [1, 2] |
+| 5 | 4 | 2 | Write to Index 2 | [1, 2, 4] |
+
+The invariant:
+
+> Before each read step, values[:write] contains exactly the unique values from
+> the prefix already read, in sorted order.
+
+After the run, only values[:write] are logically valid. The physical list remains the
+same as long as the rest is not deleted. Time: \(\Theta(n)\), Auxiliary Space:
+\(\Theta(1)\).
+
+### 9.2 Merge Two Sorted Arrays
+
+~~~python
+def merge_sorted(left_values, right_values):
+    """Merge two sorted sequences into a new sorted list."""
+    left_index = 0
+    right_index = 0
+    merged = []
+
+    while (
+        left_index < len(left_values)
+        and right_index < len(right_values)
+    ):
+        if left_values[left_index] <= right_values[right_index]:
+            merged.append(left_values[left_index])
+            left_index += 1
+        else:
+            merged.append(right_values[right_index])
+            right_index += 1
+
+    merged.extend(left_values[left_index:])
+    merged.extend(right_values[right_index:])
+    return merged
+~~~
+
+Trace for left=[2, 5, 8] and right=[1], 5, 9]:
+
+| Comparison | Selection | Result |
+|---|---:|---|
+| 2 against 1 | 1 right | [1] |
+| 2 against 5 | 2 left | [1, 2] |
+| 5 against 5 | 5 left | [1, 2, 5] |
+| 8 against 5 | 5 right | [1, 2, 5, 5] |
+| 8 against 9 | 8 left | [1, 2, 5, 5, 8] |
+| Rest | 9 right | [1, 2, 5, 5, 8, 9] |
+
+The invariant:
+
+> merged is sorted and contains exactly the already consumed elements
+> both inputs.
+
+Each of the \(n+m\) values is appended exactly once. Time and result place are
+\(\Theta(n+m)\). The <= ensures that the left element is taken over first with the same
+keys; thus a merge can be stable.
+
+### 9.3 Anagram check by frequency
+
+Two texts are anagrams if each character occurs equally often. A hash map is suitable
+for general characters:
+
+~~~python
+def are_anagrams(left_text, right_text):
+    """Return whether two strings contain the same character counts."""
+    if len(left_text) != len(right_text):
+        return False
+
+    counts = {}
+    for character in left_text:
+        counts[character] = counts.get(character, 0) + 1
+
+    for character in right_text:
+        remaining = counts.get(character, 0) - 1
+        if remaining < 0:
+            return False
+        counts[character] = remaining
+
+    return True
+~~~
+
+Under usual hashing assumptions, the function costs \(\Theta(n)\) time. The additional
+memory is \(O(k)\), where \(k\) indicates the number of different characters.
+
+Sorting both strings would also be correct with \(\Theta(n\log n)\) time, but
+asymptotically slower. For a fixed alphabet, for example exactly 26 ASCII small letters,
+the hash map can be replaced by an array of fixed sizes.
+
+### 9.4 Rotation: Modulo and empty input
+
+In the case of rotations, \(k\) must be normalized to the list length:
+
+\[
+k_{\text{effective}}=k\bmod n.
+\]
+
+A rotation by \(n\), \(2n\) or \(3n\) positions does not change anything. However,
+Modulo must not be executed with an empty list because the division is undefined by
+zero. Therefore, rotate_right first checks whether values are empty.
+
+---
+
+## 10. Formalisation
+
+### 10.1 Array abstraction
+
+A one-dimensional array \(A\) of length \(n\) is a sequence
+
+\[
+A[0],A[1],\dots,A[n-1]
+\]
+
+with direct assignment of each valid index to a storage position. For a static array of
+equally wide elements:
+
+\[
+\operatorname{address}(A[i])
+=\operatorname{base}(A)+i\cdot w,
+\]
+
+where \(w\) is the element width.
+
+The index invariant is:
+
+\[
+0\le i<n.
+\]
+
+Access outside this area is invalid. Python checks the limit and throws IndexError;
+lower languages can show undefined behavior without testing.
+
+### 10.2 Dynamic array
+
+A dynamic array complements:
+
+- length \(n\),
+- capacity \(C\),
+- a buffer of \(C\) positions,
+
+with
+
+\[
+0\le n\le C.
+\]
+
+append writes to \(n<C\) directly to position \(n\). With \(n=C\) a larger buffer is
+created. If the capacity grows geometrically by a factor \(\alpha>1\), the resize copies
+add up via \(n\) appends to \(O(n)\). Thus append is amortized \(O(1)\).
+
+### 10.3 In-place invariants
+
+In-place procedures overwrite input positions. Their correctness requires a statement
+about which area is already final and which is still unprocessed.
+
+For deduplication:
+
+\[
+values[0:write]
+\]
+
+contains exactly its unique values after processing values[0:read]. Since read only runs
+to the right and never writes larger than read, the function does not overwrite any
+unread value.
+
+### 10.4 Prefix Sum Definition
+
+For \(A\) of length \(n\) we define \(P\) of length\(n+1\):
+
+\[
+P[0]=0
+\]
+
+and
+
+\[
+P[i+1]=P[i]+A[i].
+\]
+
+Then an inclusive interval \(0\le l\le r<n\) applies:
+
+\[
+\sum_{i=l}^{r}A[i]=P[r+1]-P[l].
+\]
+
+The additional zero avoids a special case for \(l=0\).
+
+### 10.5 Matrix index
+
+For a rectangular \(r\times c\) matrix in the Row Major layout, position \((i,j)\) on
+the linear index
+
+\[
+i\cdot c+j
+\]
+
+is meant. Valid
+
+\[
+0\le i<r,\qquad 0\le j<c.
+\]
+
+A complete run is \(\Theta(rc)\) because each matrix element must be considered at least
+once.
+
+---
+
+## 11. Common Errors
+
+### 11.1 Keep each list operation for O(1)
+
+Index access is constant, search and shift are not. values.insert(0, x), pop(0),
+remove(x) and x in values can be linear.
+
+### 11.2 use list.insert(0, x) as queue
+
+Repeated removal or insertion at the top of the list leads to quadratic shifts. For a
+queue, collections.deque with operations at both ends is more suitable; the data
+structure follows in module 05.
+
+### 11.3 Keep slices for free views
+
+Python list licenses copy references. NumPy slices are often views. The same syntax does
+not mean the same memory behavior here.
+
+### 11.4 Structural changes during iteration
+
+~~~python
+def remove_negatives_wrong(values):
+    """Demonstrate skipped elements during mutation."""
+    for value in values:
+        if value < 0:
+            values.remove(value)
+~~~
+
+After a remove, the next element moves to the left, while the iterator continues. This
+allows values to be skipped. Safe alternatives are:
+
+- Create new list by Comprehension,
+- run backwards over indices,
+- a write index for in-place filtering.
+
+~~~python
+def remove_negatives_in_place(values):
+    """Filter negative numbers with a write index."""
+    write = 0
+    for value in values:
+        if value >= 0:
+            values[write] = value
+            write += 1
+    del values[write:]
+~~~
+
+### 11.5 Create nested lists with multiplication
+
+[[0] * columns] * rows divides the same line. A Comprehension creates independent lines.
+
+### 11.6 Confound in-place and copy
+
+- values.sort() changes values and returns None.
+- sorted(values) creates a new list.
+- values.reverse() changes values.
+- reversed(values) creates an iterator.
+
+APIs should use these differences consciously.
+
+### 11.7 Mix prefix sum limits
+
+Some implementations use included, other half-open intervals. This script uses for
+queries [left, right] included and therefore prefix[right+1]-prefix[left]. A clear
+convention prevents off-by-one errors.
+
+### 11.8 Build strings with += uncritical in large loops
+
+Even if CPython optimizes local cases, join is the explicit linear pattern for many
+known parts. For streaming or very large outputs io.StringIO or direct writing into a
+stream are also suitable.
+
+### 11.9 Confound NumPy Speedup with Better Big-O
+
+A vectorized and a python-based element-wise operation can be both \(\Theta(n)\). NumPy
+reduces the constant cost. For real improvements in complexity, the number of asymptotic
+work steps must change.
+
+---
+
+## 12. Systematic approach to array tasks
+
+### Step 1: Name properties of the input
+
+Is it sorted? Can it be changed? Are values homogeneous? Are there many queries or
+updates? Is the matrix guaranteed to be rectangular?
+
+### Step 2: Clear desired issue and space budget
+
+Does a new array have to be created or does a logical length suffice? Is \(O(n)\)
+auxiliary storage allowed? Does the original order have to be preserved?
+
+### Step 3: Mark Expensive Operations
+
+Watch Slicing, Front Insert, Linear Membership Tests, Repeated Concatenation, and Hidden
+Sorting.
+
+### Step 4: Recognize matching pattern
+
+- Many unchangeable area sums: prefix sums.
+- Sorted input and pairwise comparison: Two Pointers or Merge.
+- Mutation without additional array: read/write indices or swap.
+- Rectangular data: nested traversal with clear boundaries.
+- Character frequencies: Hash Map or fixed counter array.
+
+### Step 5: Formulate invariant
+
+Describe which prefix, interval or range of results is already correct. A good invariant
+often leads directly to implementation.
+
+### Step 6: Test edge cases
+
+Empty input, one element, all values equal, no duplicates, rotation multiples of \(n\),
+single matrix line and Unicode text.
+
+### Step 7: Analyze time and memory separately
+
+Considered result size, slices, copies, views and temporary arrays. Name their sizes
+separately for multiple entries.
+
+---
+
+## 13. Self-control
+
+### Task 1
+
+Determine time and auxiliary space:
+
+~~~python
+def every_second(values):
+    return values[::2]
+~~~
+
+### Task 2
+
+Why is the following matrix initialization flawed?
+
+~~~python
+matrix = [[None] * 4] * 5
+~~~
+
+### Task 3
+
+A list has \(n\) values and \(q\) ranges are queried. Compare naive calculation and
+prefix sums.
+
+### Task 4
+
+What is the complexity of the function in \(n=\text{len(left)}\) and
+\(m=\text{len(right)}\)?
+
+~~~python
+def concatenate_lists(left, right):
+    result = left.copy()
+    result.extend(right)
+    return result
+~~~
+
+### Task 5
+
+Explain why a NumPy vectorization can hit a Python loop strongly, although both require
+\(\Theta(n)\) time.
+
+### Task 6
+
+Which invariant makes deduplicate_sorted correct and why is \(write\le read\) valid?
+
+### Solutions
+
+1. The Slice copies about \(n/2\) references. Time and result place are \(\Theta(n)\).
+2. All five external positions refer to the same internal list. A mutation of a line
+   appears in all lines. Use a Comprehension that recreates each line.
+3. Naiv costs a query up to \(\Theta(n)\), i.e. total \(\Theta(qn)\). prefix sums
+   require \(\Theta(n)\) preparation, \(\Theta(n)\) memory and then \(\Theta(1)\) per
+   query, total \(\Theta(n+q)\).
+4. copy costs \(\Theta(n)\), extend \(\Theta(m)\). Total time and result place:
+   \(\Theta(n+m)\).
+5. NumPy stores typed values compactly, uses Cache Locality and executes the loop in
+   optimized compiled code, if necessary with SIMD. The asymptotic number of processed
+   values remains linear, the constant costs decrease.
+6. values[:write] contains exactly the unique values of the prefix already read. write
+   grows at most once per read step and does not start right from read. Therefore, no
+   unread value is overwritten.
+
+---
+
+## 14. Executive summary
+
+Arrays allow direct index access because positions are computed from a coherent, evenly
+built memory layout. Python lists extend this principle to dynamic arrays from object
+references. Over-allocation makes append amortized constant, while inserts and deletes
+within the list cause linear shifts.
+
+The most important findings are:
+
+- Index access, assignment and len are \(\Theta(1)\).
+- append and pop at the end are amortized \(\Theta(1)\).
+- Search, front operations and changes in the middle are in the worst case
+  \(\Theta(n)\).
+- List slicing and copies require time proportional to the copied length.
+- Strings are immutable; many parts are connected linearly to join planbar.
+- In-place patterns use indices and clear invariants to save additional memory.
+- prefix sums swap \(\Theta(n)\) preparation and memory for constant area queries.
+- A complete \(r\times c\) matrix traversal requires \(\Theta(rc)\).
+- Rotation, deduplication and merge are based on controlled index ranges instead of
+  unnecessary slices or shifts.
+- NumPy usually achieves the same Big-O class with homogeneous numerical data as Python
+  loops, but with compact memory, better cache usage and vectorized execution.
+
+If you can justify the cost of standard operations from memory movements, derive prefix
+sums correctly and explain the practical NumPy advantage without false Big-O statements,
+the qualification goals of this section of theory are reached.
+
+---
+
+# Deutsche Fassung
+
 # Modul 02 — Arrays & Strings
 
 Arrays gehören zu den grundlegendsten Datenstrukturen. Sie verbinden eine
@@ -140,9 +1497,9 @@ die eigentlichen Objekte können an anderen Speicherstellen liegen.
 Konzeptionell:
 
 ~~~text
-list buffer:  [ref] [ref] [ref] [free] [free]
+list buffer: [ref] [ref" [ref") [free] [free]
                  \     |     /
-objects:          42  "DSA"  Customer(...)
+objects:          42 "DSA" Customer(...)
 
 length = 3
 capacity = 5
@@ -460,7 +1817,7 @@ Bei einem echten zusammenhängenden zweidimensionalen Array in Row-Major-Layout
 liegen die Werte einer Zeile direkt hintereinander:
 
 ~~~text
-Matrix:            linearer Speicher:
+Matrix:            linear memory:
 [a b c]            [a b c d e f]
 [d e f]
 ~~~
@@ -502,7 +1859,7 @@ Python list: [ref] -> PyInt object
              [ref] -> PyInt object
              [ref] -> PyInt object
 
-NumPy int64: [8 bytes][8 bytes][8 bytes]
+NumPy int64: [8 bytes][8 bytes ][8 byte]
 ~~~
 
 Diese Darstellung bringt drei zentrale Vorteile:
@@ -567,7 +1924,7 @@ assert array.tolist() == [10, 99, 30, 40]
 
 Das unterscheidet sich vom List Slicing, das eine neue Liste erzeugt. Ob ein
 NumPy-Array C-contiguous ist, hängt von Form und Strides ab. Transponierte oder
-geslicte Views können nicht zusammenhängende Zugriffsmuster besitzen, obwohl sie
+geslicte Views können disconnectede Zugriffsmuster besitzen, obwohl sie
 keine Daten kopieren.
 
 ---

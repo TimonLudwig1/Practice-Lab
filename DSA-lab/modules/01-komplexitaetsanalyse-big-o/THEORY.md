@@ -1,3 +1,1043 @@
+# Module 01 — Complexity Analysis and Big-O
+
+Complexity analysis does not first answer the question "How many milliseconds does my
+program need?", but the more robust question: **How does its resource requirement change
+when input grows?** This perspective makes algorithms comparable, although computers,
+programming languages and concrete inputs are different.
+
+This script follows three levels:
+
+1. **Intuition:** Why growth is more important than a single runtime.
+2. **Simulation:** As can be observed growth on the code and in measurement series.
+3. **Formalization:** How Big-O, Ω, Θ as well as time and memory complexity are
+   precisely described.
+
+In the end, you should be able to systematically analyze unknown Python code, critically
+interpret measurements and explain why an asymptotically better algorithm for large
+input wins.
+
+---
+
+## 1. Intuition: Not the stopwatch, but the growth decides
+
+### 1.1 Same problem, three solutions
+
+Suppose a list contains readings and we want to know if a value occurs twice. Three
+plausible solutions are:
+
+~~~python
+def contains_duplicate_pairs(values):
+    """Compare every pair."""
+    for left in range(len(values)):
+        for right in range(left + 1, len(values)):
+            if values[left] == values[right]:
+                return True
+    return False
+
+
+def contains_duplicate_sorted(values):
+    """Sort a copy and compare neighbors."""
+    ordered = sorted(values)
+    for index in range(1, len(ordered)):
+        if ordered[index - 1] == ordered[index]:
+            return True
+    return False
+
+
+def contains_duplicate_set(values):
+    """Remember values that have already appeared."""
+    seen = set()
+    for value in values:
+        if value in seen:
+            return True
+        seen.add(value)
+    return False
+~~~
+
+All three functions provide the same logical result. However, their work is growing
+differently:
+
+- In the worst case, the pair comparison solution checks approximately \(n(n-1)/2\)
+  pairs. If \(n\) doubles, the work almost quadruples.
+- The sorting solution typically pays \(n \log n\) for sorting and then \(n\) for the
+  scan.
+- The set solution visits each element once. Under the usual assumption of constant
+  average set operations, the work grows linearly.
+
+For ten values, all three variants can work instantly. For ten million values, growth
+behaviour divides them drastically. The complexity analysis of individual milliseconds
+abstracts precisely for this.
+
+### 1.2 Why a fast small measurement can deceive
+
+A real runtime can be understood roughly as
+
+\[
+T(n) = \text{Number of elementary steps} \times \text{Cost per step}
+\]
+
+understand. The cost per step depends, among other things, on hardware, Python version,
+cache behavior, operating system and implementation details. A quadratic algorithm in
+optimized C can beat a linear algorithm in Python with small inputs. This does not
+change which algorithm scales better with sufficiently large \(n\).
+
+Complexity classes therefore ignore constant factors and less strongly growing terms.
+From
+
+\[
+T(n) = 3n^2 + 20n + 400
+\]
+
+becomes asymptotic \(\Theta(n^2)\) because the quadratic term dominates for large \(n\).
+
+### 1.3 The Doubling Experiment as a Thinking Tool
+
+A useful mental model is: "What happens about when I double the input?"
+
+| Growth | Work at \(n\) | Work at \(2n\) | Approximate factor |
+|---|---:|---:|---:|
+| constant | \(1\) | \(1\) | \(1\) |
+| logarithmic | \(\log_2 n\) | \(\log_2 n + 1\) | Near \(1\) |
+| linear | \(n\) | \(2n\) | \(2\) |
+| linearithmic | \(n\log_2 n\) | \(2n(\log_2 n+1)\) | slightly above \(2\) |
+| quadratic | \(n^2\) | \(4n^2\) | \(4\) |
+| exponential | \(2^n\) | \(2^{2n}\) | \(2^n\) |
+
+The table is not a substitute for an analysis, but a strong plausibility test for
+measurement data.
+
+---
+
+## 2. Simulation: Making work visible
+
+### 2.1 Count operations first
+
+Time measurements are noisy. An operation counter makes structural growth visible at
+first without hardware influence:
+
+~~~python
+def count_pair_checks(size):
+    """Return how many unordered index pairs exist."""
+    checks = 0
+    for left in range(size):
+        for right in range(left + 1, size):
+            checks += 1
+    return checks
+
+
+for size in (10, 20, 40, 80):
+    print(size, count_pair_checks(size))
+~~~
+
+Expected values:
+
+| \(n\) | pair checks \(n(n-1)/2\) | Factor to previous line |
+|---:|---:|---:|
+| 10 | 45 | — |
+| 20 | 190 | 4,22 |
+| 40 | 780 | 4,11 |
+| 80 | 3.160 | 4,05 |
+
+The factor approaches the value four when doubling the input. The linear portion in
+\(n(n-1)/2 = (n^2-n)/2\) is becoming relatively insignificant.
+
+### 2.2 An algorithm by hand: binary search
+
+Logarithmic growth often occurs when an algorithm reduces the remaining search space per
+step with a constant factor. In binary search, a sorted interval is halved.
+
+Search for 31 in:
+
+\[
+[3, 7, 12, 18, 24, 31, 42, 56, 63]
+\]
+
+| Step | left border | Right border | Centre | Value | Decision |
+|---:|---:|---:|---:|---:|---|
+| 1 | 0 | 8 | 4 | 24 | Keep searching on the right |
+| 2 | 5 | 8 | 6 | 42 | Keep searching on the left |
+| 3 | 5 | 5 | 5 | 31 | found |
+
+Even with about a million sorted elements, only approximately \(\log_2(1.000.000)
+\approx 20\) halvings are required. A linear search, on the other hand, may require a
+million comparisons.
+
+~~~python
+def binary_search(values, target):
+    """Return the target index or -1 if it is absent."""
+    left = 0
+    right = len(values) - 1
+
+    while left <= right:
+        middle = (left + right) // 2
+        if values[middle] == target:
+            return middle
+        if values[middle] < target:
+            left = middle + 1
+        else:
+            right = middle - 1
+
+    return -1
+~~~
+
+### 2.3 runtimes with time.perf_counter measure
+
+A single measurement is rarely trustworthy. Meaningful measurement series observe at
+least these points:
+
+- Inputs are generated outside the measured range.
+- Each measurement is repeated; the median dampens outliers.
+- The function runs once in advance, so that one-time start costs less disturb.
+- Results are used or checked to actually perform the same work.
+- Input sizes cover multiple duplications.
+- Very fast functions are called up several times per measuring point.
+
+The following scaffold consciously measures the three duplicate variants from Section 1:
+
+~~~python
+from statistics import median
+from time import perf_counter
+
+
+def benchmark(function, values, repeats=7):
+    """Return the median runtime in seconds."""
+    function(values)
+    durations = []
+
+    for _ in range(repeats):
+        start = perf_counter()
+        result = function(values)
+        durations.append(perf_counter() - start)
+        assert result is False
+
+    return median(durations)
+
+
+sizes = [250, 500, 1_000, 2_000, 4_000]
+functions = [
+    contains_duplicate_pairs,
+    contains_duplicate_sorted,
+    contains_duplicate_set,
+]
+
+measurements = {function.__name__: [] for function in functions}
+
+for size in sizes:
+    values = list(range(size))
+    for function in functions:
+        elapsed = benchmark(function, values)
+        measurements[function.__name__].append(elapsed)
+~~~
+
+The list deliberately does not contain duplicates. Thus, each function has to go through
+its worst case for this specific task. If the duplicate were to lie at the first two
+positions, the pair and set variant could immediately stop. We would no longer compare
+the same scenario.
+
+### 2.4 Growth curves plot
+
+A log-log plot is particularly suitable for polynomial-growing functions. Both axes are
+displayed logarithmically:
+
+~~~python
+import matplotlib.pyplot as plt
+
+
+for name, durations in measurements.items():
+    plt.plot(sizes, durations, marker="o", label=name)
+
+plt.xscale("log", base=2)
+plt.yscale("log")
+plt.xlabel("Input size n")
+plt.ylabel("Median runtime in seconds")
+plt.title("Duplicate detection: empirical growth")
+plt.grid(True, which="both", linestyle=":")
+plt.legend()
+plt.tight_layout()
+plt.show()
+~~~
+
+Why is this helpful? For \(T(n) = c n^k\):
+
+\[
+\log T(n) = \log c + k \log n
+\]
+
+In the log plot it becomes almost a straight line with slope \(k\). Thus, a linear
+function has approximately slope 1, a quadratic approximately slope 2. \(n\log n\) is
+not a perfect potency and bends slightly, but typically lies between linear and
+quadratic.
+
+### 2.5 Doubling ratios from measurement data
+
+A plot can be deceptive if axes or size ranges are unfavourable. In addition, the
+quotient of neighbouring measured values can be investigated:
+
+~~~python
+def doubling_ratios(durations):
+    """Return ratios between consecutive runtimes."""
+    return [
+        current / previous
+        for previous, current in zip(durations, durations[1:])
+        if previous > 0
+    ]
+
+
+for name, durations in measurements.items():
+    print(name, doubling_ratios(durations))
+~~~
+
+Expected values for doubling of \(n\):
+
+- \(O(1)\): approximately 1,
+- \(O(\log n)\): just over 1,
+- \(O(n)\): approximately 2,
+- \(O(n\log n)\): slightly above 2,
+- \(O(n^2)\): approximately 4.
+
+In real measurements, no perfect factors arise. For small inputs, measurement resolution
+and constants dominate; for large inputs, cache, memory allocation, garbage collection
+or system load can intervene. Empirie provides evidence, not mathematical evidence.
+
+### 2.6 Balance theory and measurement cleanly
+
+A robust interpretation separates three statements:
+
+1. **Theoretical statement:** The code performs many comparisons in the worst case
+   quadratic.
+2. **Experimental observation:** In the investigated size range, the doubling ratio
+   approaches four.
+3. **Conclusion:** The measurement is compatible with \(\Theta(n^2)\).
+
+"The plot proves Big-O" would be too strong. A limited experiment cannot exclude that
+the behavior changes for even larger inputs.
+
+---
+
+## 3. Main growth classes
+
+### 3.1 O(1): constant effort
+
+The effort does not depend on the length of the list:
+
+~~~python
+def first_or_none(values):
+    """Return the first value if available."""
+    return values[0] if values else None
+~~~
+
+An index access to a Python list is constant. \(O(1)\) does not mean "exactly an
+operation" or "always fast". An operation can have a large constant factor. It is
+crucial that their effort does not grow with \(n\).
+
+### 3.2 O(log n): logarithmic effort
+
+Binary search is the standard example. \(k\) halvings remain due to: \(n\) Candidates
+about \(n/2^k\). The search ends when:
+
+\[
+\frac{n}{2^k} \le 1
+\]
+
+and thus \(k \ge \log_2 n\). The base of the logarithm is usually omitted in Big-O,
+because logarithmas of different bases differ only by a constant factor.
+
+### 3.3 O(n): linear effort
+
+~~~python
+def maximum(values):
+    """Return the largest value."""
+    if not values:
+        raise ValueError("values must not be empty")
+
+    largest = values[0]
+    for value in values[1:]:
+        if value > largest:
+            largest = value
+    return largest
+~~~
+
+Each element must be considered in the worst case. The loop is linear. However,
+values[1] additionally creates a linear copy. The function remains \(\Theta(n)\) at a
+time, but requires unnecessary \(\Theta(n)\) additional memory. An iteration via index
+positions or an iterator would avoid this copy.
+
+### 3.4 O(n log n): linearithmic effort
+
+Efficient comparison-based sorting methods like Merge Sort typically have this class.
+Intuitively, \(\log_2 n\) division planes are formed. At each level, a total of \(n\)
+elements are processed:
+
+\[
+n + n + \dots + n
+\quad \text{on} \log_2 n \text{Levels}
+= n\log_2 n
+\]
+
+Pythons sorted is also in the worst case in \(O(n\log n)\); for already structured data
+Timsort can exploit existing order.
+
+### 3.5 O(n2): quadratic effort
+
+~~~python
+def all_ordered_pairs(values):
+    """Return every ordered pair."""
+    pairs = []
+    for left in values:
+        for right in values:
+            pairs.append((left, right))
+    return pairs
+~~~
+
+For each of the \(n\) external elements, the inner loop is \(n\) times: \(n \cdot n =
+n^2\). In addition, the result contains \(n^2\) pairs. Here quadratic time is inevitable
+if really all pairs are to be materialized, because the output is already quadratic
+large.
+
+### 3.6 O(2n): exponential effort
+
+The naive recursive calculation of the Fibonacci numbers branches several times:
+
+~~~python
+def fibonacci(number):
+    """Return a Fibonacci number using naive recursion."""
+    if number <= 1:
+        return number
+    return fibonacci(number - 1) + fibonacci(number - 2)
+~~~
+
+Many subproblems are repeatedly calculated. The exact runtime grows closer to
+\(\varphi^n\) than to \(2^n\), but is often described with the simpler upper limit
+\(O(2^n)\). Even an increase of \(n\) by a small amount can multiply the work.
+Memoization reduces this specific problem to linear time, because each partial problem
+is solved only once.
+
+### 3.7 O(n!): factorial effort
+
+If you create all orders of \(n\) elements, you get \(n!\) permutations:
+
+~~~python
+def permutations(values):
+    """Return all permutations without library shortcuts."""
+    if len(values) <= 1:
+        return [values[:]]
+
+    result = []
+    for index, value in enumerate(values):
+        rest = values[:index] + values[index + 1 :]
+        for suffix in permutations(rest):
+            result.append([value] + suffix)
+    return result
+~~~
+
+For \(n=10\) there are already \(3.628.800\) permutations. If all permutations actually
+have to be output, no algorithm can bypass the size of the output. Often, therefore, the
+actual progress is to circumcise the search area early on by conditions or not to
+materialize completely at all.
+
+### 3.8 Scales of magnitude in direct comparison
+
+The following values count abstract work units and ignore constants:
+
+| \(n\) | \(\log_2 n\) | \(n\) | \(n\log_2 n\) | \(n^2\) | \(2^n\) |
+|---:|---:|---:|---:|---:|---:|
+| 10 | 3,3 | 10 | 33 | 100 | 1.024 |
+| 100 | 6,6 | 100 | 664 | 10.000 | Approximately \(1{,}27 \cdot 10^{30}\) |
+| 1.000 | 10,0 | 1.000 | 9.966 | 1.000.000 | Astronomical |
+| 1.000.000 | 19,9 | 1.000.000 | 19.931.569 | \(10^{12}\) | Impracticable |
+
+Here it becomes visible why \(O(n\log n)\) beats long-term \(O(n^2)\). Constants can
+move the intersection but not prevent it. For example, we compare:
+
+\[
+1000n\log_2 n \quad \text{and} \quad n^2
+\]
+
+For smaller \(n\) the quadratic variant can be faster due to its smaller constant
+factor. Once \(n > 1000\log_2 n\), the linearithmic variant wins and its lead continues
+to grow.
+
+---
+
+## 4. Formalization: What O, Ω and Θ really say
+
+### 4.1 Big-O as an asymptotic upper barrier
+
+Be \(f(n)\) and \(g(n)\) non-negative functions for sufficiently large \(n\). Formal
+application
+
+\[
+f(n) \in O(g(n)),
+\]
+
+if positive constants \(c\) and \(n_0\) exist, so that
+
+\[
+0 \le f(n) \le c \cdot g(n)
+\quad \text{for all} n \ge n_0.
+\]
+
+The constants allow to hide implementation details and the behavior of small inputs.
+
+Example: \(f(n)=3n^2+20n+400\)For \(n\ge 1\) The following shall apply:
+
+\[
+3n^2+20n+400 \le 3n^2+20n^2+400n^2 = 423n^2.
+\]
+
+\(c=423\) and \(n_0=1\) follow \(f(n)\in O(n^2)\). The constants do not have to be
+narrow; their existence is sufficient.
+
+Important: \(O(n^2)\) is only an upper barrier. A linear function is also formally
+located in \(O(n^2)\). In practice, one usually calls the narrowest usual barrier to
+convey as much information as possible.
+
+### 4.2 Ω as the lower limit
+
+\[
+f(n) \in \Omega(g(n))
+\]
+
+if positive constants \(c\) and \(n_0\) exist, so that
+
+\[
+f(n) \ge c \cdot g(n)
+\quad \text{for all} n \ge n_0.
+\]
+
+Ω describes that \(f\) grows asymptotically at least as fast as \(g\).
+
+### 4.3 Θ as a narrow barrier
+
+\[
+f(n) \in \Theta(g(n))
+\]
+
+if \(f(n)\) is in both \(O(g(n))\) and \(\Omega(g(n))\). Then \(f\) grows to constant
+factors exactly in the same order of magnitude as \(g\). For \(3n^2+20n+400\),
+\(\Theta(n^2)\) is the informative statement.
+
+### 4.4 Systematic simplification of terms
+
+Three rules help to derive an asymptotic class:
+
+1. **Constant factors are eliminated:** \(7n \rightarrow \Theta(n)\).
+2. **Dominant term remains:** \(n^2+50n+2 \rightarrow \Theta(n^2)\).
+3. **Add successive blocks, multiply nested work.**
+
+Example:
+
+~~~python
+def example(values):
+    """Perform one linear and one quadratic phase."""
+    total = 0
+
+    for value in values:
+        total += value
+
+    for left in values:
+        for right in values:
+            total += left * right
+
+    return total
+~~~
+
+The work is \(n+n^2\), so \(\Theta(n^2)\). The loops follow each other; therefore, their
+costs are added, not multiplied.
+
+### 4.5 Do not quickly throw multiple input sizes together
+
+~~~python
+def common_values(left_values, right_values):
+    """Return matching pairs from two independent inputs."""
+    matches = []
+    for left in left_values:
+        for right in right_values:
+            if left == right:
+                matches.append(left)
+    return matches
+~~~
+
+If the input lengths are \(n\) and \(m\), the time complexity is \(\Theta(nm)\), not
+automatically \(\Theta(n^2)\). Only when explicitly \(n=m\) is assumed is
+\(\Theta(n^2)\).
+
+### 4.6 Best, Average and Worst Case
+
+The growth class needs a scenario:
+
+~~~python
+def linear_search(values, target):
+    """Return the first target index or -1."""
+    for index, value in enumerate(values):
+        if value == target:
+            return index
+    return -1
+~~~
+
+- **Best case:** The goal is ahead: \(\Theta(1)\).
+- **Worst Case:** The target is in the back or missing: \(\Theta(n)\).
+- **Average case:** Under a concretely defined distribution of target positions, many
+  elements are tested proportionally: \(\Theta(n)\).
+
+Average Case is incomplete without a probability model. Are hits frequent? Is each
+position equally likely? May the target be missing? Depending on the assumption, the
+expected value changes.
+
+Big-O and Worst Case are also not synonyms. O is a kind of barrier; Worst Case describes
+which input of the same size is considered. For example, you can say, "The worst-case-
+runtime is in \(\Theta(n^2)\)."
+
+---
+
+## 5. Space Complexity
+
+### 5.1 Total memory and Auxiliary Space
+
+Space Complexity describes how the space requirement grows with the input. It should be
+clearly stated whether:
+
+- **Total memory** including input and output; or
+- only the **additional memory** of the algorithm, the Auxiliary Space,
+
+is meant.
+
+~~~python
+def doubled_copy(values):
+    """Return a new list with doubled values."""
+    return [value * 2 for value in values]
+
+
+def double_in_place(values):
+    """Double all values inside the existing list."""
+    for index in range(len(values)):
+        values[index] *= 2
+~~~
+
+Both functions need \(\Theta(n)\) time. doubled_copy, however, creates a new list of
+\(\Theta(n)\) additional memory. double_in_place uses except for a few variables
+\(\Theta(1)\) Auxiliary Space.
+
+### 5.2 The output can determine the lower limit
+
+all_ordered_pairs from Section 3 returns \(n^2\) pairs. Even if their calculation was
+trickyly optimized, the materialized result requires \(\Theta(n^2)\) memory. A generator
+solution could reduce the additional memory occupied at the same time, but does not
+change the number of pairs output.
+
+### 5.3 Recursion occupied stack memory
+
+Each recursive call that has not yet been completed occupies a stack frame. Therefore, a
+recursion depth of \(n\) typically causes \(O(n)\) additional stack memory, even if no
+list is created. In a balanced Divide-and-Conquer-recursion, however, the depth may be
+\(O(\log n)\).
+
+### 5.4 Time-Space Trade-offs
+
+The set variant of the duplicate search saves time compared to the pair comparison, but
+pays with \(\Theta(n)\) additional memory. Such trade-offs are central:
+
+- A lookup structure can speed up repeated search.
+- Caching or Memoization saves results to avoid recalculation.
+- In-place methods save memory, but can be more complex or slower.
+
+There is not generally "the best" algorithm. The right choice depends on time budget,
+memory limit, input size and output requirements.
+
+---
+
+## 6. Amortized analysis: Why append is despite Resize O(1)
+
+### 6.1 The apparent problem of dynamic arrays
+
+A Python list behaves conceptually like a dynamic array. The elements are in a
+contiguous buffer with a specific capacity. If the buffer is full, a larger one must be
+reserved and the previous content copied.
+
+A single append can therefore cost \(\Theta(n)\). However, append is usually given with
+**amortized \(O(1)\)**. This is no contradiction: Amortized analysis distributes rare
+expensive operations over a whole series of operations.
+
+### 6.2 Simulation with simplified doubling strategy
+
+Let's assume a starting capacity of 1 and double with each full buffer:
+
+| append No. | Capacity before | Resize? | Copies | Capacity afterwards |
+|---:|---:|:---:|---:|---:|
+| 1 | 1 | yes | 0 | 1 |
+| 2 | 1 | Yes | 1 | 2 |
+| 3 | 2 | Yes | 2 | 4 |
+| 4 | 4 | yes | 0 | 4 |
+| 5 | 4 | Yes | 4 | 8 |
+| 6 | 8 | yes | 0 | 8 |
+| 7 | 8 | yes | 0 | 8 |
+| 8 | 8 | yes | 0 | 8 |
+
+Up to \(n\) appends with resizes are approximately
+
+\[
+1 + 2 + 4 + 8 + \dots < 2n
+\]
+
+copied old elements. In addition, \(n\) normal write operations occur. The entire work
+for the complete episode is thus \(O(n)\). Dipped by \(n\) apps results in the constant
+amortized cost per append.
+
+### 6.3 What "amortized" does not mean
+
+Amortized is not the same as Average Case:
+
+- Average case analysis means an assumed distribution of possible inputs.
+- Amortized analysis guarantees a barrier for each sufficiently long sequence of
+  operations, without probability assumption.
+
+A particular append can continue to be linearly expensive. For latent critical systems,
+this single rash is relevant; for the overall throughput of a long sequence, the
+amortized view is often more appropriate.
+
+Python internally does not use exactly the doubling strategy simulated here. The
+concrete over-allocation is an implementation decision. The didactic argument remains:
+additional free space makes resizes rare enough to keep append amortized constant.
+
+---
+
+## 7. Typical analysis errors in Python
+
+### 7.1 "Two loops always mean O(n2)"
+
+Wrong. The decisive factor is how often the loops run overall.
+
+~~~python
+def two_passes(values):
+    """Run two consecutive linear passes."""
+    for value in values:
+        print(value)
+    for value in values:
+        print(value)
+~~~
+
+The costs are \(n+n=2n\), so \(\Theta(n)\).
+
+Even a nested loop does not have to be quadratic:
+
+~~~python
+def shrinking_work(size):
+    """Halve the remaining work after each outer iteration."""
+    count = 0
+    current = size
+
+    while current > 0:
+        for _ in range(current):
+            count += 1
+        current //= 2
+
+    return count
+~~~
+
+The work is
+
+\[
+n + n/2 + n/4 + \dots < 2n,
+\]
+
+So \(\Theta(n)\), not \(\Theta(n\log n)\).
+
+### 7.2 Hidden Costs of Slicing
+
+List Slicing copies the selected references:
+
+~~~python
+def recursive_sum(values):
+    """Sum values while copying a suffix in every call."""
+    if not values:
+        return 0
+    return values[0] + recursive_sum(values[1:])
+~~~
+
+There are \(n\) calls, but the slices have sizes \(n-1,n-2,\dots,1\). Their entire copy
+costs are quadratic. In addition, many temporary lists are created. A variant with a
+passed index avoids the slices and reaches linear time.
+
+### 7.3 in depends on the container
+
+~~~python
+target in values_list
+target in values_set
+~~~
+
+For a list, the membership search is in the worst case \(O(n)\). In a set, it is on
+average \(O(1)\), but in the pathological worst case \(O(n)\). The operator alone does
+not reveal the costs; the data type belongs to the analysis.
+
+A common quadratic error is:
+
+~~~python
+def retain_allowed(values, allowed_list):
+    """Filter using repeated linear membership checks."""
+    return [value for value in values if value in allowed_list]
+~~~
+
+For \(n\) values and \(m\) allowed values, this costs \(O(nm)\). If allowed_list is
+converted to a set once, an average of \(O(m+n)\) time and \(O(m)\) additional memory
+are generated.
+
+### 7.4 String-Concatenation in loops
+
+Strings are immutable. A concatenation can therefore create a new string and copy
+previous content:
+
+~~~python
+def join_words_slow(words):
+    """Build a string through repeated concatenation."""
+    result = ""
+    for word in words:
+        result += word
+    return result
+~~~
+
+Implementations may optimise some cases, but a general analysis should not be based on
+this. The robust pattern collects parts and combines them once:
+
+~~~python
+def join_words(words):
+    """Join all words in one operation."""
+    return "".join(words)
+~~~
+
+If \(L\) is the total length of all characters, join works in \(\Theta(L)\). The
+appropriate input size is important here: Not only the number of words, but also their
+total length determines the work.
+
+### 7.5 Library calls are not free single operations
+
+A code line can do a lot of internal work:
+
+~~~python
+ordered = sorted(values)
+copy = values[:]
+smallest = min(values)
+~~~
+
+Typical costs are \(O(n\log n)\), \(O(n)\) and \(O(n)\). The number of source lines is
+not a measure of complexity.
+
+### 7.6 Early return wrong generalization
+
+A return in a loop does not make the function constant. In linear search, the best case
+is constant, the worst case remains linear. Scenarios and input assumptions must be
+mentioned for a complete statement.
+
+### 7.7 Treat average hash costs as an absolute guarantee
+
+dict and set offer on average constant operations under normal conditions. Collision and
+unfavorable cases can worsen costs. For example, a clean wording reads:
+
+> Search requires expected or average \(O(1)\) time
+> under the usual hashing assumptions; the worst case is \(O(n)\).
+
+---
+
+## 8. A systematic approach to unknown code
+
+### Step 1: Name input sizes
+
+Define what \(n\), \(m\) or other variables stand for. Different containers can be large
+independently.
+
+### Step 2: Mark Elementary and Hidden Costs
+
+Check in particular loops, recursion, slicing, sorting, copying, membership tests,
+string construction and output size.
+
+### Step 3: Determine execution frequencies
+
+Ask not only "Is there a loop here?", but "How often does this block run overall?" Use
+sums if necessary:
+
+\[
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2} \in \Theta(n^2)
+\]
+
+or geometrical series:
+
+\[
+n+n/2+n/4+\dots \in \Theta(n).
+\]
+
+### Step 4: Combining costs
+
+A sequence of phases is added, nested independent repetitions are multiplied.
+Thereafter, dominant terms and relevant input variables remain.
+
+### Step 5: Name scenario
+
+Is the statement Best, Average, Worst or amortized? What assumptions apply to hashing,
+distribution or pre-sorting?
+
+### Step 6: Analyze memory separately
+
+Consider new containers, issues, copies by slicing and the recursion stack. Say if total
+or auxiliary space is meant.
+
+### Step 7: Empirical plausibility
+
+Create controlled inputs, miss multiple sizes and repetitions and compare doubling
+ratios. Use the measurement as a control of your derivation, not as a substitute.
+
+---
+
+## 9. Examples of analysis
+
+### 9.1 Triangular loop
+
+~~~python
+def triangular(values):
+    """Count pairs whose right index is not smaller."""
+    count = 0
+    for left in range(len(values)):
+        for right in range(left, len(values)):
+            count += 1
+    return count
+~~~
+
+The inner loop runs \(n,n-1,\dots,1\) times. Total:
+
+\[
+n+(n-1)+\dots+1 = \frac{n(n+1)}{2} \in \Theta(n^2).
+\]
+
+That not every inner loop runs exactly \(n\) times does not change the class.
+
+### 9.2 Halving with linear rework
+
+~~~python
+def levels_with_scan(values):
+    """Scan prefixes whose sizes are repeatedly halved."""
+    total = 0
+    size = len(values)
+
+    while size > 0:
+        for index in range(size):
+            total += values[index]
+        size //= 2
+
+    return total
+~~~
+
+On the surface one sees a logarithmic outer and a linear inner loop. The blanket
+multiplication \(O(n\log n)\) would be too rough. The concrete sum \(n+n/2+n/4+\dots\)
+is \(\Theta(n)\).
+
+### 9.3 Sort and search several times
+
+Suppose \(m\) searches are executed against the same \(n\) values:
+
+1. Sort once: \(O(n\log n)\).
+2. Every request by binary search: \(O(\log n)\).
+3. Total: \(O(n\log n + m\log n)\).
+
+Linear search without preparation costs \(O(mn)\). Whether sorting is worthwhile depends
+on \(m\), \(n\), mutations of the data and constant factors. For only a small search the
+simple linear scan can be faster; with many requests the preparation amortizes.
+
+### 9.4 Output sensitive analysis
+
+One function finds all hit pairs in two lists. Even with fast lookups, it can output
+hits in the case of many duplicates \(k\). An informative bound is then about
+\(O(n+m+k)\), where \(k\) is the output size. To specify only \(O(n+m)\) would ignore
+the materialization of the output.
+
+---
+
+## 10. Self-control
+
+### Task 1
+
+What is the function of time and additional memory complexity?
+
+~~~python
+def reverse_copy(values):
+    result = []
+    for index in range(len(values) - 1, -1, -1):
+        result.append(values[index])
+    return result
+~~~
+
+### Task 2
+
+Why is this code not \(O(n)\), although only a visible loop exists?
+
+~~~python
+def prefixes(values):
+    result = []
+    for index in range(len(values)):
+        result.append(values[: index + 1])
+    return result
+~~~
+
+### Task 3
+
+Two algorithms need \(50n\log_2 n\) or \(n^2\) abstract steps. Explain without blanket
+"Big-O ignores constants" to say why the first wins in the long term and why the second
+can still be faster for small entries.
+
+### Task 4
+
+Arrange the scenarios to the terms Best Case, Worst Case or amortized to:
+
+1. The cost of a single append, where a resize is needed.
+2. The average cost per append over a long series.
+3. Linear search when the target is at position 0.
+4. Linear search if the target does not occur.
+
+### Solutions
+
+1. reverse_copy requires \(\Theta(n)\) time and \(\Theta(n)\) additional memory for the
+   result list.
+2. Each slice copies a growing prefix. The copied lengths add up to
+   \(1+2+\dots+n=\Theta(n^2)\). The materialized output also has quadratic total size.
+3. The Relationship
+   \[
+   \frac{n^2}{50n\log_2 n} = \frac{n}{50\log_2 n}
+   \]
+is growing without a limit in the long term. Therefore, the linearithmic algorithm
+becomes faster from one intersection. Before this intersection, its factor 50 can
+outweigh the asymptotic advantage.
+4. A resize-append is the expensive individual case; the costs over the sequence are
+   considered amortized. Position 0 is the Best Case, a missing target of the Worst
+   Case.
+
+---
+
+## 11. Executive summary
+
+Complexity analysis describes the growth of time and memory depending on clearly named
+input sizes. It does not replace measurements, but complements them: the code analysis
+provides an asymptotic justification, while controlled measurement series show whether
+the observed behavior in the relevant size range fits.
+
+The central thoughts of this module are:
+
+- Constants and small terms can be practically important, but do not change the long-
+  term growth class.
+- \(O\) is an upper, \(\Omega\) a lower and \(\Theta\) a narrow asymptotic bound.
+- Best, average, worst and amortized describe different ways of viewing and must be
+  explicitly named.
+- Hidden Python costs such as slicing, list membership, string copies, and library calls
+  belong entirely in the analysis.
+- Time and memory are to be examined separately; often one is exchanged for the other.
+- When the input is doubled, \(n\log n\) only grows slightly stronger than by a factor
+  of two, \(n^2\) about a factor of four. Therefore, \(O(n\log n)\) beats for
+  sufficiently large \(n\) \(O(n^2)\), regardless of fixed constant factors.
+
+If you can derive a runtime class from code, plausibilize it by a clean measurement
+series and explain the assumptions made, the qualification goals of this theory section
+are reached.
+
+---
+
+# Deutsche Fassung
+
 # Modul 01 — Komplexitätsanalyse und Big-O
 
 Komplexitätsanalyse beantwortet nicht zuerst die Frage „Wie viele Millisekunden
