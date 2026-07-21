@@ -1,4 +1,93 @@
-# Projekt 01 (basic) — Suchalgorithmen: BFS, UCS, IDDFS, A\*
+# Project 01 (basic) — Search algorithms: BFS, UCS, IDDFS, A\*
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Module 06 — Theory of AI 1** · Format: **Jupyter notebook** (`search.ipynb`)
+
+## Why this format?
+
+You only understand search procedures once you see them *run*: the same
+algorithm, two problems, and you observe directly how many nodes each
+procedure expands and whether it finds the *optimal* solution. A notebook
+combines code, explanation and output in one place — ideal for this
+step-by-step, exploratory start with plenty of guidance.
+
+## Goal
+
+After this project you have **implemented yourself** the uninformed and
+informed search procedures from parts 1 and 2 of the script and **checked
+their core statements empirically**:
+
+- **Optimality:** UCS and A\* find the *cheapest* route (Arad → Bucharest =
+  418 km), BFS and greedy only *a* route (450 km).
+- **Heuristic dominance:** the stronger admissible heuristic $h_2$ (Manhattan)
+  expands considerably fewer nodes than $h_1$ (Hamming), which in turn expands
+  fewer than UCS ($h\equiv 0$) — made visible on the 8-puzzle.
+- **UCS and A\* differ in only one line** (the evaluation function $f$) — the
+  central unification of the script.
+
+## Prior knowledge
+
+- Parts 1 and 2 of the script (`../../README.md`): the search problem
+  formalism, BFS/UCS/DFS/IDDFS, heuristics, A\*, admissibility, dominance.
+- Python basics: classes, `dataclass`, `heapq` (priority queue),
+  `collections.deque`, `lambda`.
+
+## Setup
+
+Only the standard library + `matplotlib` (for a bar chart) — both are
+installed in the repository `venv` (see `SETUP.md` in the root directory). In
+Jupyter or VS Code, select the kernel of the `.venv` and run the cells from
+top to bottom.
+
+```bash
+# from the repository root, if you have not done it yet:
+source .venv/bin/activate
+jupyter lab   # or: open the file search.ipynb in VS Code
+```
+
+## Tasks (step by step)
+
+Open **`search.ipynb`**. The infrastructure (nodes, `expand`, the two
+problems, BFS as a model and the generic `best_first_search`) is given — read
+it and run it. Then you solve three tasks:
+
+1. **UCS and A\* (task 1):** build `uniform_cost_search`, `astar_search` and
+   `greedy_search` by passing the right $f$ to the given `best_first_search`
+   ($g$ / $g+h$ / $h$). The goal: both return **418 km**.
+2. **IDDFS (task 2):** implement the recursive depth-limited search and the
+   outer deepening loop — with a cycle check along the path.
+3. **The dominance experiment (task 3):** solve the same 8-puzzle with UCS,
+   A\*($h_1$) and A\*($h_2$), count the expanded nodes and draw a comparison
+   bar chart. Check with an `assert` that all of them find the same optimal
+   length.
+
+At the end there is a short **reflection part** (in writing, bullet points).
+
+## What should work in the end
+
+- All four procedures solve Arad → Bucharest; **UCS and A\* return 418 km**,
+  BFS and greedy 450 km (the fewest steps, not the cheapest route).
+- The 8-puzzle (a starting position 15 moves deep) is solved optimally, and
+  the node counts show clearly **UCS ≫ A\*($h_1$) ≫ A\*($h_2$)**
+  (reference values: about **5257 ≫ 457 ≫ 147**).
+
+## Reference solution
+
+The folder **`solution/`** holds `search_solution.ipynb` — fully implemented
+and **executed** (with outputs and the bar chart). Only use it once you have
+tried the tasks yourself. The answers to the reflection questions are at the
+end of the solution as well.
+
+> **Tip:** if your A\* does *not* return 418 km, check two things: (a) does
+> `best_first_search` do the goal test at *expansion* time (not at
+> generation)? — yes, that is given. (b) Did you really choose $g+h$ for A\*
+> and not just $h$? Just $h$ is *greedy* and not optimal.
+
+---
+---
+
+# Projekt 01 (basic) — Suchalgorithmen: BFS, UCS, IDDFS, A\* (deutsche Fassung)
 
 **Modul 06 — Theorie der KI 1** · Format: **Jupyter Notebook** (`search.ipynb`)
 

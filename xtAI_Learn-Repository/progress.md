@@ -52,11 +52,10 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 ## Englisch-Umstellung (laufender Auftrag, Vorrang vor Modul 22)
 
 > ### NEXT ACTION dieses Auftrags
-> **Modul 06 „Theorie der KI 1": Modul-README + 3 Projekt-READMEs bilingual, dann die Projekte.**
-> **Modul 05 ist komplett** (4 READMEs + 6 Notebooks, alle ausgefuehrt). Modul 06 hat ein anderes Format als 01-05: **Notebook nur fuer P01**, P02 und P03 sind **.py-Projekte** (BFS/A*, CSP+DPLL, FOL-Resolutionsbeweiser) mit Testsuiten. Die .py-Dateien gehoeren eigentlich in Schritt 3 — pruefen, ob man sie fuer Modul 06 gleich mitnimmt (sinnvoll: dann ist das Modul in einem Rutsch fertig) statt spaeter separat.
-> Zielzahlen Modul 06: P01 Romania 418 km optimal, Dominanz 5257 >> 457 >> 147 Knoten; P02 Sudoku ueber beide Wege identisch; P03 West-Kriminalfall bewiesen (~600 Schritte).
->
-> **Erledigt in Modul 05:** 4 READMEs bilingual · P01 (Gradient-Check 6.49e-11, Test-Acc 0.950) · P02 (alle Zahlen bit-identisch reproduziert, 2 Bestandsfehler behoben) · P03 (ARI GMM-full **0.622** > Ward 0.539 > kMeans 0.514, DBSCAN -0.016; PC1+PC2 71 %; Silhouette k=2 0.290; BIC-Min k=4 full).
+> **Modul 06, Projekt 01-basic: `search.ipynb` + `solution/search_solution.ipynb` auf Englisch.**
+> Die **4 READMEs von Modul 06 sind fertig**. Modul 06 wird **in einem Rutsch inkl. der .py-Projekte** gemacht (User-Freigabe) — also nach P01 direkt P02 (`csp.py`/`dpll.py`/`sudoku.py`/`test_solver.py` je im Root UND in solution/) und P03 (`logic.py`/`scenarios.py`/`test_prover.py` in solution/). Das ist fuer Modul 06 ein Vorgriff auf Schritt 3.
+> Zielzahlen: P01 Arad->Bukarest **418 km** (UCS/A*) vs 450 (BFS/Greedy), 8-Puzzle **5257 >> 457 >> 147** expandierte Knoten; P02 `python test_solver.py` -> alle Tests, CSP ~10 ms, ~11 800 Klauseln, DPLL 1-2 s; P03 (A) ~600 Resolutionsschritte, (B) 2, (C) 2, (D) terminiert ohne Beweis.
+> **pytest fehlt** -> die Testsuiten haben eigene `__main__`-Runner, einfach `python test_solver.py` / `python test_prover.py`.
 >
 > Rezept siehe „Arbeitsablauf pro Notebook" weiter unten.
 
@@ -90,7 +89,7 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 03 Data Science 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `598a668`, `b723e1d` |
 | 04 Machine Learning 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `92ab92d`, `d172564`, `028b8a5`, `90817ad` |
 | 05 Machine Learning 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `af83312`, `f56b29f`, `4c879f7`, `5f8afc3` |
-| **06 Theorie der KI 1** | **offen — als Nächstes** | offen | offen | — |
+| **06 Theorie der KI 1** | ✓ | ✓ 3/3 | **offen (Notebook + .py)** | `<neu>` |
 | 07–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)

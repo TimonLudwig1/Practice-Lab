@@ -1,4 +1,603 @@
-# Modul 06 — Theorie der Künstlichen Intelligenz 1
+# Module 06 — Theory of Artificial Intelligence 1
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The projects themselves are English only.
+
+**What is this about?** This module deals with the classical, *symbolic* foundation of AI: how do you formulate a problem so that a machine can solve it by **search**, and how do you represent knowledge so formally that a computer can **draw logically correct conclusions** from it? It is the theoretical counterpart to statistical learning (modules 04/05): instead of learning from data, here we construct procedures whose correctness and optimality can be *proved*.
+
+**Helpful prior knowledge.** Basic discrete mathematics (sets, relations, functions, proof by induction), some graph theory (nodes, edges, paths) and familiarity with Landau notation ($O$, $\Theta$). Programming skills (Python) for the projects. No prior knowledge from the ML modules is needed — this module stands on its own.
+
+**Recommended earlier modules.** None is mandatory. Whoever has done module 01 "Introduction in AI" already knows A\* and minimax informally; here they are *proved*.
+
+**Following module.** Module 07 "Theory of AI 2" builds on this: planning, acting under uncertainty (probabilistic reasoning, Bayesian networks), non-monotonic reasoning and description logics.
+
+---
+
+## Learning objectives
+
+After this module you should be able to
+
+- formalize a real problem as a **search problem** (state space, actions, transition model, goal test, path costs) and estimate the size of the state space;
+- implement the **uninformed search procedures** (BFS, UCS/Dijkstra, DFS, IDDFS) and **prove** their completeness, optimality, time and space complexity;
+- design **heuristics**, distinguish the notions *admissible* and *consistent* precisely and prove the **optimality of A\***;
+- place **local search** (hill climbing, simulated annealing, genetic algorithms) and **adversarial search** (minimax, $\alpha$-$\beta$ pruning);
+- model a **constraint satisfaction problem (CSP)** and solve it with backtracking, forward checking and arc consistency (AC-3) plus ordering heuristics;
+- master **propositional logic** completely: syntax, semantics, satisfiability, entailment, normal forms, the **resolution calculus** and the **DPLL algorithm**, including soundness and refutation completeness;
+- understand **first-order logic (FOL)**: syntax and semantics (interpretations, models), **unification** (most general unifier), **FOL resolution**, the **Herbrand theorem** and the **(semi-)decidability** of validity;
+- explain *why* these procedures give the right answer — not only *that* they do.
+
+---
+
+## Part 1 — Foundations: problem solving as search
+
+### 1.1 The agent and the problem formulation
+
+A **goal-based agent** thinks before it acts: it imagines a sequence of actions, checks in its head where they lead, and picks one that leads to the goal. For a computer to do that, the problem has to be decomposed into five components. A **search problem** is the tuple
+
+$$
+\mathcal{P} = (S, s_0, A, \mathrm{Result}, \mathrm{Goal}, c)
+$$
+
+with
+
+- $S$: the set of all **states** (the *state space*),
+- $s_0 \in S$: the **initial state**,
+- $A$: the set of **actions**; $\mathrm{Actions}(s) \subseteq A$ gives the actions applicable in $s$,
+- $\mathrm{Result}: S \times A \to S$: the **transition model** (deterministic), $\mathrm{Result}(s,a) = s'$,
+- $\mathrm{Goal}: S \to \{\text{true}, \text{false}\}$: the **goal test** (which may be a set $S_g \subseteq S$ or a property),
+- $c(s,a,s') \ge 0$: the **step cost** of an action. We require $c(s,a,s') \ge \varepsilon > 0$ for a fixed $\varepsilon$ (costs are bounded away from 0 from below) — we need that later for the termination and optimality proofs.
+
+A **solution** is a sequence of actions $a_1, \dots, a_n$ that carries $s_0$ via $s_i = \mathrm{Result}(s_{i-1}, a_i)$ into a goal state $s_n$. The **path cost** is $g = \sum_{i=1}^n c(s_{i-1}, a_i, s_i)$. An **optimal solution** has minimal path cost $C^\ast$.
+
+> **An important abstraction.** The search problem is a *model* of reality. The art of formalization lies in leaving out just enough that the problem stays solvable without making the solution useless. The state space is a directed graph: nodes = states, edges = actions (weighted with step costs).
+
+**Two running examples:**
+
+*Romania* (route planning): states = cities, actions = "drive to a neighbouring city", costs = road length in km. Start Arad, goal Bucharest. The state space is small and given explicitly as a map.
+
+*The 8-puzzle*: a $3\times 3$ sliding puzzle with tiles 1–8 and one gap. State = the arrangement of the tiles, actions = slide the gap up/down/left/right, cost = 1 per move. The state space has $9!/2 = 181\,440$ reachable states (half of all $9!$ permutations are unreachable from a given starting position — the *parity invariant*). For the 15-puzzle it is already $16!/2 \approx 10^{13}$ — too large to store the state space explicitly. That is why we generate states **on demand** via the transition model.
+
+### 1.2 Search tree, search graph and the generic algorithm
+
+Search explores the state space by building a **search tree**. A **node** $n$ of the search tree is a bookkeeping structure with:
+
+- `n.state` — the associated state,
+- `n.parent` — the parent node (for reconstructing the path),
+- `n.action` — the action that led here from the parent state,
+- `n.g` — the path cost from $s_0$ to `n.state` along this path.
+
+**Careful, a subtle difference:** a *state* is a configuration of the world; a *node* is a path to it. Two different nodes can carry the same state (reached via different paths). **Expanding** a node creates one child node per applicable action. The **frontier** (the open list) is the set of nodes that have been generated but not yet expanded. The **explored set** (the closed list) records already expanded states in order to avoid cycles and redundancy.
+
+```
+function GRAPH-SEARCH(problem) returns a solution or failure:
+    frontier  ← {Node(s0)}            # priority structure depending on the strategy
+    explored  ← ∅
+    while frontier ≠ ∅:
+        n ← REMOVE(frontier)          # which node? -> that IS the strategy
+        if Goal(n.state): return SOLUTION(n)
+        add n.state to explored
+        for each a in Actions(n.state):
+            s' ← Result(n.state, a)
+            child ← Node(state=s', parent=n, action=a, g = n.g + c(...))
+            if s' ∉ explored and s' not already in frontier (with ≤ cost):
+                frontier ← INSERT(child, frontier)
+    return failure
+```
+
+The only adjustable screw is **which node `REMOVE` picks next**. That single decision generates all of the procedures that follow.
+
+### 1.3 Evaluation criteria
+
+We judge a search procedure by four criteria:
+
+1. **Completeness:** does it *guarantee* to find a solution if one exists?
+2. **Optimality:** does it guarantee to find a *cost-minimal* solution?
+3. **Time complexity:** how many nodes are generated/expanded?
+4. **Space complexity:** how many nodes have to be held in memory simultaneously?
+
+We express the complexity in three parameters:
+
+- $b$ — the **branching factor**, the maximum number of successors of a node,
+- $d$ — the **depth of the shallowest solution**,
+- $m$ — the **maximum depth** of the state space (which may be $\infty$).
+
+### 1.4 Uninformed (blind) search
+
+"Uninformed" means: the procedure uses **no** problem-specific information about how close a state is to the goal. It only knows the problem definition.
+
+**Breadth-first search (BFS).** The `frontier` is a FIFO queue → expand nodes in the order of their generation, that is layer by layer: first all nodes at depth 0, then depth 1, and so on. The goal test happens at *generation* time (not only at expansion), which saves one layer.
+
+- *Complete:* yes, if $b$ is finite (the shallowest solution at depth $d$ is found after finitely many nodes).
+- *Optimal:* yes, **if all step costs are equal** (then the shallowest solution is also the cheapest). With unequal costs, in general **no**.
+- *Time:* $1 + b + b^2 + \dots + b^d = O(b^d)$.
+- *Space:* $O(b^d)$ — every generated node stays in memory (frontier + explored). **Space is the real killer criterion**: with $b=10$ and $d=12$ that is about $10^{12}$ nodes.
+
+> **Proof of the optimality of BFS with unit costs (induction over the layer).** BFS expands nodes in non-decreasing order of depth. Claim: if a goal node at depth $d$ is generated for the first time, then there is no goal node at depth $< d$. Suppose there were one at depth $d' < d$. Since BFS proceeds layer by layer, all nodes at depth $d'$ would have been generated *before* any node at depth $d$ is generated — so the goal node at $d'$ would have been found first, a contradiction. Since with unit costs depth is proportional to cost, the shallowest solution is optimal. $\qquad\blacksquare$
+
+**Uniform-cost search (UCS) = Dijkstra for search problems.** The `frontier` is a **priority queue on $g(n)$** (the path cost so far) → always expand the cheapest open node. Two decisive details compared with BFS: (a) the goal test happens at **expansion** time, not at generation (otherwise it is not optimal, because an expensive path to the goal could be generated earlier than a cheaper one). (b) If a cheaper path to a frontier state is found, it replaces the more expensive one.
+
+- *Complete:* yes, if the step costs are $\ge \varepsilon > 0$ (otherwise infinitely many zero-cost steps could form an infinite chain).
+- *Optimal:* yes, always (proof below).
+- *Complexity:* let $C^\ast$ be the cost of the optimal solution. UCS expands all nodes with path cost $< C^\ast$. That is up to $O\!\left(b^{1 + \lfloor C^\ast / \varepsilon \rfloor}\right)$ — with unit costs ($\varepsilon = 1$, $C^\ast = d$) somewhat more than BFS, namely $O(b^{d+1})$, because UCS also examines nodes at the goal depth before it picks the goal as the cheapest.
+
+> **Proof of the optimality of UCS.** We show: when UCS selects a node $n$ for expansion, `n.g` is already the *optimal* path cost $g^\ast(n.\text{state})$ from $s_0$ to that state. **(a) Non-decreasing expansion costs:** since the cheapest frontier node is always chosen and children have costs $\ge$ their parent (step costs $\ge 0$), nodes are expanded in non-decreasing order of $g$. **(b) Optimality at expansion:** suppose $n$ is expanded with `n.g` $> g^\ast(n.\text{state})$. Then there is an optimal path with smaller cost; on it there is a first node $n'$ that is still in the frontier. It satisfies `n'.g` $\le g^\ast(n.\text{state}) <$ `n.g`, so $n'$ would have been chosen before $n$ — a contradiction. When the goal is expanded as the cheapest frontier node, its path cost is therefore optimal. $\qquad\blacksquare$
+
+**Depth-first search (DFS).** The `frontier` is a LIFO stack → always expand the most recently generated node, that is, go as deep as possible before going back (backtracking).
+
+- *Complete:* **no** in general (it can get stuck in an infinite branch or a cycle); yes in finite state spaces with cycle detection.
+- *Optimal:* no.
+- *Time:* $O(b^m)$ — bad when $m \gg d$.
+- *Space:* $O(bm)$ — **that is the advantage**: DFS only has to store the current path plus the sibling nodes, not the whole tree. Linear instead of exponential.
+
+**Depth-limited search and iterative deepening (IDDFS).** Depth-limited search is DFS with a hard depth limit $\ell$ (it cuts off deeper branches). IDDFS calls it with $\ell = 0, 1, 2, \dots$ until a solution is found.
+
+- It combines **the best of both worlds**: space $O(bd)$ like DFS, completeness and (with unit costs) optimality like BFS.
+- *Time:* $O(b^d)$. The apparent extra work of repeatedly searching the upper layers is asymptotically negligible: the bottom layer ($b^d$ nodes) is generated only once, the second to last twice, …, the root $d{+}1$ times. Sum: $\sum_{i=0}^{d}(d{+}1-i)\,b^i = O(b^d)$, dominated by the last term. With $b=10$ the overhead is only about 11 %.
+
+> **IDDFS is the standard workhorse of uninformed search** when the state space is large and the solution depth is unknown — precisely because it avoids the exponential memory bound of BFS.
+
+**Bidirectional search.** Search forwards from $s_0$ and backwards from the goal simultaneously; stop when the two fronts meet. Time and space $O(b^{d/2})$ — dramatically better, but only applicable if the transition model is invertible and an *explicit* goal state is available (not merely a goal predicate test).
+
+**Overview (finite $b$; unit costs for "optimal"):**
+
+| Criterion | BFS | UCS | DFS | IDDFS |
+|---|---|---|---|---|
+| Complete? | yes | yes ($c\ge\varepsilon$) | no\* | yes |
+| Optimal? | yes (unit costs) | yes (always) | no | yes (unit costs) |
+| Time | $O(b^d)$ | $O(b^{1+\lfloor C^\ast/\varepsilon\rfloor})$ | $O(b^m)$ | $O(b^d)$ |
+| Space | $O(b^d)$ | $O(b^{1+\lfloor C^\ast/\varepsilon\rfloor})$ | $O(bm)$ | $O(bd)$ |
+
+\* complete in finite spaces with a cycle check.
+
+---
+
+## Part 2 — Building up: informed and advanced search
+
+### 2.1 Heuristics
+
+A **heuristic** $h(n) \ge 0$ estimates the cost of the *cheapest path from the state `n.state` to a goal state*. By convention $h(n) = 0$ for goal states. It is the problem-specific "hunch" that uninformed search lacks. Two properties are central:
+
+**Admissibility.** $h$ is *admissible* if it **never overestimates** the true remaining cost $h^\ast(n)$:
+$$
+0 \le h(n) \le h^\ast(n) \quad \text{for all } n.
+$$
+An admissible heuristic is *optimistic* — it believes the goal to be at least as close as it really is.
+
+**Consistency / monotonicity.** $h$ is *consistent* if it satisfies the **triangle inequality** for every action $a$ from $s$ to $s'$:
+$$
+h(s) \le c(s, a, s') + h(s').
+$$
+Intuitively: the estimated remaining cost may fall by at most the real step cost in one step.
+
+> **Theorem: consistency $\Rightarrow$ admissibility** (but not conversely). *Proof* by induction over the number $k$ of steps on the optimal remaining path from $s$ to the nearest goal. **Base** $k=0$: $s$ is a goal state, $h(s)=0=h^\ast(s)$. **Step:** let the optimal remaining path be $s \to s' \to \dots \to \text{goal}$ with $k$ steps, the first step being $a$. By the induction hypothesis $h(s') \le h^\ast(s')$. Consistency gives $h(s) \le c(s,a,s') + h(s') \le c(s,a,s') + h^\ast(s') = h^\ast(s)$, because $s'$ lies on the optimal remaining path. $\qquad\blacksquare$
+
+**Heuristics for the 8-puzzle** (both admissible):
+- $h_1$ = the number of misplaced tiles (Hamming). Admissible, because every misplaced tile needs at least one move.
+- $h_2$ = the sum of the **Manhattan distances** of every tile to its goal position. Admissible, because one move moves a tile by exactly 1 in the Manhattan metric and tiles cannot move "through each other". We always have $h_2(n) \ge h_1(n)$: $h_2$ **dominates** $h_1$.
+
+### 2.2 A\* — informed search
+
+A\* is UCS, but with a different priority function. Instead of considering only the cost so far $g(n)$, A\* uses the **estimated total cost** of a path through $n$:
+$$
+f(n) = g(n) + h(n).
+$$
+$g(n)$ = the known cost from $s_0$ to `n.state`, $h(n)$ = the estimated remaining cost to the goal. The `frontier` is a priority queue on $f$. A\* always expands the node with the smallest $f$.
+
+**A\* generalizes the other procedures:** $h \equiv 0$ gives UCS. "Greedy best-first search" ($f = h$, ignoring $g$) is the other extreme — fast, but **neither optimal nor complete** (it can run off in the wrong direction).
+
+> **Theorem (optimality of A\*, tree search).** If $h$ is admissible, then A\* without an explored set (pure tree search) returns an optimal solution. *Proof.* Let $C^\ast$ be the optimal solution cost and $G_2$ a *suboptimal* goal node in the frontier with $g(G_2) > C^\ast$. Since $h(G_2)=0$, we have $f(G_2) = g(G_2) > C^\ast$. On the optimal path there is always a frontier node $n$ (the path has been expanded up to somewhere). For it, admissibility gives $f(n) = g(n) + h(n) \le g(n) + h^\ast(n) = C^\ast$. Hence $f(n) \le C^\ast < f(G_2)$: A\* chooses $n$ before $G_2$. A suboptimal goal node is therefore never expanded before the optimal one is reached. $\qquad\blacksquare$
+
+> **Theorem (optimality of A\*, graph search).** If $h$ is **consistent**, then A\* with an explored set is optimal. The reason: under consistency the $f$ values along every path are **non-decreasing** ($f(s') = g(s')+h(s') = g(s)+c(s,a,s')+h(s') \ge g(s)+h(s) = f(s)$). It follows that A\* expands states in non-decreasing order of $f$ and reaches a state at its *first* expansion already with the optimal $g$ — exactly as with UCS. Mere admissibility is **not** enough for graph search, unless one allows re-opening already closed nodes when a cheaper path is found.
+
+**Optimal efficiency.** Among all procedures that use the same admissible heuristic, A\* expands (apart from nodes with exactly $f=C^\ast$) *no node* that it would not have to: every node with $f(n) < C^\ast$ **must** be expanded by every optimal, complete procedure (otherwise a better solution could be hidden there). In this sense A\* is **optimally efficient**.
+
+**Dominance.** If $h_a, h_b$ are both admissible and $h_a(n) \ge h_b(n)$ for all $n$, then A\* with $h_a$ never expands more nodes than with $h_b$ (apart from ties). **A higher admissible heuristic is better.** That is why $h_2$ (Manhattan) is preferable to $h_1$ (Hamming) on the 8-puzzle. From several heuristics one can always form $h(n) = \max\{h_a(n), h_b(n)\}$ — again admissible and at least as good.
+
+**Constructing heuristics systematically.** Where do good admissible heuristics come from?
+- **Relaxation:** one solves a *simplified* problem exactly. If in the 8-puzzle you drop the rule "a tile can only move onto the empty square", every tile may "jump" straight to its goal → cost = the Manhattan distance. The exact cost of a relaxed problem is **always** an admissible (and even consistent) heuristic for the original, because the original only has *more* restrictions and is therefore never cheaper.
+- **Pattern databases:** one solves subproblems (e.g. only tiles 1–4) completely in advance and stores their exact costs in a table. At runtime the remaining cost is looked up. For the 15-puzzle, *disjoint* pattern databases lower the search time by orders of magnitude.
+
+**The memory problem of A\*.** Like UCS, A\* potentially holds exponentially many nodes. Remedies: **IDA\*** (iterative-deepening A\*, DFS with an $f$ threshold instead of a depth threshold) and **SMA\*** (memory-bounded A\*) trade memory for time.
+
+### 2.3 Local search
+
+When only the **goal state** matters and not the way there (e.g. with $n$-queens, scheduling, layout optimization), the path is irrelevant. Then one works with **local search**: one keeps only *one* current state and tries to improve it step by step. Memory $O(1)$, huge state spaces become manageable. One imagines a **landscape of the objective function** (height = quality); the global peak is sought.
+
+**Hill climbing.** Always move to the best neighbour that is better than the current state; stop when no neighbour is better. Simple and memory efficient, but it gets stuck in **local maxima**, on **plateaus** and on **ridges**. Variants: *stochastic* HC (a random choice among the improving neighbours), *first-choice* HC, *random-restart* HC (restart from a random state when stuck — surprisingly effective).
+
+**Simulated annealing.** Combines HC with occasional "downhill" steps in order to escape local maxima. A worsening step by $\Delta E < 0$ is accepted with probability $e^{\Delta E / T}$; the "temperature" $T$ decreases slowly towards 0 according to a cooling schedule. At the start (high $T$) it is almost a random walk, at the end (low $T$) almost pure HC. **A theoretical result:** if $T$ decreases sufficiently slowly ($T_k \ge c/\log k$), SA converges to the global optimum with probability 1 — but that is too slow in practice; one uses faster, heuristic schedules.
+
+**Genetic algorithms.** These keep a *population* of states. New states arise through **selection** (fit individuals are preferred), **crossover** (two parents combine partial solutions) and **mutation** (a random small change). Crossover is only effective if the encoding is chosen so that related partial solutions lie next to each other (the schema theorem). GAs are robust but coarse optimizers.
+
+### 2.4 Adversarial search (games)
+
+In **two-player zero-sum games with perfect information** (chess, checkers, tic-tac-toe) an opponent plans *against* us. The state space is a **game tree** in which the moves of MAX (us, maximizing) and MIN (the opponent, minimizing) alternate. A **utility function** evaluates terminal states (+1 win, 0 draw, −1 loss).
+
+**Minimax.** The value of a node is:
+$$
+\mathrm{Minimax}(s) =
+\begin{cases}
+\mathrm{Utility}(s) & \text{if } s \text{ is terminal}\\
+\max_{a}\mathrm{Minimax}(\mathrm{Result}(s,a)) & \text{if MAX is to move}\\
+\min_{a}\mathrm{Minimax}(\mathrm{Result}(s,a)) & \text{if MIN is to move}
+\end{cases}
+$$
+One computes it by depth-first search from the leaves back up. At the root MAX chooses the move to the child with the maximal minimax value. The result is the **optimal move under the assumption that the opponent also plays optimally**. Time $O(b^m)$, space $O(bm)$ — unaffordable down to the leaves for real games.
+
+**$\alpha$-$\beta$ pruning.** Prunes subtrees that can no longer change the result, without falsifying the minimax value. One carries two bounds: $\alpha$ = the best (highest) value MAX can guarantee so far; $\beta$ = the best (lowest) value MIN can guarantee. As soon as $\alpha \ge \beta$ at a node, the remaining subtree can be cut off (the opponent would never allow this branch).
+
+- It gives **exactly the same** minimax value as unpruned minimax — it is not an approximation.
+- With an **optimal move ordering** the time falls from $O(b^m)$ to $O(b^{m/2})$ — that *doubles* the searchable depth at the same effort. This is why good **move ordering heuristics** are decisive.
+
+**In practice:** since one can rarely compute down to the leaves, one stops at a depth limit and replaces `Utility` by a heuristic **evaluation function** that estimates the winning chance of a non-terminal position (e.g. the material value in chess). Modern engines (AlphaZero) replace it by neural networks plus Monte Carlo tree search — the transition to statistical AI.
+
+### 2.5 Constraint satisfaction problems (CSP)
+
+A **CSP** is a search problem with a *factored* state representation: a state is an assignment of **variables**, and a goal is any assignment that satisfies all **constraints**. Formally $(X, D, C)$:
+
+- $X = \{X_1, \dots, X_n\}$ — the variables,
+- $D = \{D_1, \dots, D_n\}$ — the domains, $X_i$ takes values from $D_i$,
+- $C$ — the constraints; a constraint $\langle \mathrm{scope}, \mathrm{rel}\rangle$ names the variables involved and the permitted combinations of values.
+
+A **consistent** assignment violates no constraint; a **complete** one assigns all variables; a **solution** is both. Classics: **map colouring** (colour adjacent regions differently), **Sudoku**, **$n$-queens**, timetables.
+
+**Why a theory of its own?** Because the factored structure permits powerful, *generic* techniques that speed up naive search ($d^n$ leaves) drastically — without a problem-specific heuristic.
+
+**Backtracking search.** A depth-first search that assigns variables one after the other and backtracks when a constraint is violated. The core of the efficiency lies in three ideas:
+
+**(1) Constraint propagation and consistency.** One excludes values *before* branching. An arc $X_i \to X_j$ is called **arc-consistent** if for *every* value in $D_i$ there is at least one permitted partner value in $D_j$. The **AC-3 algorithm** establishes arc consistency across the whole network:
+
+```
+function AC-3(csp) returns false (if an inconsistency is detected) otherwise true:
+    queue ← all directed arcs (Xi, Xj)
+    while queue ≠ ∅:
+        (Xi, Xj) ← REMOVE(queue)
+        if REVISE(csp, Xi, Xj):                  # removes from Di values with no partner in Dj
+            if Di = ∅: return false              # empty domain -> no solution on this branch
+            for each Xk in neighbours(Xi) \ {Xj}: # a change to Di can affect the neighbours
+                add (Xk, Xi) to queue
+    return true
+```
+`REVISE` deletes from $D_i$ every value that finds no partner in $D_j$. **Complexity:** a CSP with $c$ binary constraints and domain size $\le d$ runs in $O(c\,d^3)$: each of the $c$ arcs enters the queue at most $d$ times (once per removed value of a neighbour), and `REVISE` costs $O(d^2)$.
+
+**(2) Backtracking and inference combined.** *Forward checking* establishes arc consistency after every assignment, but only for the neighbours of the variable just assigned; *MAC* (maintaining arc consistency) calls AC-3 fully on the affected arcs after every assignment.
+
+**(3) Ordering heuristics.**
+- **MRV (minimum remaining values / "most constrained variable"):** assign next the variable with the *fewest* remaining legal values — it leads to failure fastest (fail-fast) and prunes the tree.
+- **The degree heuristic:** on an MRV tie, take the variable with the most constraints to still unassigned variables.
+- **LCV (least constraining value):** try first the value that leaves the neighbours the *most* options.
+
+**Exploiting structure.** If the constraint graph decomposes into independent components, one solves them separately (a multiplicative instead of an exponential gain). If the constraint graph is a **tree**, the CSP is solvable in **$O(n\,d^2)$** — that is, *polynomially* (order topologically, make it arc-consistent backwards, then assign greedily forwards). **Cutset conditioning** and **tree decomposition** carry this advantage approximately over to almost-tree-like graphs. This is the deep insight of CSP theory: **the graph structure determines the complexity.**
+---
+
+## Part 3 — Building up: propositional logic
+
+Search finds *solutions*; logic makes it possible to **represent knowledge** and to **derive new facts correctly** from it. A **knowledge-based agent** keeps a *knowledge base* (KB) of sentences and answers questions by checking what *follows* from the KB.
+
+### 3.1 Syntax and semantics
+
+**Syntax.** Formulas of propositional logic are built from **atomic propositions** (proposition symbols $P, Q, R, \dots$, each true or false) and the **connectives** $\lnot$ (not), $\land$ (and), $\lor$ (or), $\Rightarrow$ (implies), $\Leftrightarrow$ (if and only if). Formally (BNF):
+$$
+\varphi ::= \top \mid \bot \mid P \mid \lnot\varphi \mid (\varphi \land \varphi) \mid (\varphi \lor \varphi) \mid (\varphi \Rightarrow \varphi) \mid (\varphi \Leftrightarrow \varphi).
+$$
+
+**Semantics.** A **model** (or *interpretation*) $m$ is an assignment of true/false to every proposition symbol. The truth of a formula under $m$ follows recursively from the **truth tables** of the connectives (in particular: $A \Rightarrow B$ is false only when $A$ is true and $B$ is false — "anything follows from a falsehood"). With $n$ symbols there are $2^n$ models.
+
+**Central semantic notions:**
+- $\varphi$ is **satisfiable** if *at least one* model makes $\varphi$ true.
+- $\varphi$ is **valid / a tautology** if *every* model makes $\varphi$ true (e.g. $P \lor \lnot P$).
+- $\varphi$ is **unsatisfiable** if *no* model makes $\varphi$ true.
+- **Duality:** $\varphi$ is valid $\iff$ $\lnot\varphi$ is unsatisfiable.
+
+### 3.2 Logical entailment
+
+The central notion. A KB **entails** a sentence $\alpha$, written
+$$
+\mathrm{KB} \models \alpha,
+$$
+exactly when $\alpha$ is true in **every** model in which the KB is true. So: "$\alpha$ is an unavoidable consequence of the KB." Formally $M(\mathrm{KB}) \subseteq M(\alpha)$, where $M(\cdot)$ denotes the set of models.
+
+**The bridging theorem (deduction theorem / refutation):**
+$$
+\mathrm{KB} \models \alpha \quad\iff\quad (\mathrm{KB} \land \lnot\alpha) \text{ is unsatisfiable.}
+$$
+This is the workhorse of machine theorem proving: instead of "does $\alpha$ follow?" (a statement about *all* models) one checks "is $\mathrm{KB} \land \lnot\alpha$ unsatisfiable?" — one assumes the *opposite* of the claim and derives a contradiction (**proof by refutation**).
+
+**Model checking** solves entailment by enumerating all $2^n$ models (the truth table method) — sound and complete, but exponential. Propositional satisfiability (**SAT**) is the canonical **NP-complete** problem (the Cook–Levin theorem); entailment is correspondingly **co-NP-complete**. So we look for procedures that are faster *on average* without enumerating all models.
+
+### 3.3 Inference rules, soundness and completeness
+
+An **inference procedure** $i$ derives sentences from a KB syntactically: $\mathrm{KB} \vdash_i \alpha$ means "$i$ derives $\alpha$ from the KB". Two quality criteria connect this *syntactic* derivability with *semantic* entailment:
+
+- **Soundness:** $\mathrm{KB} \vdash_i \alpha \implies \mathrm{KB} \models \alpha$. (It derives only truths — no false conclusions.)
+- **Completeness:** $\mathrm{KB} \models \alpha \implies \mathrm{KB} \vdash_i \alpha$. (It derives everything that follows — it misses nothing.)
+
+A procedure that is sound *and* complete reproduces semantic entailment exactly, syntactically. Well-known sound rules: **modus ponens** ($\alpha \Rightarrow \beta,\ \alpha \ \vdash\ \beta$), **and-elimination** ($\alpha \land \beta \vdash \alpha$).
+
+### 3.4 Normal forms and the resolution calculus
+
+**Conjunctive normal form (CNF).** A formula is in CNF if it is a **conjunction of clauses**, where a **clause** is a **disjunction of literals** (a *literal* being an atom or its negation). **Every** propositional formula can be converted into an equivalent CNF:
+
+1. Eliminate $\Leftrightarrow$: $A \Leftrightarrow B$ becomes $(A \Rightarrow B) \land (B \Rightarrow A)$.
+2. Eliminate $\Rightarrow$: $A \Rightarrow B$ becomes $\lnot A \lor B$.
+3. Move negations inwards (De Morgan): $\lnot(A\land B)\equiv \lnot A\lor\lnot B$, $\lnot(A\lor B)\equiv \lnot A\land\lnot B$, $\lnot\lnot A\equiv A$.
+4. Distribute $\lor$ over $\land$: $A\lor(B\land C)\equiv (A\lor B)\land(A\lor C)$.
+
+**The resolution rule.** From two clauses that contain a complementary pair of literals $\ell$ / $\lnot\ell$, one derives their **resolvent** — the union of the remaining literals:
+$$
+\frac{(\ell \lor a_1 \lor \dots \lor a_k)\qquad(\lnot\ell \lor b_1 \lor \dots \lor b_m)}{(a_1 \lor \dots \lor a_k \lor b_1 \lor \dots \lor b_m)}.
+$$
+If the result contains a literal *and* its negation, it is a tautology and is discarded. If two complementary single-literal clauses ($\ell$ and $\lnot\ell$) are resolved, the **empty clause** $\square$ arises — by definition it is **unsatisfiable** and signals the contradiction we were looking for. The rule is **sound**: every model that satisfies both premises also satisfies the resolvent (case distinction on the truth value of $\ell$).
+
+**The resolution algorithm (a refutation procedure).** To show $\mathrm{KB} \models \alpha$:
+1. Form $\mathrm{KB} \land \lnot\alpha$ and convert it to CNF → a set of clauses.
+2. Apply resolution repeatedly to all pairs of clauses, adding new resolvents.
+3. If the **empty clause** $\square$ arises → $\mathrm{KB}\land\lnot\alpha$ is unsatisfiable → $\mathrm{KB}\models\alpha$. **Proved.**
+4. If no new clauses can be generated and $\square$ is not among them → $\alpha$ does **not** follow.
+
+> **Theorem (refutation completeness of resolution).** If a propositional set of clauses is unsatisfiable, then resolution derives the empty clause $\square$ in finitely many steps. *Proof idea:* via the **ground resolution theorem** — one shows by induction over the number of symbols that $\square$ can always be derived from an unsatisfiable set of clauses (semantic trees / the construction of a model if $\square$ is not derivable, which contradicts unsatisfiability). Since there are only finitely many clauses over $n$ symbols, the procedure terminates. Important: resolution is *refutation* complete — it proves unsatisfiability, not directly every entailment; but that suffices because of the bridging theorem. $\qquad\blacksquare$
+
+### 3.5 Horn clauses and efficient inference
+
+The general SAT case is NP-hard. For a practically important **subclass** it works *linearly*. A **Horn clause** is a clause with **at most one positive literal**. Written as an implication: $(\lnot P_1 \lor \dots \lor \lnot P_k \lor Q) \equiv (P_1 \land \dots \land P_k \Rightarrow Q)$ — a *definite* clause (exactly one positive literal). Facts are definite clauses without a premise.
+
+For Horn KBs, **forward chaining** and **backward chaining** are sound and complete and run in **linear time** in the size of the KB. Forward chaining applies modus ponens in a data-driven way until nothing new follows (this is the theoretical basis of modules 32/33 — deductive databases and logic programming/Prolog). Backward chaining starts goal-driven from the query. The satisfiability of Horn formulas (**HORNSAT**) is therefore in P.
+
+### 3.6 DPLL — the engine of modern SAT solvers
+
+Instead of enumerating models completely (a truth table), **DPLL** (Davis–Putnam–Logemann–Loveland) searches the assignment tree with backtracking and three accelerators. DPLL decides the **satisfiability** of a set of CNF clauses:
+
+1. **Early termination.** If every clause is already satisfied by a true literal → *satisfiable* (the rest does not matter). If a clause is completely false → this branch is *unsatisfiable*, backtrack.
+2. **Unit propagation (the one-literal rule).** If a clause contains only *one* unassigned literal left (all others false), that one must be **true**. Set it and propagate — this can trigger a cascade of further unit clauses. (This is by far the most effective step.)
+3. **The pure literal rule.** If a symbol occurs in all remaining clauses with only *one* polarity (purely positive or purely negative), assign it accordingly — that satisfies clauses without ever doing harm.
+
+Only when none of these rules applies does DPLL **branch** on a still free symbol (true/false) and recurse. Modern **CDCL solvers** (conflict-driven clause learning) extend DPLL by *clause learning* from conflicts, non-chronological backtracking (backjumping) and activity heuristics (VSIDS). They solve industrial SAT instances with *millions* of variables — the backbone of verification, planning and configuration.
+
+---
+
+## Part 4 — Advanced: first-order logic
+
+Propositional logic is weak in expressive power: "all humans are mortal" can only be represented by *one proposition per human*. **First-order logic (FOL)** introduces **objects**, **relations/predicates**, **functions** and **quantifiers** and can thus talk about *whole classes* of objects.
+
+### 4.1 Syntax
+
+The building blocks:
+- **Terms** denote objects: **constants** ($a, b, \mathrm{Socrates}$), **variables** ($x, y$), **function applications** ($f(x)$, $\mathrm{Father}(\mathrm{Socrates})$).
+- **Atomic formulas** are **predicates** over terms: $\mathrm{Human}(\mathrm{Socrates})$, $\mathrm{Greater}(x, y)$, as well as equality $t_1 = t_2$.
+- **Connectives** as in propositional logic plus **quantifiers**: the **universal quantifier** $\forall x\,\varphi$ ("for all $x$") and the **existential quantifier** $\exists x\,\varphi$ ("there is an $x$").
+
+Examples:
+$$
+\forall x\,\big(\mathrm{Human}(x) \Rightarrow \mathrm{Mortal}(x)\big), \qquad
+\exists x\,\big(\mathrm{Cat}(x) \land \mathrm{Black}(x)\big).
+$$
+**Rule of thumb:** $\forall$ usually goes with $\Rightarrow$ (not $\land$!), $\exists$ usually with $\land$ (not $\Rightarrow$!). $\forall x\,(\mathrm{Human}(x)\land\mathrm{Mortal}(x))$ would mean "everything is a mortal human" — too strong.
+
+**Duality of the quantifiers:** $\lnot\forall x\,\varphi \equiv \exists x\,\lnot\varphi$ and $\lnot\exists x\,\varphi \equiv \forall x\,\lnot\varphi$.
+
+### 4.2 Semantics
+
+An **interpretation** (structure) $\mathcal{I} = (\mathcal{D}, \cdot^\mathcal{I})$ consists of a non-empty **domain** $\mathcal{D}$ (the *universe of discourse* — the objects that exist) and an **interpretation function** that assigns
+- an object in $\mathcal{D}$ to every constant,
+- a function $\mathcal{D}^k \to \mathcal{D}$ to every $k$-ary function symbol,
+- a relation $\subseteq \mathcal{D}^k$ to every $k$-ary predicate symbol.
+
+Together with a variable assignment this fixes the truth value of every formula: $\forall x\,\varphi$ is true if $\varphi$ is true for *every* assignment of an object from $\mathcal{D}$ to $x$; $\exists x\,\varphi$ if it is true for *at least one*. An $\mathcal{I}$ that makes $\varphi$ true is a **model** of $\varphi$. The notions satisfiable / valid / entailment ($\mathrm{KB}\models\alpha$) are defined as in part 3 — only now over the in general **infinite** set of all interpretations.
+
+### 4.3 Unification
+
+To lift inference rules to FOL, one needs a mechanism that assigns (**substitutes**) values to variables so that two terms/atoms become *syntactically equal*. A **substitution** $\theta$ is a finite map from variables to terms, written $\{x/t, \dots\}$; $\varphi\theta$ applies it. Two atoms $p, q$ are **unifiable** if a $\theta$ with $p\theta = q\theta$ exists; such a $\theta$ is called a **unifier**.
+
+Example: $\mathrm{Knows}(\mathrm{John}, x)$ and $\mathrm{Knows}(y, \mathrm{Mary})$ unify with $\theta = \{y/\mathrm{John},\ x/\mathrm{Mary}\}$ to $\mathrm{Knows}(\mathrm{John}, \mathrm{Mary})$.
+
+The **most general unifier (MGU)** is the unifier that *commits to the least* — every other unifier is a specialization of it. The MGU is **unique** up to the renaming of variables. The unification algorithm runs recursively over the term structure:
+
+```
+function UNIFY(x, y, θ) returns a substitution or failure:
+    if θ = failure: return failure
+    if x = y: return θ
+    if VARIABLE?(x): return UNIFY-VAR(x, y, θ)
+    if VARIABLE?(y): return UNIFY-VAR(y, x, θ)
+    if COMPOUND?(x) and COMPOUND?(y):        # same function/predicate, arguments pairwise
+        return UNIFY(ARGS(x), ARGS(y), UNIFY(OP(x), OP(y), θ))
+    if LIST?(x) and LIST?(y):
+        return UNIFY(REST(x), REST(y), UNIFY(FIRST(x), FIRST(y), θ))
+    return failure
+```
+
+**The occurs check.** `UNIFY-VAR` may only bind $x/t$ if $x$ **does not occur in $t$** — otherwise one would try to unify $x$ with $f(x)$, which leads to an infinite term. The naive occurs check costs time; many Prolog systems omit it for efficiency (unsound, but rarely a problem in practice). With suitable data structures, unification is possible in **linear time**.
+
+### 4.4 FOL resolution and the Herbrand theorem
+
+The resolution calculus carries over to FOL — with two extensions: **Skolemization** (to get rid of existential quantifiers) and **unification** (instead of exactly complementary literals, *unifiable* ones suffice).
+
+**Conjunctive normal form in FOL.** In addition to the steps from 3.4:
+- **Standardize the variables apart:** rename every quantified variable uniquely (no name collisions).
+- **Skolemization:** eliminate existential quantifiers. An $\exists y$ that lies in the scope of no $\forall$ is replaced by a new **Skolem constant**; if $\exists y$ lies in the scope of $\forall x_1\dots\forall x_k$, one replaces $y$ by a new **Skolem function** $g(x_1,\dots,x_k)$ (the witness depends on the outer variables). Skolemization preserves *satisfiability* (not logical equivalence) — which is exactly what the refutation procedure needs.
+- **Drop the universal quantifiers** (they are assumed implicitly) and extract the clauses.
+
+**Generalized resolution.** Two clauses with literals $\ell_i$ and $\lnot m_j$ such that $\mathrm{UNIFY}(\ell_i, m_j) = \theta$ exists resolve to the resolvent, to which $\theta$ is applied:
+$$
+\frac{(\ell \lor \mathbf{a}) \qquad (\lnot m \lor \mathbf{b})}{(\mathbf{a} \lor \mathbf{b})\theta}, \qquad \theta = \mathrm{MGU}(\ell, m).
+$$
+The rest works as in propositional logic: KB $\land\ \lnot$query in CNF, resolve until $\square$ arises.
+
+**The Herbrand theorem — why this works.** The key that reduces FOL inference to the propositional case. The **Herbrand universe** of a set of clauses is the set of *all* ground (variable-free) terms that can be formed from its constants and function symbols (*infinite* when function symbols are present). A **Herbrand interpretation** assigns values only to these ground terms.
+
+> **Herbrand's theorem (1930).** A set of FOL clauses is unsatisfiable if and only if a **finite** set of **ground instances** (clauses substituted with terms of the Herbrand universe) is *propositionally* unsatisfiable.
+
+In principle this reduces FOL unsatisfiability to finitely many propositional unsatisfiability checks — one would only have to find the right finite set of ground instances. The **lifting lemma** shows: instead of blindly generating ground instances, one can resolve directly at the first-order level with unification and obtains the same power — that is the basis of the **refutation completeness of FOL resolution** (Robinson, 1965): *if a set of FOL clauses is unsatisfiable, then resolution with unification derives the empty clause.*
+
+### 4.5 Decidability: the fundamental limit
+
+A fundamental difference from propositional logic:
+
+> **FOL validity is *undecidable* (Church & Turing, 1936), but *semi-decidable*.**
+
+- **Semi-decidable (recursively enumerable):** if $\alpha$ is *valid* (or follows from the KB), then resolution **finds** that after finitely many steps (completeness) — the proof terminates with "yes".
+- **Undecidable:** if $\alpha$ is **not** valid, the procedure can **run forever** without ever stopping (the Herbrand universe is infinite when function symbols are present; there is no algorithm that terminates with "no" in *all* cases). There is provably **no** Turing machine that decides "valid / not valid" correctly for every FOL formula — by reduction to the halting problem.
+
+This is not the weakness of one particular algorithm but a **fundamental limit** of all machine FOL inference. The contrast shapes the whole of symbolic AI:
+
+| | Propositional logic | First-order logic (FOL) |
+|---|---|---|
+| Expressive power | objects individually | objects, relations, functions, quantifiers |
+| Satisfiability (SAT/validity) | **decidable** (NP- resp. co-NP-complete) | **semi-decidable**, undecidable |
+| Inference | DPLL/CDCL, resolution | resolution with unification |
+| Models | finitely many ($2^n$) | in general infinitely many |
+
+This is exactly why one often restricts things in practice: **Datalog** (deductive databases, module 32) and **description logics** (ontologies, the semantic web) are carefully tailored FOL fragments that remain *decidable* — the price of computability is reduced expressive power. This conflict between **expressive power** and **decidability/efficiency** runs through module 07 and the whole of knowledge representation.
+---
+
+## Summary / cheat sheet
+
+**Search — formalism and criteria**
+
+| Notion | Core |
+|---|---|
+| Search problem | $(S, s_0, A, \mathrm{Result}, \mathrm{Goal}, c)$; a solution = a sequence of actions $s_0 \to$ goal; optimal = minimal $\sum c$ |
+| Parameters | $b$ branching, $d$ solution depth, $m$ maximum depth |
+| Criteria | complete · optimal · time · space |
+
+**Uninformed search**
+
+| Procedure | Frontier | complete | optimal | Time | Space |
+|---|---|---|---|---|---|
+| BFS | FIFO | yes | yes (unit costs) | $O(b^d)$ | $O(b^d)$ |
+| UCS | prio. $g$ | yes | yes | $O(b^{1+\lfloor C^\ast/\varepsilon\rfloor})$ | same |
+| DFS | LIFO | no | no | $O(b^m)$ | $O(bm)$ |
+| IDDFS | iterated $\ell$ | yes | yes (unit costs) | $O(b^d)$ | $O(bd)$ |
+
+**Informed search**
+
+| Notion | Core |
+|---|---|
+| Heuristic | $h(n)\ge 0$ estimates the remaining cost $h^\ast(n)$ |
+| admissible | $h(n) \le h^\ast(n)$ (never overestimate) |
+| consistent | $h(s) \le c(s,a,s') + h(s')$; $\Rightarrow$ admissible |
+| A\* | $f(n)=g(n)+h(n)$; optimal if $h$ is admissible (tree) / consistent (graph) |
+| Dominance | $h_a \ge h_b$ admissible $\Rightarrow$ A\* with $h_a$ is more efficient; the $\max$ of several heuristics is admissible |
+| Origin | relaxation, pattern databases |
+
+**Adversarial / local / CSP**
+
+| Notion | Core |
+|---|---|
+| Minimax | $\max$/$\min$ backwards; optimal against an optimal opponent; $O(b^m)$ |
+| $\alpha$-$\beta$ | the same result, with a good ordering $O(b^{m/2})$ |
+| Local search | only one state; hill climbing, simulated annealing ($e^{\Delta E/T}$), GA |
+| CSP | $(X,D,C)$; AC-3 in $O(cd^3)$; MRV/degree/LCV; a tree CSP in $O(nd^2)$ |
+
+**Logic**
+
+| Notion | Core |
+|---|---|
+| Entailment | $\mathrm{KB}\models\alpha$: $\alpha$ is true in *every* model of the KB |
+| Refutation | $\mathrm{KB}\models\alpha \iff \mathrm{KB}\land\lnot\alpha$ unsatisfiable |
+| sound/complete | $\vdash\Rightarrow\models$ / $\models\Rightarrow\vdash$ |
+| CNF | a conjunction of clauses (disjunctions of literals) |
+| Resolution | a complementary pair → the resolvent; the empty clause $\square$ = a contradiction; refutation complete |
+| Horn | $\le 1$ positive literal; forward/backward chaining, HORNSAT in P |
+| DPLL | backtracking + unit propagation + pure literal + early termination |
+| Unification | $\mathrm{MGU}(p,q)$: $p\theta=q\theta$, most general; the occurs check |
+| FOL resolution | Skolemization + unification; the Herbrand theorem as its foundation |
+| Decidability | propositional logic decidable (NP); FOL only **semi**-decidable |
+
+---
+
+## Self-test
+
+<details><summary><b>1. Why is the memory requirement, not the time, the main problem of breadth-first search? How does IDDFS solve it?</b></summary>
+
+BFS has to keep *all* generated nodes in memory (frontier + explored), which is $O(b^d)$. With $b=10, d=12$ that is about $10^{12}$ nodes — terabytes, whereas the time (about $10^{12}$ operations) would still be feasible on modern machines. Memory is the hard limit. IDDFS runs as a repeated depth-limited DFS and needs only $O(bd)$ memory (just the current path), yet achieves the same $O(b^d)$ time and the same completeness/optimality as BFS. The repetition overhead is asymptotically negligible (about 11 % at $b=10$), because the bottom, largest layer is generated only once.
+</details>
+
+<details><summary><b>2. Define admissible and consistent. Prove: consistent ⇒ admissible. Does the converse hold?</b></summary>
+
+*Admissible:* $h(n) \le h^\ast(n)$ (it never overestimates the remaining cost). *Consistent:* $h(s) \le c(s,a,s')+h(s')$ for every step (the triangle inequality). Proof that consistent ⇒ admissible, by induction over the number of steps $k$ of the optimal remaining path: $k=0$ ⇒ a goal, $h=0=h^\ast$. Step: $h(s)\le c(s,a,s')+h(s')\le c(s,a,s')+h^\ast(s')=h^\ast(s)$ (the middle inequality from the induction hypothesis, $s'$ on the optimal remaining path). The **converse does not hold**: there are admissible but inconsistent heuristics. In practice almost all natural admissible heuristics (relaxations) are also consistent.
+</details>
+
+<details><summary><b>3. Prove the optimality of A\* with an admissible heuristic (tree search).</b></summary>
+
+Let $C^\ast$ be the optimal solution cost and $G_2$ a suboptimal goal node ($g(G_2)>C^\ast$) in the frontier. Then $f(G_2)=g(G_2)+0>C^\ast$. On the optimal path there is always a frontier node $n$; for it $f(n)=g(n)+h(n)\le g(n)+h^\ast(n)=C^\ast$ (admissibility). Hence $f(n)\le C^\ast<f(G_2)$ — A\* expands $n$ before $G_2$. So a suboptimal goal is never chosen before the optimal one. For *graph* search one needs consistency (or re-opening), so that $f$ does not fall along paths.
+</details>
+
+<details><summary><b>4. Why is a higher admissible heuristic better? How do you combine two heuristics?</b></summary>
+
+A\* expands all nodes with $f(n)<C^\ast$, that is $g(n)+h(n)<C^\ast$, i.e. $h(n)<C^\ast-g(n)$. A *larger* (but still admissible) $h$ makes this condition true for fewer nodes → fewer expansions. Formally: if $h_a\ge h_b$ (both admissible), A\* with $h_a$ expands a subset (apart from $f=C^\ast$ ties) of the nodes of $h_b$ — $h_a$ **dominates**. Combination: $h(n)=\max\{h_a(n),h_b(n)\}$ is again admissible and at least as good as both.
+</details>
+
+<details><summary><b>5. What does AC-3 do, and what is its complexity? Why is a tree-structured CSP "easy"?</b></summary>
+
+AC-3 establishes **arc consistency**: it deletes from every domain $D_i$ the values that have no permitted partner at a neighbouring variable $X_j$, and propagates the changes. Complexity $O(c\,d^3)$ ($c$ binary constraints, domain size $d$): every arc enters the queue at most $d$ times, and `REVISE` costs $O(d^2)$. A **tree CSP** is solvable in $O(n\,d^2)$: order topologically, make it arc-consistent from the leaves to the root (directional arc consistency), then assign greedily forwards from the root — no backtracking is needed, because every variable has only one parent. The graph structure determines the complexity.
+</details>
+
+<details><summary><b>6. Explain the bridging theorem $\mathrm{KB}\models\alpha \iff \mathrm{KB}\land\lnot\alpha$ unsatisfiable. Why is it so important for machine theorem proving?</b></summary>
+
+$\mathrm{KB}\models\alpha$ means: in every model of the KB, $\alpha$ is true, i.e. there is *no* model with the KB true and $\alpha$ false — so $\mathrm{KB}\land\lnot\alpha$ is unsatisfiable. Its significance: instead of checking a statement about *all infinitely many* models (entailment), one looks for *one single* contradiction. That permits **proof by refutation**: negate the claim, add it to the KB, derive the empty clause with resolution. Resolution is only *refutation* complete — which is precisely why this theorem is the bridge that nevertheless turns it into a complete entailment procedure.
+</details>
+
+<details><summary><b>7. What is unit propagation in DPLL and why is it so effective?</b></summary>
+
+If only *one* literal in a clause is still unassigned and all the others are false, that literal must be true for the clause (and hence the whole CNF) to remain satisfiable. DPLL sets it by force, without branching — and that can trigger a chain reaction of further unit clauses. The effect: unit propagation eliminates branchings without the cost of guessing; empirically SAT solvers spend most of their time here. CDCL solvers build *clause learning* and backjumping on top of it and scale to millions of variables.
+</details>
+
+<details><summary><b>8. What is an MGU and what is the occurs check for?</b></summary>
+
+A **most general unifier** $\theta$ of two atoms $p,q$ makes them equal ($p\theta=q\theta$) while committing to as *little* as possible — every other unifier is an instance of $\theta$. It is unique up to renaming. The **occurs check** prevents binding a variable $x$ to a term that contains $x$ itself (e.g. $x$ with $f(x)$) — that would give an infinite term. Without it, unification becomes unsound; many Prolog systems omit it for performance reasons.
+</details>
+
+<details><summary><b>9. What is Skolemization for? Does it preserve logical equivalence?</b></summary>
+
+Skolemization eliminates **existential quantifiers** when forming the CNF in FOL: an $\exists y$ with no surrounding $\forall$ → a new **Skolem constant**; an $\exists y$ in the scope of $\forall x_1\dots x_k$ → a **Skolem function** $g(x_1,\dots,x_k)$ (the "witness" depends on the outer variables). It does **not** preserve logical equivalence, but it does preserve **satisfiability** — and that is exactly enough for the refutation procedure, which only has to establish the unsatisfiability of $\mathrm{KB}\land\lnot\alpha$.
+</details>
+
+<details><summary><b>10. FOL validity is semi-decidable but undecidable. What does that mean concretely for a theorem prover?</b></summary>
+
+*Semi-decidable:* if the formula is valid (follows from the KB), a complete procedure (resolution) finds the proof in finitely many steps and halts with "yes". *Undecidable:* if it is **not** valid, the same prover can run forever without ever outputting "no" — there is provably no algorithm that terminates for *all* FOL formulas and decides correctly (a reduction to the halting problem, Church/Turing 1936). In practice: a FOL prover can confirm validity, but it can never *guarantee* to establish invalidity. That is why one uses decidable fragments (Datalog, description logics) when termination is required.
+</details>
+
+---
+
+## Literature and sources
+
+**Textbooks**
+- **Russell & Norvig, *Artificial Intelligence: A Modern Approach* (AIMA), 4th ed.** — *the* standard reference. For this module: ch. 3 (search), 4 (informed/local), 5 (games), 6 (CSP), 7 (propositional logic), 8–9 (FOL and inference). Beginner friendly and nevertheless complete. *The primary recommendation.*
+- **Ertel, *Grundkurs Künstliche Intelligenz*, Springer Vieweg** — in German, compact, good for logic and search. *Beginner friendly.*
+- **Nilsson, *Artificial Intelligence: A New Synthesis*** — classic, an elegant presentation of search and logic. *Advanced.*
+- **Chang & Lee, *Symbolic Logic and Mechanical Theorem Proving*** — the reference for resolution, unification and the Herbrand theorem. *Advanced, mathematical.*
+
+**Freely available courses and materials** (free)
+- **UC Berkeley CS188 "Introduction to AI"** — videos, slides, the famous *Pac-Man projects* (search, CSP, games in Python). `inst.eecs.berkeley.edu/~cs188`. *Beginner friendly, highly practical.*
+- **The AIMA companion site** with pseudocode and reference implementations (`aima-python` on GitHub). *Straight to reimplementing.*
+- **Stanford CS221 "AI: Principles and Techniques"** — notes and exercises free online. *Advanced.*
+- **MIT 6.034 "Artificial Intelligence"** (OpenCourseWare) — video lectures by Patrick Winston on search, constraints and logic. *Beginner friendly.*
+
+**Interactive / visualizations** (free)
+- **PathFinding.js** (`qiao.github.io/PathFinding.js/visual`) — watch A\*, Dijkstra and IDA\* live on a grid. *Very beginner friendly.*
+- **Red Blob Games — "Introduction to A\*"** (`redblobgames.com/pathfinding/a-star/introduction.html`) — the best interactive explanation of A\* that exists. *Beginner friendly.*
+- **Sudoku and SAT solver visualizations** and the **MiniSat** source code for a real, lean CDCL solver. *Advanced.*
+
+**Classical papers** (free, advanced)
+- Hart, Nilsson & Raphael (1968): *A Formal Basis for the Heuristic Determination of Minimum Cost Paths* — the original A\* paper.
+- Robinson (1965): *A Machine-Oriented Logic Based on the Resolution Principle* — FOL resolution.
+- Davis, Logemann & Loveland (1962): *A Machine Program for Theorem-Proving* — the DPLL algorithm.
+
+---
+
+## The three projects
+
+This module is theory-heavy, but the core procedures only *come alive* once you see them run. That is why all three projects are **implementations** (Python), each with a theoretical part for reflection. Rising difficulty and decreasing amounts of given code:
+
+- **01 – basic** (`projects/01-basic/`): **search algorithms on the 8-puzzle and Romania.** A guided notebook: implement BFS/UCS/IDDFS/A\*, compare the heuristics $h_1,h_2$, check admissibility/dominance empirically (by counting expanded nodes). Plenty of guidance.
+- **02 – medium** (`projects/02-medium/`): **a CSP solver + a DPLL SAT solver.** A structured Python project: backtracking with MRV/AC-3 for Sudoku *and* a DPLL solver with unit propagation; one Sudoku is additionally encoded as a SAT instance and solved by both routes. Only occasional inspiration.
+- **03 – final** (`projects/03-final/`): **a resolution theorem prover for propositional and first-order logic.** No given code. CNF conversion, unification (with the occurs check), resolution with refutation; applied to a realistic knowledge base scenario. Master's level: it consolidates logic, unification and the refutation principle.
+
+Details, setup and reference solutions are in the `README.md` of each project folder.
+
+---
+---
+
+# Modul 06 — Theorie der Künstlichen Intelligenz 1 (deutsche Fassung)
 
 **Worum geht es?** Dieses Modul behandelt das klassische, *symbolische* Fundament der KI: Wie formuliert man ein Problem so, dass eine Maschine es durch **Suche** lösen kann, und wie repräsentiert man Wissen so formal, dass ein Rechner daraus **logisch korrekt schließen** kann. Es ist die theoretische Gegenseite zum statistischen Lernen (Module 04/05): Statt aus Daten zu lernen, konstruieren wir hier Verfahren, deren Korrektheit und Optimalität sich *beweisen* lässt.
 
