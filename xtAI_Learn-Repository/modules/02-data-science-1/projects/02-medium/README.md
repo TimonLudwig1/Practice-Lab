@@ -1,4 +1,40 @@
-# Projekt 02 (medium) — Einen schmutzigen Datensatz retten
+# Project 02 (medium) — Rescuing a dirty data set
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook and the generator are English only; the German block below still names the original German columns where it describes the old state.
+
+**Format:** Jupyter notebook (`data_cleaning.ipynb`) + data generator (`generate_data.py`).
+**Why this format?** Cleaning is iterative inspecting and checking with a constant eye on intermediate results — notebook territory. The generator is deliberately a separate, readable script: you should be able to see how the data come about.
+
+**Data: synthetic — on purpose.** 500 orders of a fictional online shop, into which `generate_data.py` (fixed seed 42, reproducible) builds **eight documented, realistic problems**: price as text ("49.99 EUR"), missing values, decimal-point outliers (x100), the special code −999, an impossible age, inconsistent city names, two date formats, exact duplicates. Synthetic because here there is a **verifiable truth**: at the end you can read in the generator whether you really found everything — no real data set can offer that.
+
+## Goal
+
+Find all the data problems yourself, treat them with justification (every decision is documented in one sentence) and prove with a given **acceptance test** (assert cell) that the data set is clean. A core lesson along the way: the IQR outlier rule fails globally (41 false hits) and only works **per category** (exactly 3 genuine hits).
+
+## Prior knowledge
+
+- Section 2.1 of the module script (cleaning — read it first!), 1.4, 2.3
+- Project 01-basic (basic pandas patterns)
+
+## Tasks
+
+1. Generate the data: `python generate_data.py` (creates `datasets/orders_raw.csv` — the CSV is not committed, only the generator).
+2. Work through the notebook. The route: inspect and write a list of problems → duplicates → price type conversion → outliers (global vs. per group!) → cities → age → date → acceptance test → mini analysis.
+3. **Search yourself first, then read `generate_data.py`** — the generator is the answer key.
+
+## What should work in the end
+
+The acceptance cell runs through without an `AssertionError` and reports "ACCEPTANCE PASSED":
+500 unique rows, price as float (12 NaN, median about 71.6 EUR, maximum below 500 EUR), 5 normalised cities, age at most 100 (26 NaN), date as `datetime64` without gaps.
+
+## Solution
+
+Fully executed reference solution including all justifications for the decisions: [`solution/solution.ipynb`](solution/solution.ipynb).
+
+---
+---
+
+# Projekt 02 (medium) — Einen schmutzigen Datensatz retten (deutsche Fassung)
 
 **Format:** Jupyter Notebook (`data_cleaning.ipynb`) + Daten-Generator (`generate_data.py`).
 **Warum dieses Format?** Bereinigung ist iteratives Sichten und Prüfen mit ständigem Blick auf Zwischenergebnisse — Notebook-Territorium. Der Generator ist bewusst ein separates, lesbares Skript: Du sollst sehen (können), wie die Daten entstehen.

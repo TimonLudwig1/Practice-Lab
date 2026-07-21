@@ -1,4 +1,40 @@
-# Projekt 01 (basic) — pandas-Grundlagen mit echten Pinguinen
+# Project 01 (basic) — pandas basics with real penguins
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Format:** Jupyter notebook (`pandas_basics.ipynb`).
+**Why this format?** You only learn pandas by trying things directly with an immediate look at the tables and plots — that is exactly what notebooks are for.
+
+**Data: real.** The **Palmer Penguins** data set (344 penguins, 3 species, Antarctic research data 2007–2009) — directly available via `seaborn.load_dataset("penguins")` (downloaded automatically on first call and cached, internet required). Real data chosen deliberately: the data set has genuine missing values and genuine group structure, yet is small and manageable.
+
+## Goal
+
+Apply the core pandas tools confidently: first inspection (`head`/`info`/`describe`), counting missing values, boolean filters, vectorised new columns, `groupby` aggregation, the three basic plots (histogram, box plot, scatter) and a correlation — each with an interpretation.
+
+## Prior knowledge
+
+- Sections 1.3–1.5 and 2.3–2.4 of the module script
+- Python basics; notebook handling from module 01
+
+## Tasks
+
+1. Open the notebook and work through it from the top; fill in the `TODO` cells yourself.
+2. Every mini check below a task must print `True`.
+3. Do not skip the questions below the plots — a figure without a statement is decoration (script 2.5).
+
+## What should work in the end
+
+- All mini checks `True` (19 missing values; 124 Gentoo; 61 penguins over 5 kg; Gentoo as the heaviest species; $r > 0.85$).
+- You can explain the bimodal mass distribution in the histogram using the `groupby` result (Gentoo is markedly heavier than the other two species).
+
+## Solution
+
+Fully executed reference solution with all outputs and plots: [`solution/solution.ipynb`](solution/solution.ipynb).
+
+---
+---
+
+# Projekt 01 (basic) — pandas-Grundlagen mit echten Pinguinen (deutsche Fassung)
 
 **Format:** Jupyter Notebook (`pandas_basics.ipynb`).
 **Warum dieses Format?** pandas lernt man nur durch direktes Ausprobieren mit sofortigem Blick auf die Tabellen und Plots — genau dafür sind Notebooks da.

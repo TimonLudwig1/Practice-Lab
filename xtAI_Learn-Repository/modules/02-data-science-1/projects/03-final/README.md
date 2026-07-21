@@ -1,4 +1,49 @@
-# Projekt 03 (final) — EDA: Wer fährt wann Fahrrad, und warum?
+# Project 03 (final) — EDA: who cycles when, and why?
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Format:** Jupyter notebook (`bikesharing_eda.ipynb`) + download script.
+**Why this format?** An EDA *is* a notebook: question → code → figure → sentence of interpretation, in one document that you can hand to someone at the end.
+
+**Data: real.** The **bike sharing** data set (UCI ML Repository): 17,379 real hourly records of the Capital Bikeshare system in Washington D.C. 2011–2012, including weather and calendar attributes. Real data are the core of the practical connection here — the data set has exactly the quirks on which you really learn EDA: normalised columns that you only understand from the documentation (`temp*41` = degrees Celsius!), 165 hidden missing hours and a weather category with only n = 3.
+
+## Goal
+
+A complete EDA following the workflow from script 2.5, with a business scenario: management wants to know what the demand depends on. Besides the analyses, the result is a **five-point conclusion in everyday language**.
+
+Core findings that you will work out (yourself):
+
+- the commuter double peak (8 a.m. / 5–6 p.m.) on working days vs. the afternoon hump at the weekend,
+- registered users = commuters, casual users = leisure,
+- a temperature effect of r about 0.41 at the hourly level, but 0.63 at the daily level — the aggregation lesson,
+- "no NaN" is not "nothing missing": 165 complete hours are missing as rows.
+
+## Prior knowledge
+
+- The module script in full (especially 2.4, 2.5, 3.2)
+- Projects 01 and 02 of this module
+
+## Tasks
+
+1. Fetch the data: `python datasets/download_data.py` (the CSV files are not committed).
+2. Work through the notebook. The guiding questions are given, but you write the code **entirely yourself** (hints are given as prose in the tasks; the code cells are empty). **Every figure gets a sentence of interpretation** — the reference interpretations are given below the cells for comparison.
+3. Finally, formulate the conclusion for management (reference conclusion can be unfolded).
+
+## What should work in the end
+
+- The quality check reproduced: 0 NaN, 0 duplicates, `cnt` consistency, **165 missing hours**.
+- A daily-profile plot with a double peak (working days) vs. a hump (days off).
+- r(temp, cnt) about **0.405** hourly and about **0.627** daily.
+- A five-point conclusion of your own.
+
+## Solution
+
+Fully executed reference solution with all plots and interpretations: [`solution/solution.ipynb`](solution/solution.ipynb).
+
+---
+---
+
+# Projekt 03 (final) — EDA: Wer fährt wann Fahrrad, und warum? (deutsche Fassung)
 
 **Format:** Jupyter Notebook (`bikesharing_eda.ipynb`) + Download-Skript.
 **Warum dieses Format?** Eine EDA *ist* ein Notebook: Frage → Code → Grafik → Interpretationssatz, in einem Dokument, das man am Ende jemandem geben kann.
