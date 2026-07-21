@@ -51,8 +51,13 @@ Der Nutzer arbeitet mit teuren Modellen. **Token-Effizienz ist oberstes Gebot.**
 4. **Inhalte gehören in Dateien, nicht in Chat-Antworten.**
 5. **Didaktik:** Jedes Theorie-Skript folgt der Struktur Intuition → Simulation →
    Formalisierung. Erklärend statt auflistend — Ziel ist Verständnis.
-6. **Sprache:** Dokumentation auf Deutsch mit englischen Fachbegriffen, Code und
-   Docstrings auf Englisch, keine Emojis.
+6. **Sprache (verbindlich):** Jede neu erstellte oder bearbeitete erklärende
+   Markdown-Datei, insbesondere `THEORIE.md` und `README.md`, enthält zuerst die
+   vollständige englische Fassung und darunter die vollständige deutsche
+   Übersetzung. Sämtlicher Text in Code und Notebooks ist ausschließlich
+   Englisch; das umfasst Bezeichner, Kommentare, Docstrings, String-Literale,
+   Fehlermeldungen, Ausgaben, Plot-Beschriftungen und Markdown-Zellen. Keine
+   Emojis.
 7. **Code läuft:** Projekte enthalten getesteten Code; Datensätze werden mit
    fixem Seed generiert (`data/generate_data.py`), Begründung als Kommentar.
 8. **Bei Unsicherheit über Tiefe:** lieber gründlich und einsteigerfreundlich als

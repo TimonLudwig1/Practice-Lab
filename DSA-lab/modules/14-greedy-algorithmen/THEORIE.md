@@ -1,3 +1,1182 @@
+# Module 14: Greedy Algorithms
+
+A greedy algorithm makes the locally most attractive feasible decision at every
+step and never revisits it. This sounds simple, which is exactly why greedy
+algorithms are dangerous: a plausible local rule is not yet proof of global
+optimality.
+
+This module therefore treats greedy design as two connected tasks:
+
+1. construct a local selection rule,
+2. prove or disprove that it is always optimal.
+
+## Learning objectives
+
+After this module, you can:
+
+- distinguish candidates, feasibility, the selection rule, and the objective,
+- explain the greedy-choice property and optimal substructure,
+- construct counterexamples systematically,
+- implement and simulate earliest-finish-time interval scheduling,
+- justify correctness with an exchange argument,
+- run greedy coin change and demonstrate its limits,
+- solve fractional knapsack optimally by value density,
+- build a Huffman tree with a min-heap,
+- encode and decode text with prefix-free Huffman codes,
+- distinguish greedy algorithms from dynamic programming,
+- assess whether a greedy strategy is suitable for a new problem.
+
+---
+
+# Part I — The greedy way of thinking
+
+## 1. Four components
+
+Almost every greedy problem can be described with four questions:
+
+1. **Candidates:** Which elements could be selected?
+2. **Feasibility:** Which choice preserves all constraints?
+3. **Local priority:** Which feasible candidate currently looks best?
+4. **Objective:** Which global quantity should be optimized?
+
+Interval scheduling provides a useful example:
+
+| Component | Meaning |
+|---|---|
+| candidates | time intervals |
+| feasible | does not overlap any selected interval |
+| local priority | earliest finish time |
+| global objective | maximum number of compatible intervals |
+
+The local priority must fit the global objective. “Shortest duration” sounds
+reasonable for scheduling, but it is not always correct.
+
+## 2. The common pattern
+
+```text
+sort or prioritize the candidates
+solution = empty
+
+for candidate in greedy order:
+    if candidate is feasible:
+        add candidate permanently
+
+return solution
+```
+
+Greedy algorithms often use:
+
+- sorting by a key,
+- a min-heap or max-heap,
+- a sweep line,
+- Union-Find for fast feasibility checks,
+- a set or counter for resources already in use.
+
+## 3. Irrevocability
+
+Backtracking tries a choice and reverses it if necessary. Dynamic programming
+compares several partial decisions. Greedy reasoning says:
+
+> This choice is safe. I will never need to reconsider it.
+
+That claim requires justification.
+
+## 4. Two structural properties
+
+### Greedy-choice property
+
+At least one globally optimal solution begins with the greedy choice. The local
+choice therefore does not eliminate every optimal solution.
+
+### Optimal substructure
+
+After the first safe choice, a smaller problem remains, and an optimal solution
+to that subproblem is part of an optimal solution to the whole problem.
+
+Optimal substructure alone is insufficient. Many dynamic-programming problems
+have it without having a safe greedy choice.
+
+## 5. Runtime versus correctness
+
+The analysis contains two independent questions:
+
+- **Is the result optimal?** Answer with a proof or counterexample.
+- **How expensive is the algorithm?** Usually sorting in `O(n log n)` followed
+  by a linear scan.
+
+An `O(n log n)` algorithm can compute the wrong result very quickly.
+
+---
+
+# Part II — How to prove a greedy algorithm
+
+## 6. Exchange argument
+
+The most common proof pattern is:
+
+1. Consider any optimal solution `OPT`.
+2. If `OPT` already begins with the greedy choice, there is nothing to change.
+3. Otherwise, exchange the first choice in `OPT` for the greedy choice.
+4. Show that the modified solution remains feasible and is no worse.
+5. Repeat the argument for the remaining subproblem.
+
+The exchanges gradually transform an optimal solution into the greedy solution
+without reducing its value.
+
+## 7. “Stays ahead”
+
+Show after every step that greedy is at least as far ahead as every alternative.
+For example, after selecting `k` intervals, the greedy schedule finishes no
+later than any other compatible schedule with `k` intervals.
+
+## 8. Cut and cycle arguments
+
+For minimum spanning trees, the lightest edge across a cut is safe. This is also
+greedy reasoning. Kruskal and Prim from Module 13 are greedy algorithms:
+
+- Kruskal selects the cheapest edge that does not create a cycle.
+- Prim selects the cheapest edge leaving the current tree.
+
+## 9. Counterexamples are complete disproofs
+
+One input on which a strategy is worse than a feasible alternative is enough to
+disprove the claim that the strategy is always optimal.
+
+A good counterexample is:
+
+- small,
+- completely verifiable by hand,
+- tailored to the weakness of the selection rule,
+- documented with both the greedy and better result.
+
+## 10. Constructing a counterexample systematically
+
+Ask which future opportunity the local choice could block.
+
+1. Force greedy to choose an attractive candidate.
+2. Place two or more jointly better candidates behind it.
+3. Ensure that the first choice excludes that combination.
+4. Compare the objective value, not intuition.
+
+This pattern occurs in interval, coin, 0/1-knapsack, and scheduling problems.
+
+---
+
+# Part III — Interval scheduling
+
+## 11. Problem
+
+Given half-open intervals `[start, end)`, find a maximum-size subset without
+overlap. An interval ending at 5 is compatible with one beginning at 5.
+
+```python
+from dataclasses import dataclass
+from itertools import combinations, count
+from collections import Counter
+import heapq
+
+@dataclass(frozen=True)
+class Interval:
+    name: str
+    start: int
+    end: int
+
+    def __post_init__(self):
+        if self.end <= self.start:
+            raise ValueError("An interval requires end > start")
+
+    @property
+    def duration(self):
+        return self.end - self.start
+
+intervals = (
+    Interval("A", 1, 4),
+    Interval("B", 3, 5),
+    Interval("C", 0, 6),
+    Interval("D", 5, 7),
+    Interval("E", 3, 9),
+    Interval("F", 5, 9),
+    Interval("G", 6, 10),
+    Interval("H", 8, 11),
+    Interval("I", 8, 12),
+    Interval("J", 2, 14),
+    Interval("K", 12, 16),
+)
+```
+
+## 12. The correct greedy rule
+
+> Always choose the compatible interval with the earliest finish time.
+
+Why not earliest start? A long interval that starts very early may block the
+entire timeline. The earliest finish leaves as much room as possible for the
+remaining intervals.
+
+```python
+def interval_scheduling(candidates):
+    ordered = sorted(candidates, key=lambda interval: (interval.end, interval.start))
+    selected = []
+    current_end = float("-inf")
+    trace = []
+
+    for interval in ordered:
+        if interval.start >= current_end:
+            selected.append(interval)
+            current_end = interval.end
+            trace.append(("select", interval.name, current_end))
+        else:
+            trace.append(("skip", interval.name, current_end))
+    return tuple(selected), tuple(trace)
+
+schedule, schedule_trace = interval_scheduling(intervals)
+assert tuple(interval.name for interval in schedule) == ("A", "D", "H", "K")
+```
+
+## 13. Simulation
+
+Sorted by finish time:
+
+```text
+A(1,4), B(3,5), C(0,6), D(5,7), E(3,9), F(5,9),
+G(6,10), H(8,11), I(8,12), J(2,14), K(12,16)
+```
+
+| Candidate | Compatible? | Decision | Current end |
+|---|---|---|---:|
+| A [1,4) | yes | select | 4 |
+| B [3,5) | no | skip | 4 |
+| C [0,6) | no | skip | 4 |
+| D [5,7) | yes | select | 7 |
+| E [3,9) | no | skip | 7 |
+| F [5,9) | no | skip | 7 |
+| G [6,10) | no | skip | 7 |
+| H [8,11) | yes | select | 11 |
+| I [8,12) | no | skip | 11 |
+| J [2,14) | no | skip | 11 |
+| K [12,16) | yes | select | 16 |
+
+The result contains four intervals.
+
+## 14. A brute-force reference for small inputs
+
+An exact reference implementation helps test greedy on many small cases. It
+does not prove the strategy in general, but it can discover counterexamples.
+
+```python
+def intervals_are_compatible(candidate_schedule):
+    ordered = sorted(candidate_schedule, key=lambda interval: interval.start)
+    return all(
+        first.end <= second.start
+        for first, second in zip(ordered, ordered[1:])
+    )
+
+def optimal_interval_schedule_bruteforce(candidates):
+    best = ()
+    for size in range(len(candidates) + 1):
+        for subset in combinations(candidates, size):
+            if intervals_are_compatible(subset) and len(subset) > len(best):
+                best = subset
+    return best
+
+optimal_schedule = optimal_interval_schedule_bruteforce(intervals)
+assert len(schedule) == len(optimal_schedule) == 4
+assert intervals_are_compatible(schedule)
+```
+
+## 15. Exchange argument for earliest finish
+
+Let `G` be the interval with the earliest finish. An optimal solution starts
+with an interval `O`.
+
+- `end(G) <= end(O)` by definition.
+- Replace `O` with `G`.
+- Every later interval that could start after `O` can also start after `G`,
+  because `G` ends no later.
+- The number of selected intervals remains unchanged.
+
+Thus, an optimal solution beginning with `G` exists. The intervals starting
+after `G` form another instance of the same problem. Induction completes the
+proof.
+
+## 16. Incorrect rule: earliest start
+
+```python
+earliest_start_counterexample = (
+    Interval("long", 0, 10),
+    Interval("short-1", 1, 2),
+    Interval("short-2", 2, 3),
+    Interval("short-3", 3, 4),
+)
+
+def schedule_by_key(candidates, key):
+    selected = []
+    current_end = float("-inf")
+    for interval in sorted(candidates, key=key):
+        if interval.start >= current_end:
+            selected.append(interval)
+            current_end = interval.end
+    return tuple(selected)
+
+wrong_start = schedule_by_key(
+    earliest_start_counterexample,
+    key=lambda interval: interval.start,
+)
+right_start, _ = interval_scheduling(earliest_start_counterexample)
+assert len(wrong_start) == 1
+assert len(right_start) == 3
+```
+
+## 17. Incorrect rule: shortest duration
+
+```python
+shortest_duration_counterexample = (
+    Interval("left", 0, 3),
+    Interval("tempting", 2, 4),
+    Interval("right", 3, 6),
+)
+wrong_duration = schedule_by_key(
+    shortest_duration_counterexample,
+    key=lambda interval: interval.duration,
+)
+right_duration, _ = interval_scheduling(shortest_duration_counterexample)
+assert tuple(interval.name for interval in wrong_duration) == ("tempting",)
+assert tuple(interval.name for interval in right_duration) == ("left", "right")
+```
+
+## 18. Weighted intervals
+
+If intervals have different values and the goal is to maximize **total value**,
+earliest finish is no longer optimal in general. One valuable interval can be
+better than several cheap ones. Weighted interval scheduling is a classic
+dynamic-programming problem.
+
+## 19. Complexity
+
+- Sorting: `O(n log n)`
+- Selection scan: `O(n)`
+- Auxiliary space: `O(n)` for the sorted copy and result
+
+If the input is already sorted by finish time, `O(n)` is sufficient.
+
+---
+
+# Part IV — Coin change
+
+## 20. The natural greedy rule
+
+Repeatedly choose the largest coin that does not exceed the remaining amount.
+
+```python
+def greedy_change(coins, amount):
+    if amount < 0:
+        raise ValueError("Amount must be nonnegative")
+    if any(coin <= 0 for coin in coins):
+        raise ValueError("Coins must be positive")
+
+    remaining = amount
+    chosen = []
+    for coin in sorted(set(coins), reverse=True):
+        count_for_coin, remaining = divmod(remaining, coin)
+        chosen.extend([coin] * count_for_coin)
+    return tuple(chosen), remaining
+
+euro_coins = (1, 2, 5, 10, 20, 50)
+euro_change, euro_rest = greedy_change(euro_coins, 87)
+assert euro_change == (50, 20, 10, 5, 2)
+assert euro_rest == 0
+```
+
+For common euro denominations, this rule returns a minimum number of coins.
+That success depends on the structure of the coin system, not on the greedy
+scheme alone.
+
+## 21. Counterexample `{1, 3, 4}` for amount 6
+
+Greedy chooses:
+
+```text
+4 + 1 + 1 = 6    three coins
+```
+
+The optimum is:
+
+```text
+3 + 3 = 6        two coins
+```
+
+```python
+def optimal_change_dp(coins, amount):
+    if amount < 0:
+        raise ValueError("Amount must be nonnegative")
+    usable = tuple(sorted(set(coins), reverse=True))
+    best = [None] * (amount + 1)
+    best[0] = ()
+
+    for subtotal in range(amount + 1):
+        if best[subtotal] is None:
+            continue
+        for coin in usable:
+            target = subtotal + coin
+            if target <= amount:
+                candidate = best[subtotal] + (coin,)
+                if best[target] is None or len(candidate) < len(best[target]):
+                    best[target] = candidate
+    return best[amount]
+
+bad_greedy, bad_rest = greedy_change((1, 3, 4), 6)
+bad_optimal = optimal_change_dp((1, 3, 4), 6)
+assert bad_rest == 0
+assert bad_greedy == (4, 1, 1)
+assert bad_optimal == (3, 3)
+assert len(bad_greedy) > len(bad_optimal)
+```
+
+This counterexample disproves the statement that the largest fitting coin is
+always safe.
+
+## 22. Canonical coin systems
+
+A coin system is canonical if greedy returns a minimum number of coins for every
+representable amount. Testing many amounts builds confidence, but without an
+additional bound it is not a general proof.
+
+```python
+def first_change_counterexample(coins, maximum):
+    for amount in range(maximum + 1):
+        greedy, rest = greedy_change(coins, amount)
+        optimal = optimal_change_dp(coins, amount)
+        if rest == 0 and optimal is not None and len(greedy) != len(optimal):
+            return amount, greedy, optimal
+    return None
+
+assert first_change_counterexample(euro_coins, 200) is None
+assert first_change_counterexample((1, 3, 4), 20) == (
+    6,
+    (4, 1, 1),
+    (3, 3),
+)
+```
+
+## 23. Why greedy fails here
+
+Coin 4 looks locally best, but it leaves amount 2, which needs two unit coins.
+Greedy does not account for the future remainder. Dynamic programming compares
+the best solutions for all smaller amounts.
+
+## 24. Unrepresentable amounts
+
+Without a unit coin, a remainder may remain. A robust API must not report that
+case as a complete solution.
+
+```python
+incomplete_change, incomplete_rest = greedy_change((4, 6), 7)
+assert incomplete_change == (6,)
+assert incomplete_rest == 1
+assert optimal_change_dp((4, 6), 7) is None
+```
+
+---
+
+# Part V — Fractional knapsack
+
+## 25. Problem
+
+Each item has weight `w` and value `v`; the knapsack has capacity `C`. Items may
+be split. The goal is to maximize total value.
+
+The key measure is value density:
+
+```text
+ratio = value / weight
+```
+
+## 26. Greedy by value density
+
+```python
+@dataclass(frozen=True)
+class Item:
+    name: str
+    weight: float
+    value: float
+
+    def __post_init__(self):
+        if self.weight <= 0 or self.value < 0:
+            raise ValueError("Weight must be positive and value nonnegative")
+
+    @property
+    def density(self):
+        return self.value / self.weight
+
+def fractional_knapsack(items, capacity):
+    if capacity < 0:
+        raise ValueError("Capacity must be nonnegative")
+    remaining = capacity
+    total_value = 0.0
+    selection = []
+
+    for item in sorted(items, key=lambda candidate: candidate.density, reverse=True):
+        if remaining == 0:
+            break
+        fraction = min(1.0, remaining / item.weight)
+        selection.append((item, fraction))
+        total_value += fraction * item.value
+        remaining -= fraction * item.weight
+    return total_value, tuple(selection), remaining
+
+knapsack_items = (
+    Item("A", 10, 60),
+    Item("B", 20, 100),
+    Item("C", 30, 120),
+)
+fractional_value, fractional_selection, unused_capacity = fractional_knapsack(
+    knapsack_items, 50
+)
+assert fractional_value == 240
+assert tuple((item.name, fraction) for item, fraction in fractional_selection) == (
+    ("A", 1.0),
+    ("B", 1.0),
+    ("C", 2 / 3),
+)
+assert unused_capacity == 0
+```
+
+## 27. Simulation
+
+| Item | Weight | Value | Density | Fraction | Value contribution |
+|---|---:|---:|---:|---:|---:|
+| A | 10 | 60 | 6 | 100% | 60 |
+| B | 20 | 100 | 5 | 100% | 100 |
+| C | 30 | 120 | 4 | 66.7% | 80 |
+| **Total** | **50** | | | | **240** |
+
+## 28. Exchange argument
+
+Suppose a solution uses weight from a lower-density item while a higher-density
+item is not yet fully used. Exchange a small amount of weight `δ`:
+
+- remove value `δ * lower_density`,
+- add value `δ * higher_density`,
+- keep total weight unchanged,
+- never reduce value, and increase it when the density is strictly higher.
+
+Every optimal solution can therefore be transformed into density order.
+Divisibility is the essential property.
+
+## 29. Why 0/1 knapsack is different
+
+Without divisibility, the locally best ratio can block a globally better
+combination. In this example, the fractional optimum is 240, but the best
+integral combination is B+C with value 220.
+
+```python
+def zero_one_knapsack_bruteforce(items, capacity):
+    best_value = 0
+    best_subset = ()
+    for size in range(len(items) + 1):
+        for subset in combinations(items, size):
+            weight = sum(item.weight for item in subset)
+            value = sum(item.value for item in subset)
+            if weight <= capacity and value > best_value:
+                best_value = value
+                best_subset = subset
+    return best_value, best_subset
+
+integer_value, integer_selection = zero_one_knapsack_bruteforce(
+    knapsack_items, 50
+)
+assert integer_value == 220
+assert {item.name for item in integer_selection} == {"B", "C"}
+assert integer_value < fractional_value
+```
+
+In general, 0/1 knapsack requires dynamic programming, branch-and-bound, or an
+approximation; pure ratio-greedy does not guarantee an optimum.
+
+## 30. Complexity
+
+- Density sorting: `O(n log n)`
+- Filling: `O(n)`
+- Total: `O(n log n)`
+
+---
+
+# Part VI — Huffman coding
+
+## 31. Objective
+
+Huffman assigns short bit codes to frequent symbols and longer codes to rare
+symbols. The codes are prefix-free: no valid code is the prefix of another.
+Therefore, a bit stream can be decoded unambiguously from left to right.
+
+The objective is to minimize weighted code length:
+
+```text
+sum over symbols: frequency(symbol) * code_length(symbol)
+```
+
+## 32. The greedy choice
+
+> Repeatedly combine the two subtrees with the smallest frequencies.
+
+The new parent receives the sum of both frequencies and returns to the min-heap.
+The final remaining node is the root.
+
+## 33. Data structure and tree construction
+
+```python
+@dataclass(frozen=True)
+class HuffmanNode:
+    frequency: int
+    symbol: str | None = None
+    left: "HuffmanNode | None" = None
+    right: "HuffmanNode | None" = None
+
+    @property
+    def is_leaf(self):
+        return self.symbol is not None
+
+def build_huffman_tree(frequencies):
+    if not frequencies:
+        raise ValueError("At least one symbol is required")
+    if any(frequency <= 0 for frequency in frequencies.values()):
+        raise ValueError("Frequencies must be positive")
+
+    order = count()
+    heap = [
+        (frequency, next(order), HuffmanNode(frequency, symbol))
+        for symbol, frequency in sorted(frequencies.items())
+    ]
+    heapq.heapify(heap)
+    trace = []
+
+    while len(heap) > 1:
+        first_frequency, _, first = heapq.heappop(heap)
+        second_frequency, _, second = heapq.heappop(heap)
+        parent_frequency = first_frequency + second_frequency
+        parent = HuffmanNode(parent_frequency, None, first, second)
+        heapq.heappush(heap, (parent_frequency, next(order), parent))
+        trace.append((first_frequency, second_frequency, parent_frequency))
+    return heap[0][2], tuple(trace)
+
+classic_frequencies = {
+    "A": 5,
+    "B": 9,
+    "C": 12,
+    "D": 13,
+    "E": 16,
+    "F": 45,
+}
+huffman_root, huffman_trace = build_huffman_tree(classic_frequencies)
+assert huffman_root.frequency == 100
+assert huffman_trace == (
+    (5, 9, 14),
+    (12, 13, 25),
+    (14, 16, 30),
+    (25, 30, 55),
+    (45, 55, 100),
+)
+```
+
+## 34. Reading codes from the tree
+
+A left edge represents `0`; a right edge represents `1`. With only one symbol,
+use `0` so repeated occurrences still produce an explicit bit stream.
+
+```python
+def huffman_codes(root):
+    codes = {}
+
+    def visit(node, prefix):
+        if node.is_leaf:
+            codes[node.symbol] = prefix or "0"
+            return
+        if node.left is None or node.right is None:
+            raise ValueError("Invalid Huffman tree")
+        visit(node.left, prefix + "0")
+        visit(node.right, prefix + "1")
+
+    visit(root, "")
+    return codes
+
+classic_codes = huffman_codes(huffman_root)
+assert classic_codes == {
+    "F": "0",
+    "C": "100",
+    "D": "101",
+    "A": "1100",
+    "B": "1101",
+    "E": "111",
+}
+```
+
+Different tie-breakers may produce different but equally optimal codes when
+frequencies are equal.
+
+## 35. Checking prefix freedom
+
+```python
+def is_prefix_free(codes):
+    values = tuple(codes.values())
+    return all(
+        first == second or not second.startswith(first)
+        for first in values
+        for second in values
+    )
+
+assert is_prefix_free(classic_codes)
+```
+
+## 36. Encoding and decoding
+
+```python
+def huffman_encode(text, codes):
+    try:
+        return "".join(codes[symbol] for symbol in text)
+    except KeyError as error:
+        raise ValueError(f"Unknown symbol: {error.args[0]!r}") from error
+
+def huffman_decode(bits, root):
+    if root.is_leaf:
+        if any(bit != "0" for bit in bits):
+            raise ValueError("Invalid bit stream")
+        return root.symbol * len(bits)
+
+    decoded = []
+    node = root
+    for bit in bits:
+        if bit not in "01":
+            raise ValueError("Bit stream may contain only 0 and 1")
+        node = node.left if bit == "0" else node.right
+        if node is None:
+            raise ValueError("Bit stream leaves the Huffman tree")
+        if node.is_leaf:
+            decoded.append(node.symbol)
+            node = root
+    if node is not root:
+        raise ValueError("Bit stream ends inside a code")
+    return "".join(decoded)
+
+sample_text = "FACE"
+encoded_sample = huffman_encode(sample_text, classic_codes)
+assert huffman_decode(encoded_sample, huffman_root) == sample_text
+```
+
+## 37. Compression effect
+
+A fixed code for six symbols needs at least three bits per symbol. One hundred
+symbol occurrences would therefore need 300 bits. Huffman needs:
+
+```python
+huffman_bits = sum(
+    frequency * len(classic_codes[symbol])
+    for symbol, frequency in classic_frequencies.items()
+)
+fixed_width_bits = sum(classic_frequencies.values()) * 3
+assert huffman_bits == 224
+assert fixed_width_bits == 300
+assert huffman_bits / fixed_width_bits < 0.75
+```
+
+This calculation ignores storage for the tree or codebook. For very short text,
+the header can consume the entire gain.
+
+## 38. Why are the two smallest frequencies siblings?
+
+In an optimal prefix tree, the two rarest symbols can be placed as siblings at
+maximum depth. If more frequent symbols occupy those positions, exchanging them
+with rarer ones cannot increase weighted length.
+
+Combining the two siblings into a pseudo-symbol with their total frequency
+leaves a smaller Huffman problem. This establishes the greedy-choice property
+and optimal substructure.
+
+## 39. Complexity
+
+For `k` distinct symbols and text length `n`:
+
+- Frequency analysis: `O(n)`
+- `k-1` heap merges: `O(k log k)`
+- Code generation: `O(k)` plus total code lengths
+- Text encoding: `O(n)` dictionary lookups
+- Space: `O(k)` for tree and codebook, plus output bits
+
+---
+
+# Part VII — Meeting rooms as another greedy pattern
+
+## 40. Minimum number of rooms required simultaneously
+
+Sort meetings by start time. A min-heap stores the end times of occupied rooms.
+If the earliest room is free in time, reuse it; otherwise, open a new room.
+
+```python
+def minimum_meeting_rooms(meetings):
+    active_end_times = []
+    maximum_rooms = 0
+    trace = []
+
+    for meeting in sorted(meetings, key=lambda interval: interval.start):
+        while active_end_times and active_end_times[0] <= meeting.start:
+            freed_at = heapq.heappop(active_end_times)
+            trace.append(("release", freed_at, meeting.start))
+        heapq.heappush(active_end_times, meeting.end)
+        maximum_rooms = max(maximum_rooms, len(active_end_times))
+        trace.append(("allocate", meeting.name, tuple(sorted(active_end_times))))
+    return maximum_rooms, tuple(trace)
+
+meeting_sample = (
+    Interval("M1", 0, 30),
+    Interval("M2", 5, 10),
+    Interval("M3", 15, 20),
+    Interval("M4", 20, 25),
+)
+room_count, room_trace = minimum_meeting_rooms(meeting_sample)
+assert room_count == 2
+```
+
+The maximum heap size equals the maximum overlap, which is a lower bound that
+the algorithm reaches exactly. Project 03 turns this count into concrete room
+assignments.
+
+## 41. Selection versus resource demand
+
+Do not confuse these objectives:
+
+- Interval scheduling selects the maximum number of meetings for **one** room.
+- Meeting rooms schedules **all** meetings with the minimum number of rooms.
+
+The interval data looks similar, but the objective and greedy rule differ.
+
+---
+
+# Part VIII — Greedy versus dynamic programming
+
+## 42. Similarities
+
+Both often exploit optimal substructure and build solutions step by step. The
+key difference is how many alternatives remain available.
+
+## 43. Differences
+
+| Aspect | Greedy | Dynamic programming |
+|---|---|---|
+| decision | locally best and final | compare multiple alternatives |
+| revise earlier choice | no | indirectly through state comparison |
+| typical runtime | often `O(n log n)` | often multidimensional or pseudopolynomial |
+| memory | usually small | state table or memoization |
+| proof obligation | local choice must be safe | recurrence must cover every case |
+| example | fractional knapsack | 0/1 knapsack |
+
+## 44. Related problems, different guarantees
+
+| Problem | Greedy? | Reason or alternative |
+|---|---|---|
+| unweighted interval scheduling | yes | earliest finish plus exchange |
+| weighted interval scheduling | generally no | DP over predecessor intervals |
+| fractional knapsack | yes | density plus small exchanges |
+| 0/1 knapsack | generally no | DP or branch-and-bound |
+| coin change with arbitrary coins | generally no | DP over amounts |
+| Huffman coding | yes | merge the two smallest frequencies |
+| shortest path with nonnegative edges | yes | Dijkstra |
+| shortest path with negative edges | not Dijkstra | Bellman–Ford |
+
+## 45. Warning sign: a choice strongly changes the remainder
+
+If a local choice produces a complicated remaining state and no exchangeability
+is visible, dynamic programming or search is more promising. The remaining
+amount matters in coin change; remaining capacity and combinations of whole
+items matter in 0/1 knapsack.
+
+---
+
+# Part IX — Recognizing greedy suitability
+
+## 46. Positive signals
+
+- A clear local ranking exists.
+- The local choice can replace the first choice of every optimal solution.
+- Only the remaining set matters, not the detailed history.
+- Feasible sets have a strong exchange structure.
+- A cut, prefix, or dominance argument seems natural.
+- The structure resembles intervals, MSTs, Huffman, or nonnegative shortest paths.
+
+## 47. Negative signals
+
+- One choice creates many qualitatively different remaining states.
+- Parts are indivisible and combinations matter.
+- Local measures ignore a critical future remainder.
+- Small input changes break the strategy.
+- Several plausible rules disagree, but no exchange argument works.
+- A small brute-force program quickly finds counterexamples.
+
+## 48. Evaluation process for a new strategy
+
+```text
+1. Specify the objective and constraints.
+2. State the local rule precisely.
+3. Test small instances by hand.
+4. Construct or search for counterexamples.
+5. Justify the greedy-choice property.
+6. Identify optimal substructure.
+7. Formulate a proof: exchange, stays ahead, cut, or contradiction.
+8. Only then build the optimized implementation.
+```
+
+## 49. Brute force as a strategy tester
+
+For small inputs, compare a proposed greedy rule against an exact reference.
+This does not replace proof, but it is an excellent counterexample generator.
+
+```python
+def verify_interval_greedy_on_instance(candidates):
+    greedy, _ = interval_scheduling(candidates)
+    optimal = optimal_interval_schedule_bruteforce(candidates)
+    return len(greedy) == len(optimal)
+
+assert verify_interval_greedy_on_instance(intervals)
+assert verify_interval_greedy_on_instance(earliest_start_counterexample)
+assert verify_interval_greedy_on_instance(shortest_duration_counterexample)
+```
+
+---
+
+# Part X — Common pitfalls
+
+## 50. “Greedy is fast, so I will use greedy”
+
+Runtime does not guarantee correctness. Analyze the structure first.
+
+## 51. Describing the strategy imprecisely
+
+“Take the best element” is not a rule. Best by which key? How are ties resolved?
+When is a candidate feasible?
+
+## 52. Treating a few successful examples as proof
+
+Tests can reveal errors, but cannot establish universal correctness alone.
+
+## 53. Confusing objectives
+
+Maximum count, maximum value, minimum rooms, and minimum total duration are
+different problems, even when they use identical input data.
+
+## 54. Ignoring ties
+
+Tie-breaking affects reproducibility. A correct algorithm should remain optimal
+for every allowed tie-breaker or specify the rule explicitly.
+
+## 55. Mutating the input
+
+`list.sort()` changes its input. Educational and library code should often use
+`sorted()` to create a copy.
+
+## 56. Confusing fractional and 0/1 variants
+
+Divisibility changes the mathematical structure completely.
+
+## 57. Forgetting Huffman codebook costs
+
+Compression measurements must include the header, tree, or codebook, especially
+for short texts.
+
+## 58. Invalid edge cases
+
+- an empty candidate collection,
+- intervals with `end <= start`,
+- negative capacity,
+- nonpositive coins or weights,
+- an unrepresentable amount,
+- text containing only one symbol,
+- an unknown symbol during encoding,
+- an incomplete bit code during decoding.
+
+---
+
+# Part XI — Correctness and testing
+
+## 59. Interval-scheduling invariants
+
+- Selected intervals are pairwise compatible.
+- Their finish times increase.
+- After each choice, all earlier-finishing candidates have been considered.
+- The result is maximal under the strategy; the exchange argument additionally
+  proves optimality.
+
+```python
+assert intervals_are_compatible(schedule)
+assert [interval.end for interval in schedule] == sorted(
+    interval.end for interval in schedule
+)
+assert len(schedule_trace) == len(intervals)
+```
+
+## 60. Fractional-knapsack invariants
+
+- Every fraction lies in `[0,1]`.
+- Total weight does not exceed capacity.
+- Positive fractions occur in nonincreasing density order.
+- At most one item is selected partially.
+
+```python
+fractions = [fraction for _, fraction in fractional_selection]
+densities = [item.density for item, _ in fractional_selection]
+used_weight = sum(
+    item.weight * fraction for item, fraction in fractional_selection
+)
+assert all(0 <= fraction <= 1 for fraction in fractions)
+assert densities == sorted(densities, reverse=True)
+assert sum(0 < fraction < 1 for fraction in fractions) <= 1
+assert used_weight <= 50
+```
+
+## 61. Huffman invariants
+
+- Root frequency equals the sum of all frequencies.
+- Every internal node has two children.
+- The codebook contains exactly all symbols.
+- Codes are prefix-free.
+- `decode(encode(text)) == text`.
+- Weighted bit length agrees with the codebook.
+
+```python
+assert huffman_root.frequency == sum(classic_frequencies.values())
+assert set(classic_codes) == set(classic_frequencies)
+assert is_prefix_free(classic_codes)
+assert huffman_decode(
+    huffman_encode("ABCDEF", classic_codes), huffman_root
+) == "ABCDEF"
+```
+
+## 62. Property tests
+
+Strong automated checks include:
+
+- random small interval sets against brute force,
+- greedy coin change against DP while recording counterexamples,
+- fractional knapsack against linear optimization on small cases,
+- Huffman round trips for seeded texts,
+- prefix freedom for every generated codebook,
+- meeting-room count against maximum overlap from a sweep line.
+
+---
+
+# Part XII — Data-science transfer
+
+## 63. Greedy methods in data work
+
+- allocate a budget step by step to actions with highest marginal benefit,
+- select nonoverlapping training or maintenance windows,
+- schedule jobs by deadline or priority,
+- connect clusters or graph components through cheap edges,
+- reduce storage with prefix codes,
+- select features approximately under cost constraints,
+- assign data-pipeline resources with heaps.
+
+## 64. Be careful with heuristics
+
+In data science, a local strategy is often called “greedy feature selection” or
+“greedy search.” It may be practically useful without a global optimality
+guarantee. Distinguish clearly between:
+
+- **Algorithm with proof:** guaranteed optimal under stated assumptions.
+- **Heuristic:** plausible and often fast, but without a universal guarantee.
+
+A heuristic is not inherently bad; its claim simply needs to be honest.
+
+## 65. Measurable quality
+
+When optimality cannot be proved or exact optimization is too expensive:
+
+- solve small instances exactly and measure the quality gap,
+- compare several selection rules,
+- investigate approximation ratios,
+- test sensitivity to tie-breaking and random seeds,
+- report runtime and solution quality separately.
+
+---
+
+# Part XIII — Review questions
+
+## 66. Questions
+
+1. What makes a decision greedy?
+2. Why is optimal substructure alone insufficient?
+3. What does an exchange argument establish?
+4. Which rule solves unweighted interval scheduling optimally?
+5. Why is earliest start incorrect?
+6. What does coin system `{1,3,4}` disprove for amount 6?
+7. Why does value density work for fractional knapsack?
+8. Why does the same rule fail for 0/1 knapsack?
+9. Which two elements does Huffman combine at every step?
+10. Why is a Huffman code prefix-free?
+11. What role does the min-heap play?
+12. How does meeting-room counting differ from interval scheduling?
+13. Which warning signs suggest dynamic programming?
+14. Can testing replace a greedy proof?
+15. When can a greedy heuristic still be useful?
+
+## 67. Short answers
+
+1. It makes a locally optimal feasible choice and never reverses it.
+2. It does not show that one particular local choice is safe.
+3. An optimal solution can adopt the greedy choice without losing quality.
+4. Sort by earliest finish and select compatible intervals.
+5. A long interval starting early may block many short intervals.
+6. The largest fitting coin does not always minimize coin count.
+7. Small weight amounts can be exchanged for material of higher density.
+8. Whole items prevent arbitrarily small exchanges.
+9. The two subtrees with the smallest frequencies.
+10. Only leaves contain symbols, and no leaf is above another leaf.
+11. It repeatedly returns the two smallest frequencies in `O(log k)`.
+12. One selects as many meetings as possible for one room; the other schedules
+    every meeting with as few rooms as possible.
+13. Complex remaining state, indivisible combinations, and no exchange argument.
+14. No; tests can find counterexamples and increase confidence.
+15. When exact optimization is too costly and quality is measured empirically.
+
+---
+
+# Part XIV — Compact overview
+
+## 68. Cheat sheet
+
+| Problem | Greedy key | Structure | Guarantee |
+|---|---|---|---|
+| interval scheduling | earliest finish | exchange | optimal |
+| arbitrary coin change | largest coin | system-dependent | not general |
+| fractional knapsack | highest value density | divisibility plus exchange | optimal |
+| 0/1 knapsack | highest value density | indivisible | not general |
+| Huffman | two smallest frequencies | prefix tree plus induction | optimal |
+| meeting rooms | earliest end time in heap | maximum overlap | optimal |
+| Kruskal | lightest safe edge | cut plus Union-Find | optimal |
+| Dijkstra | smallest unsettled distance | nonnegative edges | optimal |
+
+## 69. One sentence per method
+
+```text
+Interval scheduling: Finish as early as possible and preserve future space.
+Coin change: The largest coin is safe only in suitable coin systems.
+Fractional knapsack: Buy value per unit of weight in descending order.
+Huffman: Give rare symbols the greatest depth.
+Meeting rooms: Always reuse the room that becomes free first.
+```
+
+## 70. Project preview
+
+- **01-basic:** Implement interval scheduling, fractional knapsack, and coin
+  change; demonstrate greedy failure explicitly against an exact reference.
+- **02-medium:** Build a complete Huffman compressor for text files and measure
+  compression rates including metadata.
+- **03-final:** Plan a seeded calendar, determine the minimum room count, create
+  concrete assignments, and compare them with a naive allocation.
+
+The central greedy skill is not sorting. It is the ability to justify a local
+rule through structure or reject it honestly with a small counterexample.
+
+---
+
+# Deutsche Fassung
+
 # Modul 14: Greedy-Algorithmen
 
 Ein Greedy-Algorithmus trifft in jedem Schritt die lokal attraktivste zulässige
@@ -54,14 +1233,14 @@ Scheduling vernünftig, ist aber nicht immer korrekt.
 ## 2. Das typische Schema
 
 ```text
-sortiere oder priorisiere Kandidaten
-Lösung = leer
+sort or prioritize the candidates
+solution = empty
 
-für Kandidat in Greedy-Reihenfolge:
-    wenn Kandidat zulässig ist:
-        nimm Kandidat endgültig auf
+for candidate in greedy order:
+    if candidate is feasible:
+        add candidate permanently
 
-gib Lösung zurück
+return solution
 ```
 
 Greedy verwendet häufig:
@@ -186,7 +1365,7 @@ class Interval:
 
     def __post_init__(self):
         if self.end <= self.start:
-            raise ValueError("Ein Intervall braucht end > start")
+            raise ValueError("An interval requires end > start")
 
     @property
     def duration(self):
@@ -226,9 +1405,9 @@ def interval_scheduling(candidates):
         if interval.start >= current_end:
             selected.append(interval)
             current_end = interval.end
-            trace.append(("nehmen", interval.name, current_end))
+            trace.append(("select", interval.name, current_end))
         else:
-            trace.append(("überspringen", interval.name, current_end))
+            trace.append(("skip", interval.name, current_end))
     return tuple(selected), tuple(trace)
 
 schedule, schedule_trace = interval_scheduling(intervals)
@@ -305,10 +1484,10 @@ Beweis.
 
 ```python
 earliest_start_counterexample = (
-    Interval("lang", 0, 10),
-    Interval("kurz-1", 1, 2),
-    Interval("kurz-2", 2, 3),
-    Interval("kurz-3", 3, 4),
+    Interval("long", 0, 10),
+    Interval("short-1", 1, 2),
+    Interval("short-2", 2, 3),
+    Interval("short-3", 3, 4),
 )
 
 def schedule_by_key(candidates, key):
@@ -333,17 +1512,17 @@ assert len(right_start) == 3
 
 ```python
 shortest_duration_counterexample = (
-    Interval("links", 0, 3),
-    Interval("verführerisch", 2, 4),
-    Interval("rechts", 3, 6),
+    Interval("left", 0, 3),
+    Interval("tempting", 2, 4),
+    Interval("right", 3, 6),
 )
 wrong_duration = schedule_by_key(
     shortest_duration_counterexample,
     key=lambda interval: interval.duration,
 )
 right_duration, _ = interval_scheduling(shortest_duration_counterexample)
-assert tuple(interval.name for interval in wrong_duration) == ("verführerisch",)
-assert tuple(interval.name for interval in right_duration) == ("links", "rechts")
+assert tuple(interval.name for interval in wrong_duration) == ("tempting",)
+assert tuple(interval.name for interval in right_duration) == ("left", "right")
 ```
 
 ## 18. Gewichtete Intervalle
@@ -372,9 +1551,9 @@ Für einen Betrag wähle wiederholt die größte Münze, die noch hineinpasst.
 ```python
 def greedy_change(coins, amount):
     if amount < 0:
-        raise ValueError("Betrag muss nichtnegativ sein")
+        raise ValueError("Amount must be nonnegative")
     if any(coin <= 0 for coin in coins):
-        raise ValueError("Münzen müssen positiv sein")
+        raise ValueError("Coins must be positive")
 
     remaining = amount
     chosen = []
@@ -397,19 +1576,19 @@ an der Struktur des Münzsystems, nicht am Greedy-Schema allein.
 Greedy nimmt:
 
 ```text
-4 + 1 + 1 = 6    drei Münzen
+4 + 1 + 1 = 6    three coins
 ```
 
 Optimal ist:
 
 ```text
-3 + 3 = 6        zwei Münzen
+3 + 3 = 6        two coins
 ```
 
 ```python
 def optimal_change_dp(coins, amount):
     if amount < 0:
-        raise ValueError("Betrag muss nichtnegativ sein")
+        raise ValueError("Amount must be nonnegative")
     usable = tuple(sorted(set(coins), reverse=True))
     best = [None] * (amount + 1)
     best[0] = ()
@@ -503,7 +1682,7 @@ class Item:
 
     def __post_init__(self):
         if self.weight <= 0 or self.value < 0:
-            raise ValueError("Gewicht muss positiv, Wert nichtnegativ sein")
+            raise ValueError("Weight must be positive and value nonnegative")
 
     @property
     def density(self):
@@ -511,7 +1690,7 @@ class Item:
 
 def fractional_knapsack(items, capacity):
     if capacity < 0:
-        raise ValueError("Kapazität muss nichtnegativ sein")
+        raise ValueError("Capacity must be nonnegative")
     remaining = capacity
     total_value = 0.0
     selection = []
@@ -614,7 +1793,7 @@ kann ein Bitstrom eindeutig von links nach rechts dekodiert werden.
 Das Ziel ist, die gewichtete Codelänge zu minimieren:
 
 ```text
-Summe über Symbole: frequency(symbol) * code_length(symbol)
+sum over symbols: frequency(symbol) * code_length(symbol)
 ```
 
 ## 32. Die Greedy-Wahl
@@ -640,9 +1819,9 @@ class HuffmanNode:
 
 def build_huffman_tree(frequencies):
     if not frequencies:
-        raise ValueError("Mindestens ein Symbol ist nötig")
+        raise ValueError("At least one symbol is required")
     if any(frequency <= 0 for frequency in frequencies.values()):
-        raise ValueError("Frequenzen müssen positiv sein")
+        raise ValueError("Frequencies must be positive")
 
     order = count()
     heap = [
@@ -694,7 +1873,7 @@ def huffman_codes(root):
             codes[node.symbol] = prefix or "0"
             return
         if node.left is None or node.right is None:
-            raise ValueError("Ungültiger Huffman-Baum")
+            raise ValueError("Invalid Huffman tree")
         visit(node.left, prefix + "0")
         visit(node.right, prefix + "1")
 
@@ -736,27 +1915,27 @@ def huffman_encode(text, codes):
     try:
         return "".join(codes[symbol] for symbol in text)
     except KeyError as error:
-        raise ValueError(f"Unbekanntes Symbol: {error.args[0]!r}") from error
+        raise ValueError(f"Unknown symbol: {error.args[0]!r}") from error
 
 def huffman_decode(bits, root):
     if root.is_leaf:
         if any(bit != "0" for bit in bits):
-            raise ValueError("Ungültiger Bitstrom")
+            raise ValueError("Invalid bit stream")
         return root.symbol * len(bits)
 
     decoded = []
     node = root
     for bit in bits:
         if bit not in "01":
-            raise ValueError("Bitstrom darf nur 0 und 1 enthalten")
+            raise ValueError("Bit stream may contain only 0 and 1")
         node = node.left if bit == "0" else node.right
         if node is None:
-            raise ValueError("Bitstrom verlässt den Huffman-Baum")
+            raise ValueError("Bit stream leaves the Huffman tree")
         if node.is_leaf:
             decoded.append(node.symbol)
             node = root
     if node is not root:
-        raise ValueError("Bitstrom endet mitten in einem Code")
+        raise ValueError("Bit stream ends inside a code")
     return "".join(decoded)
 
 sample_text = "FACE"
@@ -822,10 +2001,10 @@ def minimum_meeting_rooms(meetings):
     for meeting in sorted(meetings, key=lambda interval: interval.start):
         while active_end_times and active_end_times[0] <= meeting.start:
             freed_at = heapq.heappop(active_end_times)
-            trace.append(("frei", freed_at, meeting.start))
+            trace.append(("release", freed_at, meeting.start))
         heapq.heappush(active_end_times, meeting.end)
         maximum_rooms = max(maximum_rooms, len(active_end_times))
-        trace.append(("belegen", meeting.name, tuple(sorted(active_end_times))))
+        trace.append(("allocate", meeting.name, tuple(sorted(active_end_times))))
     return maximum_rooms, tuple(trace)
 
 meeting_sample = (
@@ -919,14 +2098,14 @@ Kapazität und Kombination ganzer Objekte.
 ## 48. Prüfprozess für eine neue Strategie
 
 ```text
-1. Zielfunktion und Nebenbedingungen präzisieren.
-2. Lokale Regel exakt formulieren.
-3. Kleine Instanzen von Hand testen.
-4. Gegenbeispiele gezielt konstruieren oder suchen.
-5. Greedy-Choice-Property begründen.
-6. Optimale Teilstruktur identifizieren.
-7. Beweisidee formulieren: Exchange, stays ahead, cut, contradiction.
-8. Erst dann optimierte Implementierung bauen.
+1. Specify the objective and constraints.
+2. State the local rule precisely.
+3. Test small instances by hand.
+4. Construct or search for counterexamples.
+5. Justify the greedy-choice property.
+6. Identify optimal substructure.
+7. Formulate a proof: exchange, stays ahead, cut, or contradiction.
+8. Only then build the optimized implementation.
 ```
 
 ## 49. Brute Force als Strategietester
@@ -1164,11 +2343,11 @@ Wenn Optimalität nicht beweisbar oder exakte Lösung zu teuer ist:
 ## 69. Ein Satz pro Verfahren
 
 ```text
-Interval Scheduling: Beende möglichst früh und bewahre Zukunftsraum.
-Münzwechsel: Die größte Münze ist nur in geeigneten Systemen sicher.
-Fraktionaler Rucksack: Kaufe Wert pro Gewicht in absteigender Reihenfolge.
-Huffman: Gib seltenen Symbolen die größte Tiefe.
-Meeting Rooms: Verwende stets den Raum, der zuerst frei wird.
+Interval scheduling: Finish as early as possible and preserve future space.
+Coin change: The largest coin is safe only in suitable coin systems.
+Fractional knapsack: Buy value per unit of weight in descending order.
+Huffman: Give rare symbols the greatest depth.
+Meeting rooms: Always reuse the room that becomes free first.
 ```
 
 ## 70. Ausblick auf die Projekte

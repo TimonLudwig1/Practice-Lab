@@ -34,9 +34,12 @@ genau einen nächsten Schritt.)*
 6. **Inhalte in Dateien, nicht in den Chat.**
 7. **Git-Commit nach jedem Task** mit sprechender Message, z. B.
    `modul-04: 02-medium fertig`.
-8. **Sprachformat ab 2026-07-21:** Neue `README.md`-Dateien enthalten zuerst
-   die vollständige englische Fassung und darunter die vollständige deutsche
-   Übersetzung. Sämtlicher Text in neuen Notebooks ist ausschließlich Englisch.
+8. **Sprachformat ab 2026-07-21:** Jede neu erstellte oder bearbeitete erklärende
+   Markdown-Datei, insbesondere `THEORIE.md` und `README.md`, enthält zuerst die
+   vollständige englische Fassung und darunter die vollständige deutsche
+   Übersetzung. Sämtlicher Text in Code und Notebooks ist ausschließlich
+   Englisch; das umfasst Bezeichner, Kommentare, Docstrings, String-Literale,
+   Fehlermeldungen, Ausgaben, Plot-Beschriftungen und Markdown-Zellen.
 
 ### Statuswerte
 `offen` → `in Arbeit` → `fertig` (pro Zelle). Ein Modul ist **FERTIG**, wenn alle
@@ -61,7 +64,7 @@ fünf Zellen `fertig` sind.
 | 11 | Heaps & Priority Queues | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 148/148 Tests; alle 11 Python-Dateien, 17 Theoriebeispiele, beide Demos, 18 Benchmark-Fälle, Generator und vollständige 300-Job-Scheduler-Simulation am 2026-07-20 erfolgreich |
 | 12 | Graphen I: Repräsentation & Traversierung | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 155/155 Tests; alle 10 Python-Dateien, 16 Theorieblöcke, beide Demos und vollständige Seed-1203-Pipeline mit 24 Tasks, 39 Kanten und 113-Minuten-Kritischem-Pfad am 2026-07-20 erfolgreich |
 | 13 | Graphen II: Kürzeste Wege, Union-Find & MST | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 188/188 Tests; alle 10 Python-Dateien, 19 Theorieblöcke, Dijkstra-/Union-Find-Demo, vier MST-Benchmarks und vollständiges Seed-1313-Routing mit 192 Knoten/356 Straßen und +5,2 %/+96,3 % Sperrungsverzögerung am 2026-07-21 erfolgreich |
-| 14 | Greedy-Algorithmen | fertig | offen | offen | offen | offen | Markdown | Umfassendes Theorie-Skript mit 21 gemeinsam erfolgreich ausgeführten Python-Beispielen zu Greedy-Denkmodell, Beweisstrategien, Gegenbeispielen, Interval Scheduling, Münzwechsel, fraktionalem Rucksack, Huffman-Codierung, Meeting-Räumen und Greedy-vs.-DP am 2026-07-21 fertiggestellt |
+| 14 | Greedy-Algorithmen | fertig | offen | offen | offen | offen | Markdown | Vollständiges zweisprachiges Theorie-Skript (Englisch vor Deutsch) mit 21 Beispielen je Sprachfassung zu Greedy-Denkmodell, Beweisstrategien, Gegenbeispielen, Interval Scheduling, Münzwechsel, fraktionalem Rucksack, Huffman-Codierung, Meeting-Räumen und Greedy-vs.-DP; alle 42 Python-Blöcke am 2026-07-21 gemeinsam erfolgreich ausgeführt |
 | 15 | Backtracking | offen | offen | offen | offen | offen | — | — |
 | 16 | Dynamic Programming | offen | offen | offen | offen | offen | — | — |
 | 17 | Capstone: DSA im Data-Science-Kontext | offen | offen | offen | offen | offen | — | — |
@@ -148,3 +151,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-21 | Modul 13: 03-final | Seed-1313-Gitterstraßennetz mit 192 Knoten/356 Straßen, selbst implementiertem Dijkstra, Einzelstraßen-/Barrierenanalyse (+5,2 %/+96,3 %), zwei CSVs, englischem Bericht, dreiteiliger PNG-Visualisierung, zweisprachiger README und 56 Tests erfolgreich. |
 | 2026-07-21 | Modul 13: Test-Durchlauf | 188/188 Tests; alle 10 Python-Dateien, 19 Theorieblöcke, Dijkstra-/Union-Find-Demo, vier MST-Benchmarkfälle und vollständiges Seed-1313-Routing mit 192 Knoten/356 Straßen und +5,2 %/+96,3 % Sperrungsverzögerung erfolgreich. |
 | 2026-07-21 | Modul 14: Theorie | Umfassendes Greedy-Skript mit Greedy-Choice-Property, optimaler Teilstruktur, Exchange-Argument, Gegenbeispielmethodik, Interval Scheduling, Münzwechsel, fraktionalem Rucksack, Huffman-Codierung, Meeting-Räumen und Greedy-vs.-DP; alle 21 Python-Beispiele gemeinsam erfolgreich ausgeführt. |
+| 2026-07-21 | Modul 14: Sprachkorrektur | `Agents.md` und Tracker auf Englisch-vor-Deutsch für erklärende Markdown-Dateien sowie ausschließlich englischen Code-/Notebook-Text präzisiert; Theorie vollständig zweisprachig umgebaut und alle 42 Python-Blöcke gemeinsam erfolgreich ausgeführt. |
