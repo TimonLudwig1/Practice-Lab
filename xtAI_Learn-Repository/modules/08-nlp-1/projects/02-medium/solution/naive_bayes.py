@@ -1,8 +1,8 @@
-"""Multinomialer Naive-Bayes-Textklassifikator — von Hand implementiert.
+"""A multinomial naive Bayes text classifier — implemented by hand.
 
-Modell (Skript 2.1):  c* = argmax_c [ log P(c) + sum_i log P(w_i | c) ]
-mit Laplace-Glaettung P(w|c) = (C(w,c) + alpha) / (sum_w' C(w',c) + alpha*|V|).
-Gerechnet wird im Log-Raum gegen Underflow.
+The model (script 2.1):  c* = argmax_c [ log P(c) + sum_i log P(w_i | c) ]
+with Laplace smoothing P(w|c) = (C(w,c) + alpha) / (sum_w' C(w',c) + alpha*|V|).
+The computation happens in log space against underflow.
 """
 import math
 from collections import Counter, defaultdict
@@ -12,17 +12,17 @@ class MultinomialNaiveBayes:
     def __init__(self, alpha=1.0):
         self.alpha = alpha
         self.classes = []
-        self.log_prior = {}
-        self.log_likelihood = {}        # {c: {wort: log P(w|c)}}
-        self.default_ll = {}            # {c: log P(unbekanntes-im-Vokabular-Wort|c)}
+        self.log_prior = {}             # {c: log P(c)}
+        self.log_likelihood = {}        # {c: {word: log P(w|c)}}
+        self.default_ll = {}            # {c: log P(a word unseen in training|c)}
         self.vocab = set()
 
     def fit(self, docs, labels):
-        """docs = Liste von Token-Listen, labels = Liste von Klassen."""
+        """docs = a list of token lists, labels = a list of classes."""
         self.classes = sorted(set(labels))
         n_docs = len(docs)
         word_counts = {c: Counter() for c in self.classes}     # C(w,c)
-        class_doc_count = Counter()                            # #Dokumente pro Klasse
+        class_doc_count = Counter()                            # #documents per class
         for tokens, c in zip(docs, labels):
             class_doc_count[c] += 1
             word_counts[c].update(tokens)
@@ -37,7 +37,7 @@ class MultinomialNaiveBayes:
                 w: math.log((word_counts[c][w] + self.alpha) / denom)
                 for w in self.vocab
             }
-            self.default_ll[c] = math.log(self.alpha / denom)  # fuer im Training ungesehene
+            self.default_ll[c] = math.log(self.alpha / denom)  # for words unseen in training
         return self
 
     def predict_one(self, tokens):
@@ -46,7 +46,7 @@ class MultinomialNaiveBayes:
             score = self.log_prior[c]
             ll = self.log_likelihood[c]
             for w in tokens:
-                if w in self.vocab:                # OOV-Woerter ignorieren
+                if w in self.vocab:                # ignore OOV words
                     score += ll[w]
             if score > best_score:
                 best_score, best_c = score, c

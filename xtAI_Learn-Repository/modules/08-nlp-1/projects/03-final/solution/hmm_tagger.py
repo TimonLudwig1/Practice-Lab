@@ -1,9 +1,9 @@
-"""HMM-POS-Tagger mit Viterbi-Dekodierung — von Grund auf (Skript 3.1).
+"""An HMM POS tagger with Viterbi decoding — from scratch (script 3.1).
 
-Modell:  argmax_t  prod_i  P(w_i | t_i) * P(t_i | t_{i-1})
-Emission und Transition per MLE aus getaggtem Korpus, mit Glaettung.
-Unbekannte Woerter werden ueber eine SIGNATUR (Suffix/Form) behandelt — das hebt
-die Genauigkeit auf unbekannten Woertern deutlich.
+The model:  argmax_t  prod_i  P(w_i | t_i) * P(t_i | t_{i-1})
+Emission and transition by MLE from a tagged corpus, with smoothing.
+Unknown words are handled via a SIGNATURE (suffix/form) — that raises the
+accuracy on unknown words considerably.
 """
 import math
 from collections import Counter, defaultdict
@@ -12,7 +12,7 @@ START = "<s>"
 
 
 def signature(word):
-    """Grobe morphologische Signatur fuer seltene/unbekannte Woerter."""
+    """A coarse morphological signature for rare/unknown words."""
     if any(ch.isdigit() for ch in word):
         return "<NUM>"
     if word[:1].isupper():
@@ -33,8 +33,8 @@ class HMMTagger:
         self.rare_threshold = rare_threshold
         self.tags = []
         self.log_trans = {}         # {(t_prev, t): log P(t|t_prev)}
-        self.log_emit = {}          # {(t, wort_oder_signatur): log P(.|t)}
-        self.emit_vocab = set()     # bekannte Emissionssymbole
+        self.log_emit = {}          # {(t, word_or_signature): log P(.|t)}
+        self.emit_vocab = set()     # the known emission symbols
 
     def fit(self, sentences):
         word_freq = Counter(w for s in sentences for w, _ in s)
@@ -57,14 +57,14 @@ class HMMTagger:
         self.tags = sorted(tag_set)
         T = len(self.tags)
 
-        # Transitionen: Add-k ueber Tags (inkl. Start-Kontext)
+        # Transitions: add-k over the tags (including the start context)
         for tp in [START] + self.tags:
             total = sum(trans[tp].values())
             denom = total + self.k_trans * T
             for t in self.tags:
                 self.log_trans[(tp, t)] = math.log((trans[tp][t] + self.k_trans) / denom)
 
-        # Emissionen: Add-k ueber das Emissionsvokabular (Woerter + Signaturen)
+        # Emissions: add-k over the emission vocabulary (words + signatures)
         self.emit_vocab = set(sym(w) for w in word_freq)
         Ve = len(self.emit_vocab)
         k_e = 1e-3
@@ -73,7 +73,7 @@ class HMMTagger:
             denom = total + k_e * Ve
             for symbol in self.emit_vocab:
                 self.log_emit[(t, symbol)] = math.log((emit[t][symbol] + k_e) / denom)
-            self.log_emit[(t, None)] = math.log(k_e / denom)   # Fallback
+            self.log_emit[(t, None)] = math.log(k_e / denom)   # the fallback
         return self
 
     def _emission(self, t, word):
@@ -85,10 +85,10 @@ class HMMTagger:
         return self.log_emit[(t, None)]
 
     def viterbi(self, words):
-        """Beste Tag-Folge fuer eine Wortliste (Skript 3.1 / Modul 07)."""
+        """The best tag sequence for a list of words (script 3.1 / module 07)."""
         if not words:
             return []
-        V = [{}]          # V[i][tag] = beste Log-Wahrscheinlichkeit
+        V = [{}]          # V[i][tag] = the best log probability
         back = [{}]
         for t in self.tags:
             V[0][t] = self.log_trans[(START, t)] + self._emission(t, words[0])
@@ -104,7 +104,7 @@ class HMMTagger:
                         best_score, best_prev = score, tp
                 V[i][t] = best_score
                 back[i][t] = best_prev
-        # Rueckverfolgung
+        # Backtracking
         last = max(self.tags, key=lambda t: V[-1][t])
         tags = [last]
         for i in range(len(words) - 1, 0, -1):

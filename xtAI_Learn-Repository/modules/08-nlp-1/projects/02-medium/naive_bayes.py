@@ -1,10 +1,10 @@
-"""Multinomialer Naive-Bayes-Textklassifikator — von Hand implementiert.
+"""A multinomial naive Bayes text classifier — implemented by hand.
 
-DEINE AUFGABE: Fuelle `fit`, `predict_one` (und damit `predict`).
+YOUR TASK: fill in `fit`, `predict_one` (and thereby `predict`).
 
-Modell (Skript 2.1):  c* = argmax_c [ log P(c) + sum_i log P(w_i | c) ]
-mit Laplace-Glaettung  P(w|c) = (C(w,c) + alpha) / (sum_w' C(w',c) + alpha*|V|).
-Rechne im Log-Raum (Summe von Logs statt Produkt) gegen Underflow.
+The model (script 2.1):  c* = argmax_c [ log P(c) + sum_i log P(w_i | c) ]
+with Laplace smoothing  P(w|c) = (C(w,c) + alpha) / (sum_w' C(w',c) + alpha*|V|).
+Compute in log space (a sum of logs instead of a product) against underflow.
 """
 import math
 from collections import Counter
@@ -15,28 +15,28 @@ class MultinomialNaiveBayes:
         self.alpha = alpha
         self.classes = []
         self.log_prior = {}             # {c: log P(c)}
-        self.log_likelihood = {}        # {c: {wort: log P(w|c)}}
-        self.default_ll = {}            # {c: log P(im-Vokabular-ungesehenes-Wort|c)}
+        self.log_likelihood = {}        # {c: {word: log P(w|c)}}
+        self.default_ll = {}            # {c: log P(a word unseen in the vocabulary|c)}
         self.vocab = set()
 
     def fit(self, docs, labels):
-        """docs = Liste von Token-Listen, labels = Liste von Klassen.
+        """docs = a list of token lists, labels = a list of classes.
 
-        Schritte:
-          1) self.classes = sortierte eindeutige Labels; self.vocab = alle Woerter.
-          2) Pro Klasse c: Wortzaehlungen C(w,c) (Counter ueber alle Tokens der
-             Dokumente mit Label c) und Dokumentzahl.
-          3) log_prior[c] = log( #Dok(c) / #Dok ).
-          4) Mit total_c = sum_w C(w,c) und denom = total_c + alpha*|V|:
-                 log_likelihood[c][w] = log( (C(w,c)+alpha) / denom )  fuer alle w in vocab.
-             default_ll[c] = log( alpha / denom )   (falls du OOV NICHT ignorierst).
+        The steps:
+          1) self.classes = the sorted unique labels; self.vocab = all words.
+          2) Per class c: the word counts C(w,c) (a Counter over all tokens of the
+             documents with label c) and the number of documents.
+          3) log_prior[c] = log( #docs(c) / #docs ).
+          4) With total_c = sum_w C(w,c) and denom = total_c + alpha*|V|:
+                 log_likelihood[c][w] = log( (C(w,c)+alpha) / denom )  for all w in vocab.
+             default_ll[c] = log( alpha / denom )   (in case you do NOT ignore OOV).
         """
         # TODO
         raise NotImplementedError
 
     def predict_one(self, tokens):
-        """Gib die Klasse mit maximalem log P(c) + sum_{w in tokens} log P(w|c).
-        Ignoriere Woerter, die nicht in self.vocab sind (OOV)."""
+        """Return the class with the maximum log P(c) + sum_{w in tokens} log P(w|c).
+        Ignore words that are not in self.vocab (OOV)."""
         # TODO
         raise NotImplementedError
 

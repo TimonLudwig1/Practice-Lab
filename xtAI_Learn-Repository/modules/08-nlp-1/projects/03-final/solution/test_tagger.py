@@ -1,8 +1,8 @@
-"""Abnahmetest fuer den HMM-POS-Tagger (Musterloesung).
+"""The acceptance test for the HMM POS tagger (the reference solution).
 
     python test_tagger.py
 
-Laedt (einmalig) UD English-EWT und dauert einige Sekunden.
+It downloads UD English-EWT (once) and takes a few seconds.
 """
 from data import read_conllu
 from hmm_tagger import HMMTagger, signature
@@ -14,11 +14,11 @@ def test_signature():
     assert signature("Berlin") == "<CAP>"
     assert signature("running") == "<~ing>"
     assert signature("quickly") == "<~ly>"
-    print("  Signaturen ................. OK")
+    print("  Signatures ................. OK")
 
 
 def test_viterbi_toy():
-    # Winziges, eindeutiges Korpus
+    # A tiny, unambiguous corpus
     train = [
         [("the", "DET"), ("dog", "NOUN"), ("runs", "VERB")],
         [("the", "DET"), ("cat", "NOUN"), ("sleeps", "VERB")],
@@ -26,7 +26,7 @@ def test_viterbi_toy():
     ]
     tg = HMMTagger().fit(train)
     assert tg.viterbi(["the", "cat", "runs"]) == ["DET", "NOUN", "VERB"]
-    print("  Viterbi (Spielzeug) ........ OK")
+    print("  Viterbi (toy) .............. OK")
 
 
 def test_ewt_accuracy():
@@ -36,10 +36,10 @@ def test_ewt_accuracy():
     known = set(w for s in train for w, _ in s)
     res = evaluate(tg, test, known)
     assert res["acc"] > 0.88, res["acc"]
-    # Standardsatz sauber getaggt
+    # a standard sentence tagged cleanly
     ex = tg.viterbi("The quick brown fox jumps over the lazy dog".split())
     assert ex[0] == "DET" and ex[-1] == "NOUN"
-    print(f"  EWT-Accuracy > 0.88 ........ OK ({res['acc']:.4f}, unk {res['unk_acc']:.3f})")
+    print(f"  EWT accuracy > 0.88 ........ OK ({res['acc']:.4f}, unk {res['unk_acc']:.3f})")
 
 
 if __name__ == "__main__":
@@ -47,4 +47,4 @@ if __name__ == "__main__":
     test_signature()
     test_viterbi_toy()
     test_ewt_accuracy()
-    print("\nAlle Tests bestanden.")
+    print("\nAll tests passed.")

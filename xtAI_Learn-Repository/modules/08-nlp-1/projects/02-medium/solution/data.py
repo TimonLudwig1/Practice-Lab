@@ -1,7 +1,7 @@
-"""Laedt und tokenisiert einen Ausschnitt des 20-Newsgroups-Korpus.
+"""Loads and tokenizes a subset of the 20 newsgroups corpus.
 
-Beim ersten Aufruf laedt scikit-learn den Datensatz (~14 MB) herunter und cached
-ihn (in ~/scikit_learn_data). Danach offline nutzbar.
+On the first call, scikit-learn downloads the data set (about 14 MB) and caches
+it (in ~/scikit_learn_data). After that it can be used offline.
 """
 import re
 from sklearn.datasets import fetch_20newsgroups
@@ -16,14 +16,14 @@ CATEGORIES = [
 _TOKEN = re.compile(r"[a-z]{2,}")
 
 def tokenize(text):
-    """Kleinschreibung, nur Buchstabenfolgen ab Laenge 2."""
+    """Lowercase, only sequences of letters of length 2 or more."""
     return _TOKEN.findall(text.lower())
 
 
 def load(categories=CATEGORIES):
-    """Gibt (train_docs, y_train, test_docs, y_test, target_names) zurueck.
-    docs = Liste roher Texte; y = Liste von Klassenindizes."""
-    strip = ("headers", "footers", "quotes")      # nur den eigentlichen Text
+    """Returns (train_docs, y_train, test_docs, y_test, target_names).
+    docs = a list of raw texts; y = a list of class indices."""
+    strip = ("headers", "footers", "quotes")      # only the actual text
     tr = fetch_20newsgroups(subset="train", categories=categories,
                             remove=strip, shuffle=True, random_state=0)
     te = fetch_20newsgroups(subset="test", categories=categories,

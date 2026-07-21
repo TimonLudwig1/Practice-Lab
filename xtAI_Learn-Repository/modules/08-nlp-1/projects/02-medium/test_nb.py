@@ -1,15 +1,15 @@
-"""Testsuite fuer den Naive-Bayes-Klassifikator.
+"""The test suite for the naive Bayes classifier.
 
     python test_nb.py
 
-Der letzte Test laedt (einmalig) 20 Newsgroups und dauert ein paar Sekunden.
+The last test downloads 20 newsgroups (once) and takes a few seconds.
 """
 import math
 from naive_bayes import MultinomialNaiveBayes
 
 
 def test_tiny_deterministic():
-    # Zwei klar getrennte Klassen -> perfekte Trennung erwartet.
+    # Two clearly separated classes -> a perfect separation is expected.
     docs = [
         ["puck", "goal", "ice", "hockey"],
         ["hockey", "goal", "goal"],
@@ -20,22 +20,22 @@ def test_tiny_deterministic():
     nb = MultinomialNaiveBayes(alpha=1.0).fit(docs, y)
     assert nb.predict([["puck", "ice", "goal"]]) == ["sport"]
     assert nb.predict([["orbit", "launch", "moon"]]) == ["space"]
-    # OOV-Wort darf nicht crashen
+    # an OOV word must not crash
     assert nb.predict([["quidditch", "puck"]]) == ["sport"]
-    print("  Mini-Datensatz (deterministisch) ... OK")
+    print("  Mini data set (deterministic) ..... OK")
 
 
 def test_log_prior_and_likelihood():
     docs = [["a", "a", "b"], ["b", "b"], ["a", "c"]]
     y = ["x", "y", "x"]
     nb = MultinomialNaiveBayes(alpha=1.0).fit(docs, y)
-    # Prior: 2 von 3 Dokumenten sind Klasse x
+    # The prior: 2 of the 3 documents are class x
     assert abs(nb.log_prior["x"] - math.log(2 / 3)) < 1e-12
-    # Likelihood normalisiert korrekt? sum_w P(w|c) ueber Vokabular = 1
+    # Does the likelihood normalize correctly? sum_w P(w|c) over the vocabulary = 1
     for c in nb.classes:
         s = sum(math.exp(nb.log_likelihood[c][w]) for w in nb.vocab)
         assert abs(s - 1.0) < 1e-9, (c, s)
-    print("  Log-Prior & normierte Likelihood ... OK")
+    print("  Log prior & normalized likelihood . OK")
 
 
 def test_real_data_smoke():
@@ -45,7 +45,7 @@ def test_real_data_smoke():
     pred = nb.predict([tokenize(d) for d in te_docs])
     acc = sum(p == t for p, t in zip(pred, y_te)) / len(y_te)
     assert acc > 0.80, acc
-    print(f"  20-Newsgroups Accuracy > 0.80 ..... OK ({acc:.3f})")
+    print(f"  20 newsgroups accuracy > 0.80 ..... OK ({acc:.3f})")
 
 
 if __name__ == "__main__":
@@ -53,4 +53,4 @@ if __name__ == "__main__":
     test_tiny_deterministic()
     test_log_prior_and_likelihood()
     test_real_data_smoke()
-    print("\nAlle Tests bestanden.")
+    print("\nAll tests passed.")
