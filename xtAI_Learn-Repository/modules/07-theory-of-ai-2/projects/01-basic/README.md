@@ -71,8 +71,8 @@ Finally part C verifies that the plan is executable and reaches the goal.
 ## Reference solution
 
 The folder **`solution/`** holds `planning_solution.ipynb` — fully implemented
-and **executed**, with the answers to the reflection questions at the end. Look
-only after your own attempt.
+and **executed**. The reflection questions are deliberately left unanswered —
+they are yours to work through. Look only after your own attempt.
 
 ---
 ---
@@ -147,4 +147,5 @@ Zum Schluss verifiziert Teil C, dass der Plan ausführbar ist und das Ziel errei
 ## Musterlösung
 
 In **`solution/`** liegt `planning_solution.ipynb` — vollständig implementiert und
-**ausgeführt**, mit Reflexions-Antworten am Ende. Erst nach eigenem Versuch ansehen.
+**ausgeführt**. Die Reflexionsfragen bleiben bewusst unbeantwortet — die sind zum
+Selbstdurcharbeiten da. Erst nach eigenem Versuch ansehen.

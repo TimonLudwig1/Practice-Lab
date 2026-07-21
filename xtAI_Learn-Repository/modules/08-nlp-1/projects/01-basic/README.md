@@ -69,8 +69,8 @@ tendencies do not.
 ## Reference solution
 
 The folder **`solution/`** holds `language_model_solution.ipynb` — fully
-implemented and **executed**, with the answers to the reflection questions at the
-end. Look only after your own attempt.
+implemented and **executed**. The reflection questions are deliberately left
+unanswered — they are yours to work through. Look only after your own attempt.
 
 ---
 ---
@@ -143,4 +143,5 @@ nicht.
 ## Musterlösung
 
 In **`solution/`** liegt `language_model_solution.ipynb` — vollständig implementiert und
-**ausgeführt**, mit Reflexions-Antworten am Ende. Erst nach eigenem Versuch ansehen.
+**ausgeführt**. Die Reflexionsfragen bleiben bewusst unbeantwortet — die sind zum
+Selbstdurcharbeiten da. Erst nach eigenem Versuch ansehen.
