@@ -81,11 +81,12 @@ Pro Modul: Modul-`README.md` + alle Projekt-`README.md` bekommen den englischen 
 | Modul | README (bilingual) | Projekt-READMEs | Notebooks englisch |
 |-------|--------------------|-----------------|--------------------|
 | 01 | ✓ | ✓ (3/3) | ✓ (4/4, ausgeführt, Zahlen == README: BFS 29/54, A* 29/35, greedy 31/32; Spam-Accuracy 0.9857) |
-| 02 | ✓ | ✓ (3/3) | **offen (0/6)** ← hier weitermachen |
+| 02 | ✓ | ✓ (3/3) | **teilweise (2/6)** ← hier weitermachen |
 | 03–21 | offen | offen | offen |
 
 **Modul 02 — offener Rest und ein gefundener Kopplungs-Fall:**
-Notebooks noch alle offen: `pandas_basics` + solution, `data_cleaning` + solution, `bikesharing_eda` + solution.
+P01-basic FERTIG: `pandas_basics` + solution englisch, ausgeführt, alle Mini-Checks True (19 fehlende Werte, 124 Gentoo, 61 > 5 kg, Gentoo schwerste Art, r = 0.871) — deckt sich mit der README. Bezeichner: `fehlend`→`missing`, `schwer`→`heavy`, `masse_kg`→`mass_kg`, `schnabel_verhaeltnis`→`bill_ratio`, `masse_pro_art`→`mass_per_species`.
+NOCH OFFEN: `data_cleaning` + solution (P02), `bikesharing_eda` + solution (P03).
 **Wichtig für P02-medium:** `generate_data.py` erzeugt die CSV mit **deutschen Spaltennamen** (`preis`, `kunden_alter`, `stadt`, `datum`, `kategorie`) und deutschen Kategoriewerten ("Elektronik", "Buecher" …); das Notebook konsumiert sie. Das Notebook kann also nicht englisch werden, ohne den Generator mitzuziehen → **`generate_data.py` wird ausnahmsweise schon in Schritt 2 übersetzt** (nicht erst in Schritt 3). Die READMEs sind bereits auf die englischen Zielnamen geschrieben: Datei `datasets/orders_raw.csv`, Abnahmemeldung „ACCEPTANCE PASSED". Beim Bau also Generator zuerst, dann Notebook, dann `python generate_data.py` + Notebook ausführen.
 Solche Kopplungen (Projekt-.py erzeugt Daten, die das Notebook nutzt) in allen weiteren Modulen mitprüfen.
 
