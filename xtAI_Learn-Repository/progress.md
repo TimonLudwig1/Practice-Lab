@@ -52,9 +52,12 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 ## Englisch-Umstellung (laufender Auftrag, Vorrang vor Modul 22)
 
 > ### NEXT ACTION dieses Auftrags
-> **Modul 05, Projekt 02-medium: `image_classification_cnn.ipynb` + `solution/solution.ipynb` auf Englisch.**
-> Die vier READMEs und **P01 sind fertig** (P01 verifiziert: Gradient-Check **6.49e-11**, Test-Accuracy **0.950** — exakt die README-Referenzwerte). Es fehlen P02 (**CNN Fashion-MNIST, torch/MPS, ca. 5-10 min Laufzeit** — Hitze beachten, Daten liegen schon in `02-medium/solution/datasets/`) und P03 (Clustering, CPU, <1 min).
-> Zielzahlen: P02 Parameter-Assert **66 570**, CNN 0.90-0.91 vs MLP 0.86-0.88 Test-Accuracy nach 3 Epochen auf dem 20k-Subset; P03 GMM-full bester ARI ~0.6, ~2 Hauptsegmente.
+> **Modul 05, Projekt 03-final: `customer_segmentation.ipynb` + `solution/solution.ipynb` auf Englisch.**
+> Danach ist **Modul 05 komplett** und Modul 06 ist dran. P03 ist reines CPU-Clustering (<1 min Laufzeit), Daten werden in der ersten Zelle geladen (~15 KB Download).
+> Zielzahlen: ~2 Hauptsegmente (k-Means/GMM/Ward einig), **GMM-full bester ARI ~0,6**, DBSCAN scheitert instruktiv.
+>
+> **Erledigt in Modul 05:** 4 READMEs bilingual · P01 (Gradient-Check 6.49e-11, Test-Acc 0.950) · P02 (alle Zahlen bit-identisch zum alten Notebook reproduziert).
+>
 > Rezept siehe „Arbeitsablauf pro Notebook" weiter unten.
 
 **Auftrag:** Jede README bekommt den vollständigen englischen Text als Block **über** dem bestehenden deutschen. Die Projektinhalte selbst (Notebooks, .py) werden **ausschließlich englisch**, inklusive Bezeichnern. Datei- und Ordnernamen ebenfalls englisch. Die verbindliche Regel steht in `CLAUDE.md` im Abschnitt **„Sprachregel"**.
@@ -86,7 +89,7 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 02 Data Science 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `0cae09f`, `374a81e`, `6c7e61f`, `80ca895` |
 | 03 Data Science 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `598a668`, `b723e1d` |
 | 04 Machine Learning 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `92ab92d`, `d172564`, `028b8a5`, `90817ad` |
-| **05 Machine Learning 2** | ✓ | ✓ 3/3 | **2/6 — als Nächstes P02 (CNN)** | `af83312` |
+| **05 Machine Learning 2** | ✓ | ✓ 3/3 | **4/6 — als Nächstes P03** | `af83312` |
 | 06–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)
@@ -110,6 +113,8 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 4. **Bestandsfehler in READMEs/Notebooks.** Beim Nachrechnen tauchten mehrere auf; die gemessenen Werte gewinnen, der Text wird korrigiert (nicht der Fehler mitübersetzt). Bisher gefunden und behoben: Tippfehler „klener"→„kleiner" (Modul 04 Skript); „78 %/96 %" statt gemessener 76,7 %/95,1 % (04 P01); „alle Modelle > 0.95 CV-ROC-AUC" obwohl der Entscheidungsbaum bei 0.918 liegt (04 P02); Emoji in der Abnahmezelle (02 P02).
 5. **Leere Musterlösungen.** Enthält die deutsche Lösung Stellen wie „*(Deine Notiz hier …)*", werden sie in der englischen Lösung **ausformuliert beantwortet** (so geschehen in 04 P02: Boxplot-Streuung, Feature-Plausibilität, Lernkurven-Diagnose, 3 Reflexionsfragen).
 6. **Nicht jede Zahlenabweichung ist ein Übersetzungsfehler.** In 04 P03 lieferte der `RandomForestClassifier` 0.7327 statt der in der README notierten 0.71. Gegenprobe: das **alte deutsche** Notebook aus `git show HEAD:...` liefert unter nbconvert **exakt dieselben** 0.7327 (per Skript-Lauf dagegen 0.7129) → umgebungsabhängig (Thread-/BLAS-Konfiguration), nicht von der Übersetzung verursacht. Alle anderen Zahlen des Notebooks stimmen auf vier Nachkommastellen. **Rezept: bei einer Abweichung immer erst die alte Version gegenprüfen, bevor man die Übersetzung verdächtigt** — und die README auf eine Spanne setzen statt auf einen Punktwert.
+7. **Zwei Bestandsfehler in 05 P02 (CNN), beim Übersetzen aufgedeckt.** (a) Der Assert im Aufgaben-Notebook verlangte **66 570** Parameter, das Netz hat aber **66 026** (von Hand nachgerechnet: 9696 + 55680 + 650) — der Student konnte den Check **nie** bestehen. (b) README und Interpretationstext behaupteten „CNN schlägt MLP deutlich, CNN 0,90-0,91 vs MLP 0,86-0,88"; gemessen (alt wie neu, bit-identisch): **MLP 0,853 > CNN 0,847** nach 3 Epochen; erst über 10 Epochen zieht das regularisierte CNN mit 0,861 vorbei. Beides korrigiert, der didaktische Punkt umformuliert (induktiver Bias = besseres Ergebnis pro Parameter, nicht schnellerer Fortschritt pro Epoche). **Lehre: bei Notebooks mit Assert-Zellen den Assert einmal wirklich ausführen, und die Behauptungen der README gegen die tatsächlichen Outputs halten.**
+8. **Von Schritt 1 übersehene deutsche Pfade.** In 05 P02 stand in beiden Notebooks noch `DATA_DIR = "daten"`, während die Daten auf der Platte längst unter `solution/datasets/` liegen und `.gitignore` nur `**/datasets/FashionMNIST/` abdeckt — ein erneuter Lauf hätte 30 MB nach `daten/` geladen und ins Repo geschrieben. **Bei jedem weiteren Modul nach Pfad-Strings im Code greppen, nicht nur nach Prosa.**
 
 #### Verifizierte Kennzahlen der fertigen Module (zum Wiedererkennen bei Regressionen)
 - **01**: BFS 29 Schritte/54 Knoten, A\* 29/35, greedy 31/32; Spam-Accuracy 0.9857.

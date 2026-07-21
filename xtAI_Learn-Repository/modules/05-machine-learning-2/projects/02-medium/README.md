@@ -33,7 +33,7 @@ It runs on an Apple GPU (`mps`), on CUDA or on a CPU — detected automatically.
 ## Tasks (step by step)
 
 1. **Look at the data** (given): the loading pipeline with normalization and a second, augmented loader (RandomCrop + flip).
-2. **TODO 1 — build the CNN:** two `[Conv3×3→BN→ReLU]×2→MaxPool` blocks (32, 64 channels) → global average pooling → dropout → linear. An assert cell checks the parameter count (**expected: 66,570** — work it out by hand beforehand, the formula is in script 2.5).
+2. **TODO 1 — build the CNN:** two `[Conv3×3→BN→ReLU]×2→MaxPool` blocks (32, 64 channels) → global average pooling → dropout → linear. An assert cell checks the parameter count (**expected: 66,026** — work it out by hand beforehand, the formula is in script 2.5).
 3. **TODO 2 — repair `evaluate`:** one decisive line is missing. Without it all test metrics are wrong — find it and explain which two mechanisms are affected.
 4. **TODO 3 — complete the ablation configurations** (Adam / AdamW+wd / SGD+momentum, the augmented loader for configuration C).
 5. **Run the ablation and interpret it** — compare against the expectations stated in the notebook text.
@@ -42,9 +42,10 @@ It runs on an Apple GPU (`mps`), on CUDA or on a CPU — detected automatically.
 
 ## What should work in the end
 
-- The parameter-count assert passes (66,570).
-- The CNN clearly beats the MLP (reference after 3 epochs on the 20k subset: CNN about 0.90–0.91, MLP about 0.86–0.88 test accuracy).
-- Using your own curves, you can explain why the regularized variant is not yet ahead after 3 epochs but has the smaller train/test gap after 10.
+- The parameter-count assert passes (66,026).
+- The ablation runs through. Reference values after 3 epochs on the 20k subset: A (MLP) 0.853, B (CNN) 0.847, C (CNN + reg/aug) 0.775, D (CNN + SGD momentum) 0.829.
+- **Note the finding, it is deliberately not the textbook one:** at this short budget the CNN does *not* yet beat the MLP. Only over 10 epochs does the regularized CNN pull ahead (0.861 vs. 0.848 for the plain CNN) — and it does so with 3.5 times fewer parameters. The inductive bias buys a better result per parameter, not faster progress per epoch; the GAP head and BatchNorm converge more slowly than a dense MLP on 28×28 greyscale.
+- Using your own curves, you can explain why the regularized variant is behind after 3 epochs but has the smaller train/test gap and the better accuracy after 10.
 
 ## Reference solution
 
@@ -86,7 +87,7 @@ Läuft auf Apple-GPU (`mps`), CUDA oder CPU — wird automatisch erkannt. Refere
 ## Aufgabenstellung (Schritt für Schritt)
 
 1. **Daten ansehen** (fertig vorgegeben): Lade-Pipeline mit Normalisierung und einem zweiten, augmentierten Loader (RandomCrop + Flip).
-2. **TODO 1 — CNN bauen:** zwei `[Conv3×3→BN→ReLU]×2→MaxPool`-Blöcke (32, 64 Kanäle) → Global Average Pooling → Dropout → Linear. Eine Assert-Zelle prüft die Parameterzahl (**erwartet: 66 570** — rechne sie vorher von Hand nach, Formel im Skript 2.5).
+2. **TODO 1 — CNN bauen:** zwei `[Conv3×3→BN→ReLU]×2→MaxPool`-Blöcke (32, 64 Kanäle) → Global Average Pooling → Dropout → Linear. Eine Assert-Zelle prüft die Parameterzahl (**erwartet: 66 026** — rechne sie vorher von Hand nach, Formel im Skript 2.5).
 3. **TODO 2 — `evaluate` reparieren:** Eine entscheidende Zeile fehlt. Ohne sie sind alle Testmetriken falsch — finde sie und erkläre, welche zwei Mechanismen betroffen sind.
 4. **TODO 3 — Ablations-Konfigurationen** vervollständigen (Adam / AdamW+wd / SGD+Momentum, Augmentierungs-Loader für Konfiguration C).
 5. **Ablation ausführen und interpretieren** — vergleiche mit den Erwartungen im Notebook-Text.
@@ -95,9 +96,10 @@ Läuft auf Apple-GPU (`mps`), CUDA oder CPU — wird automatisch erkannt. Refere
 
 ## Was am Ende funktionieren soll
 
-- Parameterzahl-Assert besteht (66 570).
-- CNN schlägt MLP deutlich (Referenz nach 3 Epochen auf 20k-Subset: CNN ≈ 0,90–0,91, MLP ≈ 0,86–0,88 Test-Accuracy).
-- Du kannst anhand deiner Kurven erklären: warum die regularisierte Variante nach 3 Epochen noch nicht vorn liegt, nach 10 aber die kleinere Train/Test-Schere hat.
+- Parameterzahl-Assert besteht (66 026).
+- Die Ablation läuft durch. Referenzwerte nach 3 Epochen auf dem 20k-Subset: A (MLP) 0,853, B (CNN) 0,847, C (CNN + Reg/Aug) 0,775, D (CNN + SGD-Momentum) 0,829.
+- **Achte auf den Befund, er ist bewusst nicht der aus dem Lehrbuch:** Bei diesem kurzen Budget schlägt das CNN das MLP noch *nicht*. Erst über 10 Epochen zieht das regularisierte CNN vorbei (0,861 gegenüber 0,848 für das pure CNN) — und zwar mit 3,5× weniger Parametern. Der induktive Bias kauft das bessere Ergebnis pro Parameter, nicht den schnelleren Fortschritt pro Epoche; GAP-Kopf und BatchNorm konvergieren auf 28×28-Graustufen langsamer als ein dichtes MLP.
+- Du kannst anhand deiner Kurven erklären: warum die regularisierte Variante nach 3 Epochen zurückliegt, nach 10 aber die kleinere Train/Test-Schere und die bessere Accuracy hat.
 
 ## Musterlösung
 
