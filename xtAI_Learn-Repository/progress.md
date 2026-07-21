@@ -72,9 +72,16 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** wurd
 ### Schritt 2 — READMEs bilingual + Notebooks englisch: **offen**
 Pro Modul: Modul-`README.md` + alle Projekt-`README.md` bekommen den englischen Block oben; alle Notebooks (Aufgabe + `solution/`) werden komplett englisch (Markdown-Zellen, Code-Kommentare, print-Strings). Notebook danach per nbconvert erneut ausführen. Nach jedem Modul: diese Tabelle aktualisieren + committen.
 
+**Konventionen für den englischen Block** (so gebaut in Modul 01, bitte beibehalten):
+- H1 auf Englisch, darunter ein `> **Language note.**`-Zitatblock, dann der komplette englische Text.
+- Trenner `---` / `---`, danach `# <deutscher Originaltitel> (deutsche Fassung)` und der **unveränderte** deutsche Text. Deutsche Überschriften behalten deutsche Anchor-Slugs → kein Konflikt mit dem englischen Inhaltsverzeichnis.
+- Notebooks: komplett englisch, **inklusive Bezeichnern** (`nachbarn`→`neighbours`, `WAENDE`→`WALLS`, `tokenisiere`→`tokenize` …). Das Labyrinth-Zielfeld heißt jetzt `G` statt `Z`.
+- Notebook-Neubau per Build-Skript im scratchpad (Stub + Lösung aus gemeinsamen Bausteinen), danach Lösung per nbconvert ausführen und die Zahlen gegen die README prüfen.
+
 | Modul | README (bilingual) | Projekt-READMEs | Notebooks englisch |
 |-------|--------------------|-----------------|--------------------|
-| 01–21 | offen | offen | offen |
+| 01 | ✓ | ✓ (3/3) | ✓ (4/4, ausgeführt, Zahlen == README: BFS 29/54, A* 29/35, greedy 31/32; Spam-Accuracy 0.9857) |
+| 02–21 | offen | offen | offen |
 
 ### Schritt 3 — .py-Projektdateien englisch: **offen** (erst nach Schritt 2)
 198 Dateien / ~18.600 Zeilen: Docstrings, Kommentare, print-Ausgaben, deutsche Bezeichner. Danach **alle** Testsuites erneut ausführen (pytest fehlt → `__main__`-Runner).

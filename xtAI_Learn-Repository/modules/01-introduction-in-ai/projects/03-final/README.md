@@ -1,4 +1,47 @@
-# Projekt 03 (final) — Spamfilter mit Naive Bayes auf echten SMS-Daten
+# Project 03 (final) — Spam filter with naive Bayes on real SMS data
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Format:** Jupyter notebook (`spam_filter.ipynb`) + download script.
+**Why this format?** This is a data project: load, explore, model, evaluate — exactly the workflow notebooks were made for, and at the same time a preview of the data science and ML modules.
+
+**Data: real.** We use the **SMS Spam Collection** (UCI Machine Learning Repository, Almeida & Hidalgo 2011): 5,574 real text messages, about 13 % of them spam. Real data are chosen deliberately here — the practical connection (spam filtering was *the* success story of naive Bayes) is precisely the point of this final project. The file (about 470 KB) is fetched by script and not committed to the repository.
+
+## Goal
+
+You translate Bayes' rule from the script into a working spam classifier with your own hands (including Laplace smoothing and log probabilities), evaluate it with the right metrics and compare it with scikit-learn. Reference result: **about 98.6 % accuracy** — identical to the scikit-learn implementation.
+
+## Prior knowledge
+
+- Sections 2.4 (Bayes, naive Bayes) and 2.5 (supervised learning, generalisation) of the module script
+- Projects 01 and 02
+- As a final project you write **all the code yourself** — the notebook only contains the step-by-step instructions, formulas and self-checks (no pre-written lines of code). You learn pandas systematically only in module 02; the few necessary pandas calls (e.g. `read_csv`) are therefore described as **prose hints** in the tasks so that you can reconstruct them.
+
+## Tasks
+
+1. **Fetch the data** (once, in the folder `03-final`, venv active):
+   ```bash
+   python datasets/download_data.py
+   ```
+2. Open the notebook `spam_filter.ipynb` and work through it from the top. Every code cell is **empty** — you fill it in yourself; the markdown cell above it says what to do (with formulas, hints and self-checks). The route: load and explore the data → train/test split → `tokenize(text)` → naive Bayes by hand (`train`, `log_word_prob`, `log_posterior`, `classify`) → evaluation → learned words → comparison with scikit-learn.
+3. Run the evaluation and **interpret** it: look closely at the confusion matrix — which kind of error is worse for a spam filter, and how does your model fare on it?
+4. Run the section "What did the model learn?" and the scikit-learn comparison.
+
+## What should work in the end
+
+- The tokenizer mini test prints `True`.
+- The example messages are correctly recognised as `spam` / `ham`.
+- Accuracy on the test set **above 98 %** (reference: 0.9857; naive "always ham" baseline: 0.8664).
+- Your model and `MultinomialNB` are practically neck and neck.
+
+## Solution
+
+Fully executed reference solution: [`solution/solution.ipynb`](solution/solution.ipynb) — try it yourself first. There you also see all reference outputs (confusion matrix, top spam words, etc.).
+
+---
+---
+
+# Projekt 03 (final) — Spamfilter mit Naive Bayes auf echten SMS-Daten (deutsche Fassung)
 
 **Format:** Jupyter Notebook (`spam_filter.ipynb`) + Download-Skript.
 **Warum dieses Format?** Das ist ein Daten-Projekt: laden, explorieren, modellieren, auswerten — genau der Workflow, für den Notebooks gemacht sind, und zugleich eine Vorschau auf die Data-Science- und ML-Module.
