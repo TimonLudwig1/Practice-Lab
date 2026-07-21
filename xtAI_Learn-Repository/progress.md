@@ -82,8 +82,9 @@ Pro Modul: Modul-`README.md` + alle Projekt-`README.md` bekommen den englischen 
 |-------|--------------------|-----------------|--------------------|
 | 01 | ✓ | ✓ (3/3) | ✓ (4/4, ausgeführt, Zahlen == README: BFS 29/54, A* 29/35, greedy 31/32; Spam-Accuracy 0.9857) |
 | 02 | ✓ | ✓ (3/3) | ✓ (6/6, ausgeführt; 165 fehlende Stunden, r 0.405/0.627, Abnahme grün) |
-| 03 | ✓ | ✓ (3/3) | **offen (0/6)** ← hier weitermachen |
-| 04–21 | offen | offen | offen |
+| 03 | ✓ | ✓ (3/3) | ✓ (6/6, ausgeführt; SQL 5 Checks, Bootstrap-KI [3.49, 20.47], R2 0.394/0.453/0.794, MAE 859<952<1458) |
+| 04 | offen | offen | offen | ← **hier weitermachen** |
+| 05–21 | offen | offen | offen |
 
 **Modul 02 — offener Rest und ein gefundener Kopplungs-Fall:**
 P01-basic FERTIG: `pandas_basics` + solution englisch, ausgeführt, alle Mini-Checks True (19 fehlende Werte, 124 Gentoo, 61 > 5 kg, Gentoo schwerste Art, r = 0.871) — deckt sich mit der README. Bezeichner: `fehlend`→`missing`, `schwer`→`heavy`, `masse_kg`→`mass_kg`, `schnabel_verhaeltnis`→`bill_ratio`, `masse_pro_art`→`mass_per_species`.
@@ -94,7 +95,8 @@ P03-final FERTIG: `bikesharing_eda` + solution englisch, ausgeführt. Bestätigt
 Solche Kopplungen (Projekt-.py erzeugt Daten, die das Notebook nutzt) in allen weiteren Modulen mitprüfen.
 
 **Modul 03 — Stand:** READMEs (Modul + 3 Projekte) fertig. `generate_db.py` (P01) bereits übersetzt: Schema jetzt `customers`/`products`/`orders` mit englischen Spalten, Kategorien `Electronics`/`Books`/`Household`/`Sports`, Produktnamen englisch. **Personennamen bewusst deutsch gelassen** (Kundendaten eines deutschen Shops — und erhält den README-Referenzwert „Emma Schulz"). Listenlängen unverändert ⇒ Seed-Folge erhalten; alle 5 README-Referenzwerte gegengeprüft und exakt reproduziert (6 Produkte > 50 EUR, Top-Kategorie Electronics, Top-Kunde Emma Schulz, 5 Kunden ohne Bestellung, 4 Städte >= 150, Dezember-Peak 124).
-NOCH OFFEN Modul 03: alle 6 Notebooks (`sql_basics`, `bootstrap_permutation`, `regression_forecasting`, je + solution). P03 braucht `python datasets/download_data.py`; Zielzahlen R2 0.394/0.453/0.794, MAE 859 < 952 < 1458, Leakage-MAE 625.
+**Modul 03 komplett.** Alle 6 Notebooks englisch + ausgeführt. Bestätigt: P01 alle 5 SQL-Mini-Checks True (Top-Kategorie Electronics, Top-Kunde Emma Schulz); P02 Median B 61.21, Differenz 12.29, KI [3.49, 20.47] (enthält 0 nicht), Konversions-p 0.187 (nicht signifikant — Power-Lektion intakt); P03 R2 0.394→0.453→0.794, Scheitel 29.1 °C, MAE Modell 859 < naiv 952 < saisonal 1458, Leakage-Zufallssplit 625, yr +1893.
+**Wichtig bei P02:** Die Reihenfolge der rng-Aufrufe (`rng` seed 42 für Daten, `rng_boot` seed 1 für Resampling) MUSS erhalten bleiben, sonst ändern sich KI und p-Werte. Beim Übersetzen nur Namen getauscht, Aufrufreihenfolge identisch gelassen.
 
 ### Schritt 3 — .py-Projektdateien englisch: **offen** (erst nach Schritt 2)
 198 Dateien / ~18.600 Zeilen: Docstrings, Kommentare, print-Ausgaben, deutsche Bezeichner. Danach **alle** Testsuites erneut ausführen (pytest fehlt → `__main__`-Runner).
