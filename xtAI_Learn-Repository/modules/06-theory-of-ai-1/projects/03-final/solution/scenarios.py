@@ -1,14 +1,14 @@
-"""Anwendungsszenarien fuer den Resolutions-Beweiser (logic.py)."""
+"""Application scenarios for the resolution prover (logic.py)."""
 from logic import (Atom, Not, And, Or, Implies, Iff, ForAll, Exists,
                    Var, Fn, Const, unify, unify_atoms, occurs, prove, to_clauses,
                    clause_str)
 
-# Kurzschreibweisen
+# Short forms
 def V(n): return Var(n)
 def C(n): return Const(n)
 
 # ======================================================================
-#  Szenario A — "Colonel West ist ein Krimineller" (AIMA-Klassiker, Horn)
+#  Scenario A — "Colonel West is a criminal" (the AIMA classic, Horn)
 # ======================================================================
 def scenario_west(verbose=True):
     x, y, z = V("x"), V("y"), V("z")
@@ -17,85 +17,86 @@ def scenario_west(verbose=True):
     def A(p, *a): return Atom(p, a)
 
     kb = [
-        # Es ist ein Verbrechen fuer einen Amerikaner, Waffen an feindliche Nationen zu verkaufen.
+        # It is a crime for an American to sell weapons to hostile nations.
         ForAll("x", ForAll("y", ForAll("z",
             Implies(And(A("American", x), And(A("Weapon", y),
                         And(A("Sells", x, y, z), A("Hostile", z)))),
                     A("Criminal", x))))),
-        A("Owns", Nono, M1),                                   # Nono besitzt M1
-        A("Missile", M1),                                      # M1 ist eine Rakete
-        # Alle Raketen, die Nono besitzt, wurden von West verkauft.
+        A("Owns", Nono, M1),                                   # Nono owns M1
+        A("Missile", M1),                                      # M1 is a missile
+        # All missiles that Nono owns were sold by West.
         ForAll("x", Implies(And(A("Missile", x), A("Owns", Nono, x)),
                             A("Sells", West, x, Nono))),
-        ForAll("x", Implies(A("Missile", x), A("Weapon", x))), # Raketen sind Waffen
-        ForAll("x", Implies(A("Enemy", x, America), A("Hostile", x))),  # Feinde sind feindlich
-        A("American", West),                                   # West ist Amerikaner
-        A("Enemy", Nono, America),                             # Nono ist Feind Amerikas
+        ForAll("x", Implies(A("Missile", x), A("Weapon", x))), # missiles are weapons
+        ForAll("x", Implies(A("Enemy", x, America), A("Hostile", x))),  # enemies are hostile
+        A("American", West),                                   # West is an American
+        A("Enemy", Nono, America),                             # Nono is an enemy of America
     ]
     goal = A("Criminal", West)
     ok, steps = prove(kb, goal, verbose=verbose)
-    print(f"\n[A] Ist West ein Krimineller?  ->  {'JA, bewiesen' if ok else 'nicht beweisbar'} "
-          f"({steps} Resolutionsschritte)")
+    print(f"\n[A] Is West a criminal?  ->  {'YES, proved' if ok else 'not provable'} "
+          f"({steps} resolution steps)")
     return ok
 
 # ======================================================================
-#  Szenario B — Skolem-Funktion: "jeder hat einen Vorfahren"
-#  KB: jeder hat einen Elter;  Elter => Vorfahr.   Ziel: jeder hat einen Vorfahren.
-#  Uebt Skolem-FUNKTION (Elter haengt von x ab) und Unifikation in Funktionsterme.
+#  Scenario B — a Skolem function: "everyone has an ancestor"
+#  KB: everyone has a parent;  parent => ancestor.   Goal: everyone has an ancestor.
+#  It exercises the Skolem FUNCTION (the parent depends on x) and unification
+#  into function terms.
 # ======================================================================
 def scenario_ancestor(verbose=True):
     def A(p, *a): return Atom(p, a)
     x, y = V("x"), V("y")
     kb = [
-        ForAll("x", Exists("y", A("Parent", y, x))),                       # jeder hat einen Elter
+        ForAll("x", Exists("y", A("Parent", y, x))),                       # everyone has a parent
         ForAll("x", ForAll("y", Implies(A("Parent", y, x), A("Ancestor", y, x)))),
     ]
-    goal = ForAll("x", Exists("y", A("Ancestor", y, x)))                   # jeder hat einen Vorfahren
+    goal = ForAll("x", Exists("y", A("Ancestor", y, x)))                   # everyone has an ancestor
     ok, steps = prove(kb, goal, verbose=verbose)
-    print(f"\n[B] Hat jeder einen Vorfahren?  ->  {'JA, bewiesen' if ok else 'nicht beweisbar'} "
-          f"({steps} Resolutionsschritte)")
+    print(f"\n[B] Does everyone have an ancestor?  ->  {'YES, proved' if ok else 'not provable'} "
+          f"({steps} resolution steps)")
     return ok
 
 # ======================================================================
-#  Szenario C — reine Aussagenlogik (Sonderfall ohne Variablen)
-#  Modus Tollens: (P=>Q), ¬Q  |=  ¬P
+#  Scenario C — pure propositional logic (the special case without variables)
+#  Modus tollens: (P=>Q), ¬Q  |=  ¬P
 # ======================================================================
 def scenario_propositional(verbose=True):
     P, Q = Atom("P"), Atom("Q")
     kb = [Implies(P, Q), Not(Q)]
     goal = Not(P)
     ok, steps = prove(kb, goal, verbose=verbose)
-    print(f"\n[C] Aussagenlogik, Modus Tollens (P⇒Q, ¬Q ⊢ ¬P)  ->  "
-          f"{'JA' if ok else 'nein'} ({steps} Schritte)")
+    print(f"\n[C] Propositional logic, modus tollens (P⇒Q, ¬Q ⊢ ¬P)  ->  "
+          f"{'YES' if ok else 'no'} ({steps} steps)")
     return ok
 
 # ======================================================================
-#  Szenario D — Gegenprobe: etwas, das NICHT folgt, wird nicht bewiesen
+#  Scenario D — the counter-check: something that does NOT follow is not proved
 # ======================================================================
 def scenario_nonentailment():
     def A(p, *a): return Atom(p, a)
     kb = [A("Sunny"), Implies(A("Sunny"), A("Warm"))]
-    goal = A("Raining")                    # folgt nicht
+    goal = A("Raining")                    # does not follow
     ok, steps = prove(kb, goal, max_steps=500, verbose=False)
-    print(f"\n[D] Folgt 'Raining' aus (Sunny, Sunny⇒Warm)?  ->  "
-          f"{'JA (FEHLER!)' if ok else 'nein, korrekt nicht beweisbar'} ({steps} Schritte)")
+    print(f"\n[D] Does 'Raining' follow from (Sunny, Sunny⇒Warm)?  ->  "
+          f"{'YES (AN ERROR!)' if ok else 'no, correctly not provable'} ({steps} steps)")
     return not ok
 
 # ======================================================================
-#  Occurs-Check-Demonstration
+#  A demonstration of the occurs check
 # ======================================================================
 def demo_occurs_check():
     x = Var("x")
     fx = Fn("f", (x,))
     s = unify(x, fx, {})
-    print("\n[Occurs-Check] unify(x, f(x)) =", s,
-          "->", "korrekt abgelehnt (unendlicher Term)" if s is None else "FEHLER")
+    print("\n[Occurs check] unify(x, f(x)) =", s,
+          "->", "correctly rejected (an infinite term)" if s is None else "AN ERROR")
     return s is None
 
 # ======================================================================
 if __name__ == "__main__":
     print("=" * 68)
-    print(" Resolutions-Theorembeweiser — Demonstration")
+    print(" Resolution theorem prover — a demonstration")
     print("=" * 68)
     r = []
     r.append(scenario_west(verbose=True))
@@ -104,5 +105,5 @@ if __name__ == "__main__":
     r.append(scenario_nonentailment())
     r.append(demo_occurs_check())
     print("\n" + "=" * 68)
-    print(" Ergebnis:", "ALLE Szenarien wie erwartet." if all(r) else "FEHLER in einem Szenario!")
+    print(" Result:", "ALL scenarios as expected." if all(r) else "AN ERROR in one scenario!")
     print("=" * 68)

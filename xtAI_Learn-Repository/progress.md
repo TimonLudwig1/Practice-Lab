@@ -52,11 +52,10 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 ## Englisch-Umstellung (laufender Auftrag, Vorrang vor Modul 22)
 
 > ### NEXT ACTION dieses Auftrags
-> **Modul 06, Projekt 03-final: `solution/logic.py`, `solution/scenarios.py`, `solution/test_prover.py` auf Englisch.**
-> Danach ist **Modul 06 komplett** (Modul 06 wird auf User-Wunsch inkl. .py-Dateien in einem Rutsch gemacht) und Modul 07 ist dran.
-> Erledigt in Modul 06: 4 READMEs · P01 (verifiziert: 418 km, 5257/457/147) · P02 (verifiziert: alle Tests OK, CSP 10.5 ms, **11 775** Klauseln, DPLL 1.5 s; Stub wirft korrekt NotImplementedError).
-> Zielzahlen P03: (A) Colonel West in ~600 Resolutionsschritten bewiesen, (B) 2, (C) 2, (D) terminiert ohne Beweis; Occurs-Check lehnt `unify(x, f(x))` ab. Test: `python test_prover.py` (kein pytest noetig).
-> **Nur solution/ vorhanden** (P03 ist bewusst ohne Code-Vorgabe) — es gibt also keine Stub-Dateien zu uebersetzen.
+> **Modul 07 „Theorie der KI 2": Modul-README + 3 Projekt-READMEs bilingual, dann die Projekte.**
+> **Modul 06 ist komplett** — als erstes Modul **inklusive der .py-Dateien** (User-Freigabe „in einem Rutsch"). Modul 07 hat dasselbe Format: **Notebook nur P01**, P02+P03 sind .py-Projekte (STRIPS-Planer, Bayes-Netz, MDP-Agent) — also genauso in einem Rutsch machen.
+> Zielzahlen Modul 07: P01 Sussman BFS vs A*(h_add) **18 vs 11**; P02 Alarm **0.2842**, explaining away 0.374→0.003, Enumeration==VE exakt; P03 AIMA-Utilities reproduziert, VI 34 / PI 5 Iterationen, gleiche Policy.
+> **pytest fehlt** -> Testsuiten via `python test_*.py`.
 >
 > Rezept siehe „Arbeitsablauf pro Notebook" weiter unten.
 
@@ -90,8 +89,9 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 03 Data Science 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `598a668`, `b723e1d` |
 | 04 Machine Learning 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `92ab92d`, `d172564`, `028b8a5`, `90817ad` |
 | 05 Machine Learning 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `af83312`, `f56b29f`, `4c879f7`, `5f8afc3` |
-| **06 Theorie der KI 1** | ✓ | ✓ 3/3 | **P01+P02 ✓, P03 offen** | `033b87a`, `1d3e467` |
-| 07–21 | offen | offen | offen | — |
+| 06 Theorie der KI 1 | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `033b87a`, `1d3e467`, `<neu>` |
+| **07 Theorie der KI 2** | **offen — als Nächstes** | offen | offen | — |
+| 08–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)
 1. Altes Notebook dumpen: `python -c "import json; nb=json.load(open(PFAD)); [print('####',i,c['cell_type'],''.join(c['source'])) for i,c in enumerate(nb['cells'])]"`.

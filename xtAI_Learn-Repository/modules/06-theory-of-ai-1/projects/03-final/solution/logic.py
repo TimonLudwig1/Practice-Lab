@@ -1,19 +1,19 @@
-"""Ein Resolutions-Theorembeweiser fuer die Praedikatenlogik erster Stufe.
+"""A resolution theorem prover for first-order predicate logic.
 
-Pipeline (Teil 3 & 4 des Skripts):
-    Formel  --Implikationen elim.--> --NNF--> --standardisieren-->
-            --skolemisieren--> --All-Q. weglassen--> --distribuieren-->
-            Klauselmenge  --Resolution mit Unifikation--> Widerlegung.
+The pipeline (parts 3 and 4 of the script):
+    formula --eliminate implications--> --NNF--> --standardize apart-->
+            --skolemize--> --drop universals--> --distribute-->
+            a set of clauses --resolution with unification--> a refutation.
 
-Beweisstrategie: Refutation. Um KB |= alpha zu zeigen, fuegt man ¬alpha zur
-KB hinzu und leitet die leere Klausel ab.
+The proof strategy: refutation. To show KB |= alpha, one adds ¬alpha to the KB
+and derives the empty clause.
 """
 from dataclasses import dataclass
 from itertools import count
 from typing import Tuple
 
 # ======================================================================
-#  Terme:  Var (Variable)  und  Fn (Funktions-/Konstantensymbol)
+#  Terms:  Var (a variable)  and  Fn (a function/constant symbol)
 # ======================================================================
 @dataclass(frozen=True)
 class Var:
@@ -27,11 +27,11 @@ class Fn:
     def __repr__(self):
         return self.name if not self.args else f"{self.name}({','.join(map(repr,self.args))})"
 
-def Const(name):            # Konstante = 0-stellige Funktion
+def Const(name):            # a constant = a 0-ary function
     return Fn(name, ())
 
 # ======================================================================
-#  Formeln (AST)
+#  Formulas (AST)
 # ======================================================================
 @dataclass(frozen=True)
 class Atom:
@@ -56,7 +56,7 @@ class ForAll: x: str; f: object
 class Exists: x: str; f: object
 
 # ======================================================================
-#  Literale und Klauseln
+#  Literals and clauses
 # ======================================================================
 @dataclass(frozen=True)
 class Literal:
@@ -65,10 +65,10 @@ class Literal:
     def __repr__(self):
         return ("¬" if self.neg else "") + repr(self.atom)
 
-# Klausel = frozenset[Literal];  leere Klausel = frozenset()
+# A clause = frozenset[Literal];  the empty clause = frozenset()
 
 # ======================================================================
-#  KNF-Umwandlung
+#  CNF conversion
 # ======================================================================
 def eliminate_implications(f):
     if isinstance(f, Atom):    return f
@@ -84,7 +84,7 @@ def eliminate_implications(f):
     raise TypeError(f)
 
 def to_nnf(f):
-    """Negationen nach innen ziehen (setzt eliminierte Implikationen voraus)."""
+    """Move negations inwards (assumes implications have been eliminated)."""
     if isinstance(f, Atom):   return f
     if isinstance(f, And):    return And(to_nnf(f.a), to_nnf(f.b))
     if isinstance(f, Or):     return Or(to_nnf(f.a), to_nnf(f.b))
@@ -110,7 +110,7 @@ def _rename_atom(a, env):
 
 _std_counter = count(1)
 def standardize_apart(f, env=None):
-    """Jede quantifizierte Variable global eindeutig umbenennen."""
+    """Rename every quantified variable so that it is globally unique."""
     env = env or {}
     if isinstance(f, Atom): return _rename_atom(f, env)
     if isinstance(f, Not):  return Not(standardize_apart(f.f, env))
@@ -130,18 +130,18 @@ def _subst_term(t, sub):
 
 _sk_counter = count(1)
 def skolemize(f, univ=(), sub=None):
-    """Existenzquantoren durch Skolem-Konstanten/-Funktionen ersetzen.
-    `univ` = die umgebenden allquantifizierten Variablen (als Terme)."""
+    """Replace existential quantifiers by Skolem constants/functions.
+    `univ` = the surrounding universally quantified variables (as terms)."""
     sub = sub or {}
     if isinstance(f, ForAll):
         return ForAll(f.x, skolemize(f.f, univ + (Var(f.x),), sub))
     if isinstance(f, Exists):
-        sk = Fn(f"Sk{next(_sk_counter)}", tuple(univ))   # Zeuge haengt von univ ab
+        sk = Fn(f"Sk{next(_sk_counter)}", tuple(univ))   # the witness depends on univ
         sub2 = dict(sub); sub2[f.x] = sk
         return skolemize(f.f, univ, sub2)
     if isinstance(f, And): return And(skolemize(f.a, univ, sub), skolemize(f.b, univ, sub))
     if isinstance(f, Or):  return Or(skolemize(f.a, univ, sub), skolemize(f.b, univ, sub))
-    if isinstance(f, Not): return Not(skolemize(f.f, univ, sub))   # nur Not(Atom) in NNF
+    if isinstance(f, Not): return Not(skolemize(f.f, univ, sub))   # only Not(Atom) in NNF
     if isinstance(f, Atom): return Atom(f.pred, tuple(_subst_term(t, sub) for t in f.args))
     raise TypeError(f)
 
@@ -151,7 +151,7 @@ def drop_universals(f):
     return f
 
 def distribute(f):
-    """Or ueber And distribuieren -> KNF-Struktur."""
+    """Distribute Or over And -> the CNF structure."""
     if isinstance(f, And): return And(distribute(f.a), distribute(f.b))
     if isinstance(f, Or):
         a, b = distribute(f.a), distribute(f.b)
@@ -175,10 +175,10 @@ def _collect_literals(f, acc):
     elif isinstance(f, Atom):
         acc.add(Literal(False, f))
     else:
-        raise TypeError(f"unerwartet in Klausel: {f}")
+        raise TypeError(f"unexpected inside a clause: {f}")
 
 def to_clauses(f):
-    """Vollstaendige Umwandlung einer (geschlossenen) Formel in Klauseln."""
+    """The complete conversion of a (closed) formula into clauses."""
     f = eliminate_implications(f)
     f = to_nnf(f)
     f = standardize_apart(f)
@@ -190,10 +190,9 @@ def to_clauses(f):
     return acc
 
 # ======================================================================
-#  Unifikation (mit Occurs-Check)
+#  Unification (with the occurs check)
 # ======================================================================
 def occurs(vname, t, sub):
-    t = sub.get(vname, None) if False else t
     if isinstance(t, Var):
         if t.name == vname: return True
         if t.name in sub:   return occurs(vname, sub[t.name], sub)
@@ -218,7 +217,7 @@ def unify(x, y, sub):
 def unify_var(var, x, sub):
     if var.name in sub:              return unify(sub[var.name], x, sub)
     if isinstance(x, Var) and x.name in sub: return unify(var, sub[x.name], sub)
-    if occurs(var.name, x, sub):     return None          # Occurs-Check!
+    if occurs(var.name, x, sub):     return None          # the occurs check!
     s2 = dict(sub); s2[var.name] = x
     return s2
 
@@ -230,7 +229,7 @@ def unify_atoms(a1, a2, sub):
     return sub
 
 # ======================================================================
-#  Substitution auf Literalen/Klauseln
+#  Substitution on literals/clauses
 # ======================================================================
 def subst_literal(lit, sub):
     return Literal(lit.neg, Atom(lit.atom.pred,
@@ -241,7 +240,7 @@ def subst_clause(clause, sub):
 
 _ren_counter = count(1)
 def rename_clause(clause):
-    """Alle Variablen der Klausel frisch umbenennen (Standardisieren fuer Resolution)."""
+    """Rename all variables of the clause freshly (standardizing apart for resolution)."""
     names = {t.name for lit in clause for t in _vars_in_atom(lit.atom)}
     sub = {n: Var(f"{n}#{next(_ren_counter)}") for n in names}
     return subst_clause(clause, sub)
@@ -255,16 +254,16 @@ def _vars_in_atom(a):
     for t in a.args: yield from _vars_in_term(t)
 
 # ======================================================================
-#  Resolution + Faktorisierung
+#  Resolution + factoring
 # ======================================================================
 def resolve(c1, c2):
-    """Alle Resolventen zweier Klauseln (Variablen vorher frisch umbenannt)."""
+    """All resolvents of two clauses (with the variables renamed freshly first)."""
     c1, c2 = rename_clause(c1), rename_clause(c2)
     resolvents = []
     for L1 in c1:
         for L2 in c2:
             if L1.neg == L2.neg:
-                continue                       # nicht komplementaer
+                continue                       # not complementary
             sub = unify_atoms(L1.atom, L2.atom, {})
             if sub is None:
                 continue
@@ -273,7 +272,7 @@ def resolve(c1, c2):
     return resolvents
 
 def factors(clause):
-    """Faktoren: zwei gleichnamige Literale gleicher Polaritaet unifizieren."""
+    """Factors: unify two literals of the same name and polarity."""
     clause = rename_clause(clause)
     result = []
     lits = list(clause)
@@ -288,23 +287,23 @@ def factors(clause):
     return result
 
 # ======================================================================
-#  Refutations-Hauptschleife
+#  The main refutation loop
 # ======================================================================
 EMPTY = frozenset()
 
 def prove(kb_formulas, goal, max_steps=100000, verbose=False):
-    """Zeigt kb |= goal per Widerlegung mit Set-of-Support-Strategie
-    (given-clause-Schleife). Gibt (bewiesen: bool, schritte) zurueck.
+    """Shows kb |= goal by refutation with the set-of-support strategy
+    (a given-clause loop). Returns (proved: bool, steps).
 
-    Idee: Nur aus dem (negierten) Ziel abgeleitete Klauseln kommen in das
-    'set of support' (SOS) und werden nacheinander als 'given clause' gegen
-    ALLE bekannten Klauseln resolviert. Das ist refutationsvollstaendig,
-    solange die KB ohne Ziel erfuellbar ist, und meidet die vielen
-    nutzlosen KB-mit-KB-Resolutionen der blinden Saturierung."""
+    The idea: only clauses derived from the (negated) goal enter the 'set of
+    support' (SOS), and they are used one after another as the 'given clause'
+    to be resolved against ALL known clauses. That is refutation complete as
+    long as the KB without the goal is satisfiable, and it avoids the many
+    useless KB-with-KB resolutions of blind saturation."""
     kb_clauses = []
     for f in kb_formulas:
         kb_clauses.extend(to_clauses(f))
-    goal_clauses = to_clauses(Not(goal))       # Ziel negieren
+    goal_clauses = to_clauses(Not(goal))       # negate the goal
     kb_clauses = _dedup(kb_clauses)
     goal_clauses = _dedup(goal_clauses)
 
@@ -313,7 +312,7 @@ def prove(kb_formulas, goal, max_steps=100000, verbose=False):
         parents.setdefault(c, None)
 
     known = set(kb_clauses) | set(goal_clauses)
-    sos = list(goal_clauses)                    # Warteschlange der given clauses
+    sos = list(goal_clauses)                    # the queue of given clauses
     step = 0
 
     def emit(res, p):
@@ -334,14 +333,14 @@ def prove(kb_formulas, goal, max_steps=100000, verbose=False):
                 if emit(res, (given, other)):
                     if verbose: _print_proof(EMPTY, parents)
                     return True, step
-        for fc in factors(given):               # Faktorisierung des given clause
+        for fc in factors(given):               # factoring of the given clause
             step += 1
             if emit(fc, (given, None)):
                 if verbose: _print_proof(EMPTY, parents)
                 return True, step
     return False, step
 
-# ---- Hilfen ---------------------------------------------------------
+# ---- Helpers --------------------------------------------------------
 def _normalize(clause):
     return frozenset(clause)
 
@@ -358,10 +357,10 @@ def _is_tautology(clause):
     return bool(atoms_pos & atoms_neg)
 
 def clause_str(c):
-    return "□ (leer)" if not c else "{" + ", ".join(sorted(map(repr, c))) + "}"
+    return "□ (empty)" if not c else "{" + ", ".join(sorted(map(repr, c))) + "}"
 
 def _print_proof(target, parents):
-    print("\n--- Widerlegung gefunden (Ableitung der leeren Klausel) ---")
+    print("\n--- Refutation found (the derivation of the empty clause) ---")
     order, seen = [], set()
     def walk(c):
         if c in seen: return
