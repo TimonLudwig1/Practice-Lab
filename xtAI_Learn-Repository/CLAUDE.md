@@ -13,6 +13,15 @@ Für **jedes Modul** aus `module-liste.md` (bzw. der Modulübersicht) erstellst 
 1. **Einer Erklärungs-Datei** (`README.md` oder `skript.md`) — wie Vorlesungsfolien in Textform: von den Basics bis zu Advanced-Themen, am Ende Literatur und weiterführende Quellen. Die Erklärungsdatei, und oder readme.d sollen zuerst auf englisch verfasst und darunter eine deutsch übersetzte Version enthalten. Keine emojis verwenden.
 2. **Drei Lernprojekten**, aufsteigend in Schwierigkeit (basic → medium → final). Format wählst du pro Projekt selbst (siehe unten). Die Sprache in den projekten selbst, soll ausschließlich englisch sein. 
 
+### Sprachregel (gilt für alles, verbindlich)
+
+Diese Regel präzisiert die beiden Punkte oben und hat Vorrang, falls weiter unten etwas anderes steht:
+
+- **Jede `README.md`** — sowohl die Modul-Erklärungsdatei als auch die READMEs der einzelnen Projekte — ist **zweisprachig**: zuerst der vollständige englische Text, darunter durch einen Trenner abgesetzt die deutsche Fassung. Der englische Block ist eine **vollständige Spiegelung**, keine Kurzfassung.
+- **Alles in den Projekten selbst ist ausschließlich englisch**: Notebooks (Markdown-Zellen und Code), `.py`-Dateien, Kommentare, Docstrings, `print`-Ausgaben, Testnamen — und auch die **Bezeichner** (Variablen, Funktionen, Konstanten). Kein deutsches Wort im Code.
+- **Datei- und Ordnernamen sind englisch** (`modules/`, `projects/`, `solution/`, `datasets/`, `results/`, `search.ipynb` …). Wer den deutschen Fachbegriff sucht, findet ihn im deutschen README-Block.
+- Der **deutsche Block bleibt deutsch** — mit englischen Fachbegriffen, wo sie in der Praxis Standard sind (*overfitting*, *policy*, *frontier*). Nicht eindeutschen, was niemand eindeutscht.
+
 Arbeite **ein Modul nach dem anderen vollständig ab**, bevor du zum nächsten übergehst. Nach jedem fertigen Modul: kurze Statusmeldung an mich und weiter, außer ich sage etwas anderes.
 
 ---
@@ -57,7 +66,7 @@ Schreibe es so, dass ich es allein durcharbeiten kann, ohne Vorlesung. Struktur:
    - gute Blogposts / interaktive Visualisierungen
    Kennzeichne, was **einsteigerfreundlich** und was **vertiefend** ist. Kennzeichne kostenlose Ressourcen.
 
-**Stil**: Deutsch. Fachbegriffe auf Englisch, wo üblich (die sind so in der Praxis). Formeln als LaTeX in Markdown (`$...$` / `$$...$$`). Erklärend, geduldig, aber nicht geschwätzig. Nutze Diagramme/ASCII-Skizzen oder Mermaid, wo es hilft.
+**Stil**: Die obige Struktur gilt für **beide** Sprachblöcke — erst komplett auf Englisch, darunter dieselbe Gliederung auf Deutsch (siehe Sprachregel). Im deutschen Block: Fachbegriffe auf Englisch, wo üblich (die sind so in der Praxis). Formeln als LaTeX in Markdown (`$...$` / `$$...$$`). Erklärend, geduldig, aber nicht geschwätzig. Nutze Diagramme/ASCII-Skizzen oder Mermaid, wo es hilft.
 
 ---
 
@@ -174,7 +183,7 @@ Siehe die ausführliche Sektion **„progress.md — Build-Tracker & nahtloses W
 - Erklärend statt nur auflistend — ich will *verstehen*, nicht nur Stichworte sehen.
 - Lauffähiger, getesteter Code in den Projekten.
 - Konsistente Struktur über alle Module, damit ich mich schnell zurechtfinde.
-- Deutsch als Sprache, englische Fachbegriffe wo Standard.
+- Sprache nach der **Sprachregel** oben: READMEs zweisprachig (Englisch zuerst, Deutsch darunter), Projektinhalte und Dateinamen ausschließlich englisch. Im deutschen Block englische Fachbegriffe, wo Standard.
 - **Strikte Master-Niveau-Garantie (Keine Abkürzungen):** Überspringe oder vereinfache unter keinen Umständen mathematische, statistische oder algorithmische Komplexität. Sätze wie „das sprengt den Rahmen“ sind strikt untersagt. Wenn ein Konzept komplex ist, liefere das **vollständige, exakte und komplexe Modell in formaler Notation**. Kompensiere die Komplexität niemals durch inhaltliche Reduktion, sondern ausschließlich durch eine herausragende, präzise und geduldige Erklärung. Die Abschlussprojekte müssen dem Niveau einer echten Master-Prüfungsleistung entsprechen.
 - **Wichtig:** Es ist ok, wenn das beginner Projekt viel code vorgabe hat. Das medium projekt sollte weniger code vorgabe haben, nur vereinzelt bei den schwereren Ansätzen eine kleine Inspiration, das final Projekt sollte keinen schon vorgeschriebenen code haben. Es soll dazu dienen die gelernten Inhalte final anzuwenden. 
 
