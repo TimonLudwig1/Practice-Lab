@@ -91,7 +91,7 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 05 Machine Learning 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `af83312`, `f56b29f`, `4c879f7`, `5f8afc3` |
 | 06 Theorie der KI 1 | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `033b87a`, `1d3e467`, `f1bc5b3` |
 | 07 Theorie der KI 2 | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `d2bb460`, `a1b92c6` |
-| 08 NLP 1 | ✓ | ✓ 3/3 (+2 datasets) | ✓ Notebook + alle .py | `678c6c1`, `<neu>` |
+| 08 NLP 1 | ✓ | ✓ 3/3 (+2 datasets) | ✓ Notebook + alle .py | `678c6c1`, `50b79a5` |
 | **09 NLP 2** | **offen — als Nächstes** | offen | offen | — |
 | 10–21 | offen | offen | offen | — |
 
