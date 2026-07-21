@@ -1,4 +1,42 @@
-# Projekt 01 (basic) — kNN von Hand & der Bias-Variance-Tradeoff zum Anfassen
+# Project 01 (basic) — kNN by hand and the bias-variance tradeoff made tangible
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Format:** Jupyter notebook (`knn_from_scratch.ipynb`).
+**Why this format?** The two core lessons (scaling, the bias-variance arc) are visual insights — accuracy curves and decision boundaries have to appear right next to the code.
+
+**Data: real.** The Palmer penguins again (`seaborn.load_dataset`), now as a classification task: the species from **bill length (mm) and body mass (g)** — the extremely different scales are chosen deliberately so that the scaling lesson lands (77 % → 95 % accuracy).
+
+## Goal
+
+Implement kNN entirely yourself (distance → k nearest neighbours → majority vote), verify it against scikit-learn, then sweep $k$ from 1 to 151 and see the bias-variance arc (overfitting on the left, underfitting on the right) as a curve and as a picture of decision boundaries.
+
+## Prior knowledge
+
+- Sections 1.2–1.4 of the module script (kNN, bias/variance, evaluation)
+- numpy basics; `train_test_split` from module 03
+
+## Tasks
+
+1. Work through the notebook; to be implemented: `euclidean`, `knn_predict`, the standardisation (on the training data only — the leakage rule!) and the k sweep.
+2. Mini checks must evaluate to `True`.
+3. Describe the bias-variance plot in your own words before reading the reference interpretation.
+
+## What should work in the end
+
+- Unscaled (k=5): accuracy about 0.77 → scaled: about 0.95.
+- The hand-written kNN and sklearn agree up to at most one test point (tie breaks).
+- k sweep: k=1 → train 1.0 / test 0.92 (overfitting); the optimum around k = 5–31; k=151 → both about 0.75 (underfitting).
+- Decision boundary plot: jagged at k=1, smooth at k=31.
+
+## Solution
+
+Fully executed reference solution: [`solution/solution.ipynb`](solution/solution.ipynb).
+
+---
+---
+
+# Projekt 01 (basic) — kNN von Hand & der Bias-Variance-Tradeoff zum Anfassen (deutsche Fassung)
 
 **Format:** Jupyter Notebook (`knn_from_scratch.ipynb`).
 **Warum dieses Format?** Die zwei Kernlektionen (Skalierung, Bias-Variance-Bogen) sind visuelle Erkenntnisse — Accuracy-Kurven und Entscheidungsgrenzen müssen direkt neben dem Code entstehen.

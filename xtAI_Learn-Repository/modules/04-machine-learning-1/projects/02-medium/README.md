@@ -1,4 +1,51 @@
-# Projekt 02 (medium) — Das ehrliche Modellrennen: Pipelines, CV & Tuning
+# Project 02 (medium) — The honest model race: pipelines, CV and tuning
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Format:** Jupyter notebook (`model_race.ipynb`).
+**Why this format?** Model comparisons live on tables and box plots right next to the code — and on the immediate visual check ("does the ROC curve match the number?").
+
+**Data: real.** The **Breast Cancer Wisconsin (Diagnostic)** data set, directly available via `sklearn.datasets.load_breast_cancer()` (569 tumour samples, 30 numerical features from images of cell nuclei, target: *malignant* vs. *benign*, class ratio about 37/63 — real and slightly imbalanced). No download needed, no synthetic data required — ideal for practising the craft (pipelines, CV, tuning) on real but manageable data.
+
+## Goal
+
+You enter a "model competition" against yourself: preprocess several model families from the script (chapter 2) cleanly via a **pipeline**, compare them fairly with **stratified cross-validation**, tune the best two with **grid/randomised search**, and at the end do the honest final accounting **once** on the test set — including interpretation (permutation importance, calibration, learning curve).
+
+Compared with project 01 there is markedly **less guidance**: you get intermediate goals and checks, but you are to derive the pipeline and grid search construction yourself from the script (sections 2.1–2.5).
+
+## Prior knowledge
+
+- The module script in full (especially 1.4–1.5 evaluation/metrics, 2.1–2.5 models/pipelines/tuning)
+- Project 01 (kNN, bias-variance, scaling)
+- The basic sklearn routine: `train_test_split`, `.fit`/`.predict` (modules 02/03)
+
+## Tasks
+
+1. **Load and explore**: `load_breast_cancer`, check the class distribution, stratified train/test split (put the test set away — do not touch it until step 6!).
+2. **Baseline**: a `DummyClassifier` as the lower bound — every serious model has to beat it.
+3. **Build pipelines**: for every model (logistic regression, kNN, SVM (RBF kernel), decision tree, random forest, gradient boosting) a `Pipeline` with `StandardScaler` + classifier. (Tree models do not need scaling — build them in consistently anyway, it does no harm and keeps the code uniform.)
+4. **Fair comparison**: evaluate all pipelines with `StratifiedKFold(5)` and `cross_val_score` (scoring: `roc_auc`), present the results as a box plot. Which 2 models go into tuning?
+5. **Hyperparameter tuning**: define a parameter grid for each of your top 2 models and tune it on the training data with `GridSearchCV` (or `RandomizedSearchCV`). Print the best CV result and the best parameters.
+6. **The one-off test evaluation**: fit the best model finally on all of train, evaluate it **once** on the test set: confusion matrix, precision/recall/F1, ROC curve + AUC.
+7. **Interpretation**: permutation importance on the test set (plot the top 10 features), briefly assess whether the most important features seem medically plausible (e.g. `worst radius`, `worst concave points`).
+8. **Learning curve** for the final model: a bias or a variance problem?
+9. Answer the reflection questions at the end of the notebook in your own words.
+
+## What should work in the end
+
+- The CV ROC-AUC of all models lies between about 0.95 (an unscaled kNN baseline would be worse, but with a pipeline all should be above 0.95) and about 0.99 (gradient boosting/logistic regression typically in front).
+- The tuned model reaches ROC-AUC at least 0.98 and F1 at least 0.95 on the test set.
+- Permutation importance highlights plausible `worst` features.
+- You can justify in your own words why the test set was touched only once.
+
+## Solution
+
+Fully executed reference solution: [`solution/solution.ipynb`](solution/solution.ipynb). Please try it yourself first — this module lives on the craft, not on copying.
+
+---
+---
+
+# Projekt 02 (medium) — Das ehrliche Modellrennen: Pipelines, CV & Tuning (deutsche Fassung)
 
 **Format:** Jupyter Notebook (`model_race.ipynb`).
 **Warum dieses Format?** Modellvergleiche leben von Tabellen und Boxplots direkt neben dem Code — und vom sofortigen visuellen Check ("stimmt die ROC-Kurve mit der Zahl überein?").

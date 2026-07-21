@@ -1,4 +1,55 @@
-# Projekt 03 (final) — Einkommensvorhersage auf echten Zensusdaten
+# Project 03 (final) — Income prediction on real census data
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Format:** Jupyter notebook (`income_prediction.ipynb`).
+**Why this format?** As in project 02, the model comparison, the cost-threshold plot, the fairness table and the importance plot belong visually together with the code that produces them.
+
+**Data: real.** UCI **Adult / Census Income** (US census 1994, 48,842 people), loaded via `sklearn.datasets.fetch_openml("adult", version=2)` — no manual download needed, scikit-learn caches the data set locally in `~/scikit_learn_data/` (not part of the repository; the first run needs internet access). **A practical connection as required**: a real, classical ML task (predicting income from census attributes) with all the ugliness of real data — mixed numerical/categorical types, genuine missing values (`workclass`, `occupation`, `native-country`), class imbalance (about 24 % `>50K`) and sensitive attributes (`sex`, `race`) that invite a fairness analysis.
+
+## Goal
+
+Consolidate the module end to end: ColumnTransformer pipelines for mixed types, a fair model comparison under imbalance (PR-AUC instead of accuracy), tuning, and two topics that textbooks often skimp on but that are central in practice — **choosing a threshold by costs** and a **fairness check between subgroups**.
+
+## Prior knowledge
+
+- The complete module script, in particular 2.4 (pipelines/ColumnTransformer), 2.6 (imbalanced classes), 3.1 (interpretation)
+- Project 02 (pipelines, CV, GridSearchCV)
+
+## Tasks
+
+1. **Load and explore**: `fetch_openml`, look at the missing values and the target distribution.
+2. **Preparation**: encode the target variable as binary, remove `fnlwgt` (a census weight, not an attribute) and `education` (redundant with `education-num`), define the feature lists (numerical/categorical).
+3. **Split**: stratified; do not touch the test set until step 6.
+4. **Preprocessing pipeline**: a `ColumnTransformer` with imputation + scaling (numerical) and imputation + one-hot encoding (categorical, `sparse_output=False`, because `HistGradientBoostingClassifier` needs dense matrices).
+5. **Baseline**: a `DummyClassifier`.
+6. **Model comparison under imbalance**: three pipelines (logistic regression, random forest, gradient boosting), each with `class_weight="balanced"`, compared via `StratifiedKFold` + `scoring="average_precision"` (PR-AUC).
+7. **Tuning**: refine the best model with `GridSearchCV` (scoring still PR-AUC).
+8. **The one-off test evaluation**: classification report, PR curve, PR-AUC on the test set at the default threshold of 0.5.
+9. **Choosing a threshold by a cost calculation**: a scenario with asymmetric costs (a false alarm 50 dollars vs. a missed case 200 dollars), find the cost-minimal threshold.
+10. **Fairness check**: recall/false positive rate separately by `sex` at the chosen threshold — assess the pattern.
+11. **Permutation importance** on the original raw features (not on the one-hot dummies).
+
+## What should work in the end
+
+- CV PR-AUC: logistic regression about 0.76, random forest about 0.71, gradient boosting about 0.83 (gradient boosting wins clearly).
+- The tuned gradient boosting model reaches PR-AUC about 0.83 on the test set; at threshold 0.5: recall(`>50K`) about 0.87, precision about 0.60.
+- The cost-minimal threshold lies at about 0.44 (moderately below 0.5 — `class_weight="balanced"` has already shifted the scores, so the cost threshold only fine-tunes).
+- The fairness table shows a real gap: recall for `Female` (base rate `>50K` about 11 %) is about 0.80, for `Male` (base rate about 30 %) about 0.91 — a concrete result worth discussing, not an artefact.
+- Permutation importance highlights `capital-gain`, `education-num`, `age`, `hours-per-week`, `marital-status`.
+
+## Why real practice data (no design decision needed)
+
+For this final project there was a freely available, established real data set with exactly the properties that make up the practical connection (messiness, imbalance, ethical questions) — hence no synthetic substitute data set was needed.
+
+## Solution
+
+Fully executed reference solution: [`solution/solution.ipynb`](solution/solution.ipynb). Please try it yourself first.
+
+---
+---
+
+# Projekt 03 (final) — Einkommensvorhersage auf echten Zensusdaten (deutsche Fassung)
 
 **Format:** Jupyter Notebook (`income_prediction.ipynb`).
 **Warum dieses Format?** Wie in Projekt 02 gehören Modellvergleich, Kosten-Schwellen-Plot, Fairness-Tabelle und Importance-Plot visuell zusammen mit dem Code, der sie erzeugt.
