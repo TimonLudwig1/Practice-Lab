@@ -1,4 +1,101 @@
-# Projekt 02 (medium) — Textklassifikation: Naive Bayes vs. TF-IDF + LogReg
+# Project 02 (medium) — Text classification: naive Bayes vs. TF-IDF + logistic regression
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Module 08 — NLP 1** · Format: **Python project** (several modules + tests)
+
+## Why this format?
+
+Text classification is a small pipeline with clear building blocks — load the
+data, tokenize, train a model, evaluate, compare with a second method. As a
+**code base** (rather than a notebook) you see the separation of data, model and
+evaluation, and you implement **naive Bayes from scratch** — exactly what stays
+hidden inside libraries.
+
+## Goal
+
+You implement a **multinomial naive Bayes classifier by hand** and compare it
+with **TF-IDF + logistic regression** (scikit-learn) on real text data (**20
+newsgroups**, 4 categories). Along the way you learn:
+
+- the generative NB model in **log space** with **Laplace smoothing** (part 2.1);
+- the discriminative alternative (TF-IDF + logistic regression, parts 2.2/2.3);
+- **clean evaluation** with precision/recall/F1 (macro/weighted) on a test set;
+- the (surprisingly good) competitiveness of naive Bayes despite its "naive"
+  independence assumption.
+
+## Prior knowledge
+
+- Part 2 of the script (naive Bayes, logistic regression, TF-IDF, precision/recall/F1).
+- Python: `collections.Counter`, `math.log`, classes.
+- The basics of scikit-learn (the pipeline is given).
+
+## Project structure
+
+```
+02-medium/
+  data.py          # load 20 newsgroups + the tokenizer  (given)
+  naive_bayes.py   # MultinomialNaiveBayes               <- YOU: fit + predict_one
+  classify.py      # training + comparison + report      (given, uses your NB)
+  test_nb.py       # the test suite                      (given)
+  solution/        # the complete reference solution
+```
+
+What is given: loading the data and tokenizing, the comparison and reporting
+logic (including the sklearn pipeline) and the tests. **You implement the core**
+— `MultinomialNaiveBayes.fit` and `.predict_one` (the log prior, the smoothed log
+likelihoods, the argmax), marked with `TODO`.
+
+## Tasks (step by step)
+
+1. **`fit`**: determine the classes and the vocabulary; per class the word counts
+   $C(w,c)$ and the number of documents; $\log P(c)$; the smoothed
+   $\log P(w\mid c)=\log\frac{C(w,c)+\alpha}{\sum_{w'}C(w',c)+\alpha|V|}$.
+2. **`predict_one`**: for every class $\log P(c)+\sum_{w\in\text{doc}}\log P(w\mid c)$
+   (skipping OOV words); return the argmax class.
+
+Test incrementally with `python test_nb.py` (a mini data set → a normalized
+likelihood → the real data). Then run `python classify.py` for the full
+comparison with the classification report.
+
+## What should work in the end
+
+```bash
+source ../../../../.venv/bin/activate    # sklearn is needed; the 1st run downloads 20ng (about 14 MB)
+python test_nb.py     # -> "All tests passed."
+python classify.py    # -> reports for NB and TF-IDF+LogReg + a conclusion
+```
+
+Reference (4 categories): both reach about **0.88–0.89 accuracy / macro-F1**; the
+hand-written naive Bayes is **competitive** (here even slightly ahead). The
+classification report shows precision/recall/F1 per category.
+
+> **Note:** the first call downloads 20 newsgroups and caches it in
+> `~/scikit_learn_data` (not in the repository). After that everything works
+> offline.
+
+## Reflection (in writing, briefly)
+
+1. Naive Bayes is **generative**, logistic regression **discriminative**. Explain
+   the difference in terms of $P(d\mid c)$ vs. $P(c\mid d)$ and when each model
+   has the advantage.
+2. Why does one compute naive Bayes in **log space**? What would otherwise go
+   wrong?
+3. Why is **accuracy** alone fine here but misleading with strongly unbalanced
+   classes — and what does macro-F1 measure differently from weighted-F1?
+4. How would the result change if you did *not* remove the headers/footers
+   (`remove=()`)? (Keyword: the model learns metadata instead of content — a
+   classical data leakage mistake with 20 newsgroups.)
+
+## Reference solution
+
+Complete in **`solution/`** — all tests pass, `classify.py` runs through. Look
+only after your own attempt.
+
+---
+---
+
+# Projekt 02 (medium) — Textklassifikation: Naive Bayes vs. TF-IDF + LogReg (deutsche Fassung)
 
 **Modul 08 — NLP 1** · Format: **Python-Projekt** (mehrere Module + Tests)
 

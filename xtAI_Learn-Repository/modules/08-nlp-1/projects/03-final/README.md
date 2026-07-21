@@ -1,4 +1,133 @@
-# Projekt 03 (final) — Ein HMM-POS-Tagger mit Viterbi
+# Project 03 (final) — An HMM POS tagger with Viterbi
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Module 08 — NLP 1** · Format: **a Python project, built from scratch by you**
+
+> **The final project of the module.** There is **no given code** — you design and
+> implement everything yourself. The project consolidates part 3 (sequence
+> labeling, HMM, Viterbi) and is the direct, practical application of the
+> HMM/Viterbi theory from **module 07**. Level: a genuine master's examination
+> piece.
+
+## Why this format and this topic?
+
+A POS tagger is the classical sequence labeling problem and the most beautiful
+application of Viterbi to real language. If you write the **hidden Markov model**
+and the **Viterbi algorithm** yourself and evaluate them on a real treebank, you
+connect probability estimation (module 08), dynamic programming (module 07) and
+the hard business of **unknown words** — which is what decides the accuracy in
+practice. A modular code base is right here (data, model and evaluation kept
+separate).
+
+## Goal
+
+Build an **HMM-based POS tagger** that assigns its word class (UPOS tag) to every
+word of a sentence, and evaluate it on real **Universal Dependencies** data
+(English-EWT). The core:
+
+$$
+\hat t_{1:n} = \arg\max_{t_{1:n}} \prod_i \underbrace{P(w_i\mid t_i)}_{\text{emission}}\;
+\underbrace{P(t_i\mid t_{i-1})}_{\text{transition}},
+$$
+
+solved with **Viterbi** in $O(n\,|T|^2)$.
+
+## Prior knowledge
+
+- Part 3.1 of the script (the HMM tagger, Viterbi) and **module 07** (HMM,
+  filtering, Viterbi — here the concrete application).
+- Part 1 (MLE, smoothing) for the probability estimation.
+- Python: `collections.Counter`/`defaultdict`, `math.log`, nested dicts.
+
+## What you should build — the components
+
+1. **Load and parse the data.** Read the `.conllu` format (Universal
+   Dependencies): skip the comment lines (`#`) and the multi-word tokens (an ID
+   with a `-`), take **FORM** (column 2) and **UPOS** (column 4) from every token
+   line; split sentences at the blank lines. (Downloaded from GitHub, cached in
+   `datasets/`.)
+
+2. **Estimate the HMM (MLE + smoothing).**
+   - The **transition probabilities** $P(t_i\mid t_{i-1})$ from tag bigrams (with
+     a start symbol per sentence), add-$k$ smoothed over the tag set.
+   - The **emission probabilities** $P(w\mid t)$ from (word, tag) counts, smoothed.
+   - **Unknown words** are the crux: replace rare training words (and unknown
+     words at test time) by a **signature** (e.g. `<NUM>`, `<CAP>`, suffix classes
+     such as `<~ing>`, `<~ed>`, `<~ly>`). That way the model learns a sensible
+     distribution for words it has never seen.
+
+3. **Viterbi decoding.** Dynamic programming over a table
+   $v_t(j)=\max_i v_{t-1}(i)\,P(t_j\mid t_i)\,P(w_t\mid t_j)$ (in log space!), with
+   **back pointers** for reconstructing the best tag sequence. Mind the start of
+   the sentence (the start context) and the backtracking.
+
+4. **Evaluation.** Compute the **tag accuracy** on the test set, **separately for
+   known and unknown words**, and list the most frequent confusions. Tag an
+   example sentence for a visual check.
+
+## Acceptance criteria
+
+- [ ] the `.conllu` parser delivers sentences as lists of (word, tag) (17 UPOS tags);
+- [ ] Viterbi tags a small, unambiguous toy corpus perfectly;
+- [ ] the overall tag accuracy on the EWT test set is **> 0.88** (reference about
+      **0.91**);
+- [ ] the evaluation reports **unknown words separately** (clearly lower,
+      reference about 0.65 — the bottleneck);
+- [ ] a standard sentence ("The quick brown fox …") is tagged plausibly
+      (`The`→DET, `dog`→NOUN).
+
+## Self-check questions (answer them in writing)
+
+1. **Why does Viterbi work in log space?** What would happen with a product of
+   many small probabilities over a long sentence?
+2. **Why is the first-order Markov assumption** usually not quite enough, and how
+   would a trigram HMM (state = a *pair* of tags) help? What does that cost?
+3. **Unknown words** make up about 9 % of the test set but a large share of the
+   errors. Why? How does the signature idea improve the emission for them?
+4. **NOUN↔PROPN** is a frequent confusion. What causes it (the `<CAP>` signature,
+   sentence beginnings), and how could one fix it (a feature: the position in the
+   sentence)?
+5. **Why does this HMM only reach about 91 % on EWT** while textbooks quote about
+   95–96 %? (Keywords: noisy web text vs. WSJ, unknown words, bigram vs. neural
+   taggers — module 09 reaches about 97–98 %.)
+
+## Extensions (optional, for going deeper)
+
+- A **trigram HMM** (Viterbi over pairs of tags) with deleted-interpolation smoothing.
+- **Position and context features** in a **CRF** (script 3.2) instead of an HMM —
+  it eliminates the label bias and uses rich features.
+- **Error analysis:** the confusion matrix as a heatmap; which pairs of tags are
+  the hardest?
+- A comparison with `sklearn`-free baselines (the most-frequent-tag baseline) —
+  how much does the context buy beyond the plain word→most-frequent-tag mapping?
+
+## Reference solution
+
+**`solution/`** holds a complete, tested reference implementation:
+- `data.py` — the `.conllu` download (with a retry) and the parser,
+- `hmm_tagger.py` — the signatures, the HMM estimation, Viterbi,
+- `evaluate.py` — training + accuracy (overall/unknown) + confusions + an example,
+- `test_tagger.py` — the acceptance test.
+
+Reference: about **0.91** overall accuracy, about 0.65 on unknown words.
+**Look only after your own attempt.**
+
+```bash
+source ../../../../.venv/bin/activate    # only the standard library is needed
+cd solution && python evaluate.py        # training + evaluation
+python test_tagger.py                    # the acceptance test
+```
+
+> **Note:** the first call downloads UD English-EWT from GitHub (about 5 MB) into
+> `datasets/` (not checked in, via `.gitignore`). GitHub raw can briefly answer
+> with HTTP 429 ("too many requests") — `data.py` retries the download
+> automatically.
+
+---
+---
+
+# Projekt 03 (final) — Ein HMM-POS-Tagger mit Viterbi (deutsche Fassung)
 
 **Modul 08 — NLP 1** · Format: **Python-Projekt, von Grund auf selbst gebaut**
 
@@ -108,7 +237,7 @@ Referenz: **~0,91** Gesamt-Genauigkeit, ~0,65 auf unbekannten Wörtern.
 
 ```bash
 source ../../../../.venv/bin/activate    # nur Standardbibliothek nötig
-cd loesung && python evaluate.py         # Training + Evaluation
+cd solution && python evaluate.py        # Training + Evaluation
 python test_tagger.py                    # Abnahmetest
 ```
 

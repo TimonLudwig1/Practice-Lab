@@ -1,4 +1,559 @@
-# Modul 08 — Natural Language Processing 1
+# Module 08 — Natural Language Processing 1
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The projects themselves are English only.
+
+**What is this about?** This module deals with statistical, "classical" NLP —
+the foundations of machine language processing *before* the transformer era
+(that comes in module 09). You learn how to represent text formally, how
+**language models** estimate the probability of word sequences, how to
+**classify** texts, how **words become vectors** (embeddings) and how to
+**label sequences** (POS tagging) and **parse sentences**. These procedures are
+not merely historical: n-gram models, naive Bayes, TF-IDF and Viterbi still run
+in production today, and their concepts (likelihood, smoothing, sequence
+modelling) are the foundation the neural models build on.
+
+**Helpful prior knowledge.** Probability (conditional probability, Bayes —
+module 07), some linear algebra, Python. From module 07 you already know
+**HMMs, filtering and Viterbi** — POS tagging is the direct application. From
+modules 04/05, familiarity with classification and logistic regression helps.
+
+**Recommended earlier modules.** Data Science 1/2, Machine Learning 1, Theory of
+AI 2 (for HMM/Viterbi). Module 01 already had a naive Bayes spam filter — here
+we go deeper.
+
+**Following module.** NLP 2 (module 09): neural language models, RNN/LSTM,
+seq2seq, attention, transformers. Multilingual NLP (module 10) and others build
+on it.
+
+---
+
+## Learning objectives
+
+After this module you should be able to
+
+- **preprocess** text systematically (tokenization, normalization, stemming vs.
+  lemmatization) and explain the statistical structure of language (**Zipf's law**);
+- set up **n-gram language models**, understand the **sparsity problem** and
+  solve it with **smoothing** (Laplace/add-$k$, Good-Turing, **Kneser-Ney**,
+  backoff/interpolation); evaluate models with **perplexity**;
+- classify texts with **multinomial naive Bayes** and **logistic
+  regression / MaxEnt** and evaluate them cleanly with **precision/recall/F1**;
+- understand **word representations** — from **TF-IDF** and **PPMI** through
+  **Word2Vec** (skip-gram with negative sampling) to **GloVe** — and explain the
+  **distributional hypothesis** behind them;
+- carry out **sequence labeling**: **POS tagging** with **HMM + Viterbi**, and
+  place the limits (label bias) as well as the solution (**MEMM**, **CRF**);
+- understand the foundations of **syntax**: context-free grammars, the **CKY
+  parser**, **PCFGs** and **dependency parsing**;
+- explain *why* every procedure works — likelihood, smoothing, distributional
+  semantics, dynamic programming.
+
+---
+
+## Part 1 — Foundations: text and language models
+
+### 1.1 From text to tokens
+
+Raw text is a string of characters; NLP needs **discrete units**. The pipeline:
+
+- **Tokenization**: splitting into **tokens** (words, numbers, punctuation). It
+  sounds trivial, and it is not: "don't" → `do` + `n't`? Is "New York" one token
+  or two? URLs, hashtags, emoji? Common today are **subword tokenizers** (BPE,
+  WordPiece, SentencePiece — the details are in modules 09/10), which split rare
+  words into frequent pieces and thereby defuse the **out-of-vocabulary problem**.
+- **Normalization**: lowercasing, Unicode normalization, unifying numbers and
+  dates. It is context dependent — for sentiment, "GREAT" ≠ "great".
+- **Stemming vs. lemmatization**: both reduce word forms to a base form.
+  **Stemming** (e.g. the Porter stemmer) chops off endings by rule (`running`,
+  `runs` → `run`; but `argument` → `argu` — crude). **Lemmatization** uses a
+  lexicon plus morphology and delivers real base forms (`better` → `good`); it is
+  more accurate but more expensive.
+- **Stop words** (the, is, of …) are removed depending on the task — often useful
+  for classification, harmful for language modelling.
+
+**Zipf's law.** Word frequency follows a **power law**: if you order words by
+rank $r$, their frequency is $f \propto 1/r$. The consequence: few words are
+extremely frequent, but the **long tail** of rare words is huge — most word forms
+are seen in training *very rarely or never*. That is the root of the **sparsity
+problem** that shapes the whole of statistical NLP.
+
+### 1.2 Language models and the chain rule
+
+A **language model (LM)** assigns a probability $P(w_{1:n})$ to a word sequence
+$w_{1:n} = w_1 \dots w_n$. Applications: speech recognition, translation,
+autocompletion, text generation. Exactly, by the chain rule:
+$$
+P(w_{1:n}) = \prod_{i=1}^{n} P(w_i \mid w_{1:i-1}).
+$$
+The problem: $P(w_i \mid w_{1:i-1})$ over the *whole* history cannot be estimated
+(infinitely many possible contexts). The **Markov assumption** (as in module 07):
+the next context depends only on the last $k$ words. An **n-gram model**
+approximates
+$$
+P(w_i \mid w_{1:i-1}) \approx P(w_i \mid w_{i-N+1:i-1}).
+$$
+For the **bigram** ($N=2$): $P(w_i\mid w_{i-1})$; the **trigram** ($N=3$):
+$P(w_i\mid w_{i-2},w_{i-1})$.
+
+**Maximum likelihood estimation (MLE):** count relative frequencies.
+$$
+P_{\text{MLE}}(w_i \mid w_{i-1}) = \frac{C(w_{i-1}, w_i)}{C(w_{i-1})},
+$$
+where $C(\cdot)$ is the count in the corpus. The start and end of a sentence are
+marked with the special tokens `<s>` / `</s>`.
+
+### 1.3 The sparsity problem and smoothing
+
+The MLE assigns probability **0** to every n-gram **unseen in training** — and
+thereby makes the whole sentence impossible ($P=0$), which is fatal (perplexity
+$\infty$). Because of Zipf that happens *constantly*. **Smoothing** shifts
+probability mass from what has been seen to what has not.
+
+**Laplace / add-$k$ smoothing.** Add a pseudo count $k$ (often $k=1$) to every
+counter:
+$$
+P_{\text{Add-}k}(w_i \mid w_{i-1}) = \frac{C(w_{i-1}, w_i) + k}{C(w_{i-1}) + k\,|V|},
+$$
+with the vocabulary size $|V|$. Simple, but crude — it takes too much mass away
+from frequent n-grams. Sensible only as a baseline.
+
+**Good-Turing.** It estimates the mass for the unseen from the number of n-grams
+seen **once** (the singletons): the rescaled counts are
+$c^\ast = (c+1)\,\dfrac{N_{c+1}}{N_c}$, where $N_c$ is the number of n-grams with
+frequency $c$. The total mass for unseen events is $N_1/N$.
+
+**Backoff and interpolation.** If a trigram is unseen, use the bigram; if that is
+missing too, the unigram. **Katz backoff** *falls back* to the lower order (with
+discounting); **interpolation** always *mixes* all orders:
+$$
+P_{\text{interp}}(w_i\mid w_{i-2},w_{i-1}) = \lambda_3 P(w_i\mid w_{i-2},w_{i-1})
++ \lambda_2 P(w_i\mid w_{i-1}) + \lambda_1 P(w_i), \quad \textstyle\sum\lambda=1.
+$$
+The $\lambda$ are learned on a held-out set.
+
+**Kneser-Ney (the gold standard).** Two ideas. (1) **Absolute discounting:**
+subtract a fixed amount $d$ from every count and redistribute the freed mass.
+(2) The clever part — the **continuation model** for the lower order: instead of
+"how *frequent* is the word $w$?", Kneser-Ney asks "in how *many different
+contexts* does $w$ occur?". The classical example: "Francisco" is frequent, but
+almost only after "San" — as a fallback probability it should be *low*. The
+(interpolated) Kneser-Ney formula for the bigram:
+$$
+P_{\text{KN}}(w_i\mid w_{i-1}) = \frac{\max\big(C(w_{i-1},w_i)-d,\,0\big)}{C(w_{i-1})}
++ \lambda(w_{i-1})\; P_{\text{cont}}(w_i),
+$$
+$$
+P_{\text{cont}}(w_i) = \frac{\big|\{w' : C(w', w_i) > 0\}\big|}{\big|\{(w',w'') : C(w',w'')>0\}\big|},
+\qquad
+\lambda(w_{i-1}) = \frac{d}{C(w_{i-1})}\,\big|\{w : C(w_{i-1},w)>0\}\big|.
+$$
+$\lambda(w_{i-1})$ is the normalized discount (the mass freed by subtracting $d$).
+Kneser-Ney (in its *modified* variant) was for years the best n-gram procedure.
+
+### 1.4 Perplexity — how good is a language model?
+
+The standard intrinsic metric. The **perplexity** of a model on a test sequence
+$w_{1:n}$ is the inverse geometric mean probability per word:
+$$
+\mathrm{PP}(w_{1:n}) = P(w_{1:n})^{-1/n}
+= \Big(\prod_{i=1}^{n} \frac{1}{P(w_i\mid w_{1:i-1})}\Big)^{1/n}
+= 2^{\,-\frac{1}{n}\sum_i \log_2 P(w_i\mid \cdot)}.
+$$
+The interpretation: the **effective branching factor** — on average the model has
+to distinguish "that many equally probable words" at every position. **Lower is
+better.** Perplexity is $2$ to the power of the **cross-entropy** (in bits) — the
+bridge to information theory. Important: perplexity is only comparable *within*
+the same vocabulary, and an unseen word ($P=0$) makes it $\infty$ — which is why
+one *must* smooth.
+
+---
+
+## Part 2 — Building up: classification and word representations
+
+### 2.1 Text classification with naive Bayes
+
+**The task:** assign a class $c$ to a document $d$ (spam/ham, sentiment, topic).
+The **naive Bayes** classifier picks the class with the maximum posterior
+probability (MAP):
+$$
+\hat c = \arg\max_c P(c\mid d) = \arg\max_c P(c)\,P(d\mid c),
+$$
+with the **naive independence assumption**: the words are conditionally
+independent given the class. In the **multinomial** model (words as counts):
+$$
+\hat c = \arg\max_c \Big[\log P(c) + \sum_{i} \log P(w_i\mid c)\Big],
+$$
+with $P(w\mid c) = \dfrac{C(w,c)+\alpha}{\sum_{w'}\big(C(w',c)+\alpha\big)}$
+(Laplace smoothing, $\alpha=1$). One computes in **log space** against underflow.
+Despite the obviously false independence assumption, naive Bayes is surprisingly
+strong, extremely fast and an indispensable baseline. (Module 01 had a spam
+filter; here you understand the model completely.)
+
+### 2.2 Logistic regression / MaxEnt
+
+Naive Bayes is a **generative** model ($P(d\mid c)$); **logistic regression** is
+its **discriminative** counterpart ($P(c\mid d)$ directly). It models
+$$
+P(c\mid d) = \mathrm{softmax}\big(\mathbf{w}_c^\top \mathbf{f}(d)\big)
+= \frac{\exp(\mathbf{w}_c^\top \mathbf{f}(d))}{\sum_{c'}\exp(\mathbf{w}_{c'}^\top \mathbf{f}(d))},
+$$
+where $\mathbf{f}(d)$ is a **feature vector** (word counts, TF-IDF, arbitrary
+features). In the NLP tradition this is called a **maximum entropy model
+(MaxEnt)**. The weights are learned by minimizing the **cross-entropy** (with L2
+regularization) via gradient descent (module 05). The advantage over naive Bayes:
+LR can cope with **correlated, overlapping features** (e.g. word + bigram +
+capitalization) without counting them twice — usually somewhat more accurate when
+there is enough data.
+
+**Evaluation.** Accuracy alone is deceptive with unbalanced classes. For one class:
+$$
+\text{precision} = \frac{TP}{TP+FP}, \quad
+\text{recall} = \frac{TP}{TP+FN}, \quad
+F_1 = \frac{2\cdot P\cdot R}{P+R}
+$$
+($F_1$ = the harmonic mean). With several classes one averages **macro** (every
+class equal) or **micro** (every instance equal). Always on a separate **test
+set** and ideally with **cross-validation**.
+
+### 2.3 Vector representations: from TF-IDF to embeddings
+
+**Bag of words and TF-IDF.** A document as a vector over the vocabulary. Raw
+counts overweight frequent words; **TF-IDF** corrects that:
+$$
+\text{tf-idf}(w,d) = \underbrace{\text{tf}(w,d)}_{\text{frequency in } d}\;\cdot\;
+\underbrace{\log\frac{N}{\text{df}(w)}}_{\text{inverse document frequency}},
+$$
+where $N$ = the number of documents and $\text{df}(w)$ = the number of documents
+containing $w$. Words that occur *everywhere* (the, is) get a low weight; rare,
+discriminating words a high one. Document similarity is measured with the
+**cosine similarity** $\cos(\mathbf{a},\mathbf{b}) = \frac{\mathbf{a}\cdot\mathbf{b}}{\lVert\mathbf a\rVert\lVert\mathbf b\rVert}$.
+
+**The distributional hypothesis.** *"You shall know a word by the company it
+keeps"* (Firth): words with similar contexts have similar meanings. That
+motivates **dense word vectors (embeddings)**, which encode semantic proximity
+geometrically.
+
+**PPMI.** A first, count-based step: the **positive pointwise mutual
+information** between a word $w$ and a context $c$:
+$$
+\text{PMI}(w,c) = \log_2 \frac{P(w,c)}{P(w)\,P(c)}, \qquad
+\text{PPMI}(w,c) = \max\big(\text{PMI}(w,c),\,0\big).
+$$
+A word-context matrix of PPMI values (reduced in dimension by SVD if desired)
+already yields usable, dense vectors.
+
+**Word2Vec (skip-gram with negative sampling).** Instead of counting, it is
+*learned*. Skip-gram predicts the context words from a target word. With
+**negative sampling** the efficient training objective becomes (for a
+target-context pair $(w,c)$ and $k$ random "negative" words):
+$$
+\log \sigma(\mathbf{v}_c^\top \mathbf{v}_w) + \sum_{j=1}^{k}
+\mathbb{E}_{c_j\sim P_n}\big[\log \sigma(-\mathbf{v}_{c_j}^\top \mathbf{v}_w)\big],
+$$
+with $\sigma$ = the sigmoid. The intuition: real pairs should have a high dot
+product, random pairs a low one. The result is vectors in which **semantic
+relations become directions** — the famous analogy
+$\text{vec(king)} - \text{vec(man)} + \text{vec(woman)} \approx \text{vec(queen)}$.
+
+**GloVe** combines both worlds: it factorizes the **global** co-occurrence matrix
+and minimizes
+$$
+J = \sum_{i,j} f(X_{ij})\,\big(\mathbf{w}_i^\top \tilde{\mathbf{w}}_j + b_i + \tilde b_j
+- \log X_{ij}\big)^2,
+$$
+where $X_{ij}$ is the co-occurrence count and $f$ a damping weight function.
+These *static* embeddings (one vector per word type) are the precursor of the
+*contextual* embeddings (BERT and company, module 09), where every context of
+occurrence gets its own vector.
+---
+
+## Part 3 — Advanced: sequence labeling and syntax
+
+### 3.1 POS tagging as a sequence problem
+
+**Part-of-speech tagging** assigns its word class to every word (noun, verb,
+adjective …). The challenge is **ambiguity**: "book" is a noun *or* a verb — the
+context decides. This is a **sequence labeling** problem: find the best tag
+sequence $t_{1:n}$ for the word sequence $w_{1:n}$.
+
+**The HMM tagger.** Directly the model from module 07: the tags are the *hidden*
+states, the words the *observations*. By Bayes:
+$$
+\hat t_{1:n} = \arg\max_{t_{1:n}} P(t_{1:n}\mid w_{1:n})
+= \arg\max_{t_{1:n}} \prod_i \underbrace{P(w_i\mid t_i)}_{\text{emission}}\;
+\underbrace{P(t_i\mid t_{i-1})}_{\text{transition}}.
+$$
+The **transition probabilities** $P(t_i\mid t_{i-1})$ and **emission
+probabilities** $P(w_i\mid t_i)$ are estimated by MLE from a tagged corpus (with
+smoothing, especially for unknown words). The optimal sequence is found by the
+**Viterbi algorithm** (module 07) in $O(n\,|T|^2)$ by dynamic programming:
+$$
+v_t(j) = \max_{i}\; v_{t-1}(i)\; P(t_j\mid t_i)\; P(w_t\mid t_j),
+$$
+with back pointers for reconstructing the path. HMM taggers reach about 95–96 %
+accuracy — a strong, transparent baseline.
+
+### 3.2 The limit of the HMM: label bias, MEMM and CRF
+
+An HMM is **generative** and can only use limited features (the word itself). But
+one would like **rich features** (the suffix "-ing", capitalization, the
+surrounding words). Two discriminative successors:
+
+- **MEMM (maximum entropy Markov model):** it models $P(t_i\mid t_{i-1}, w_i,
+  \dots)$ directly with a MaxEnt classifier per position. The problem: the
+  **label bias problem** — states with few successor states "prefer" their
+  transitions, because normalization is local per step.
+- **CRF (conditional random field):** the solution. A **linear-chain CRF**
+  normalizes **globally** over the whole sequence:
+  $$
+  P(t_{1:n}\mid w_{1:n}) = \frac{1}{Z(w)}\exp\Big(\sum_{i}\sum_{k}\theta_k\,
+  f_k(t_{i-1}, t_i, w, i)\Big),
+  $$
+  with feature functions $f_k$, weights $\theta_k$ and the global partition
+  function $Z(w)$. CRFs avoid the label bias, permit arbitrary features and were
+  the standard for sequence labeling (NER, chunking) before the neural models.
+  Decoding is again done with Viterbi, and training by gradient descent over the
+  (convex) log-likelihood.
+
+### 3.3 Syntax: constituents, CFG and the CKY parser
+
+**Syntactic parsing** uncovers the grammatical structure of a sentence. A
+**context-free grammar (CFG)** (known from module 06 / theory) consists of
+terminals (words), non-terminals (phrases such as NP, VP), a start symbol (S) and
+**production rules** ($S\to NP\ VP$, $NP\to Det\ N$ …).
+
+**The CKY algorithm.** It decides and constructs parses for grammars in **Chomsky
+normal form** (every rule $A\to BC$ or $A\to w$) by **dynamic programming** over a
+triangular table: `chart[i][j]` contains all non-terminals that can generate the
+subspan $w_{i:j}$. One fills it bottom-up by span length; the runtime is
+$O(n^3\,|G|)$. CKY is the syntactic counterpart of Viterbi — dynamic programming
+over structures.
+
+**PCFG.** A **probabilistic CFG** gives every rule a probability (the $\sum$ over
+all rules with the same left-hand side $=1$). The **probabilistic CKY** then finds
+the **most probable** parse (useful for resolving **ambiguity**, e.g. PP
+attachment: "I saw the man with the telescope"). The rule probabilities are
+estimated from a **treebank** (e.g. the Penn Treebank).
+
+### 3.4 Dependency parsing — an outlook
+
+Instead of constituents (phrases), **dependency parsing** models direct **binary
+relations** between words (head → dependent, labelled with `nsubj`, `dobj`,
+`amod` …). The resulting **dependency tree** is often more practical for
+extracting meaning and is the standard of the **Universal Dependencies** project
+(a cross-lingual annotation convention — relevant for module 10). Two paradigms:
+**transition-based** (a classifier chooses shift/reduce actions, linear in $n$)
+and **graph-based** (find the maximum spanning tree over all possible edges).
+Neural dependency parsers (module 09) dominate today.
+
+---
+
+## Summary / cheat sheet
+
+**Language models**
+
+| Notion | Core |
+|---|---|
+| N-gram | $P(w_i\mid w_{i-N+1:i-1})$; MLE $=\frac{C(w_{i-1},w_i)}{C(w_{i-1})}$ |
+| Add-$k$ | $\frac{C+k}{C(w_{i-1})+k|V|}$ |
+| Interpolation | $\sum_n \lambda_n P_n$, $\sum\lambda=1$; the $\lambda$ on held-out data |
+| Kneser-Ney | absolute discounting $d$ + continuation $P_{\text{cont}}(w)=\frac{|\{w':C(w',w)>0\}|}{\#\text{bigram types}}$ |
+| Perplexity | $PP = P(w_{1:n})^{-1/n} = 2^{H}$; lower = better; $\infty$ when $P=0$ |
+
+**Classification and vectors**
+
+| Notion | Core |
+|---|---|
+| Naive Bayes | $\hat c=\arg\max_c \log P(c)+\sum_i\log P(w_i\mid c)$; generative |
+| Logistic regression | $P(c\mid d)=\mathrm{softmax}(\mathbf w_c^\top\mathbf f)$; discriminative, correlated features are fine |
+| $F_1$ | $\frac{2PR}{P+R}$; macro/micro averaging |
+| TF-IDF | $\text{tf}\cdot\log\frac{N}{\text{df}}$; similarity via cosine |
+| PPMI | $\max(\log_2\frac{P(w,c)}{P(w)P(c)},0)$ |
+| Word2Vec (SGNS) | $\log\sigma(\mathbf v_c^\top\mathbf v_w)+\sum_j\log\sigma(-\mathbf v_{c_j}^\top\mathbf v_w)$ |
+| GloVe | $\sum f(X_{ij})(\mathbf w_i^\top\tilde{\mathbf w}_j+b_i+\tilde b_j-\log X_{ij})^2$ |
+
+**Sequence and syntax**
+
+| Notion | Core |
+|---|---|
+| HMM tagger | $\arg\max_t\prod_i P(w_i\mid t_i)P(t_i\mid t_{i-1})$; Viterbi $O(n|T|^2)$ |
+| CRF | globally normalized, $\frac{1}{Z(w)}\exp(\sum\theta_k f_k)$; no label bias |
+| CKY | a DP parser for CNF, $O(n^3|G|)$; PCFG → the most probable parse |
+| Dependency | head→dependent relations; transition-/graph-based |
+
+---
+
+## Self-test
+
+<details><summary><b>1. Why does the MLE of an n-gram model without smoothing make almost every test sentence impossible?</b></summary>
+
+Because of Zipf, every real test sentence contains, with high probability, an
+n-gram that never occurred in training. Its MLE is $0$, and since $P(w_{1:n})$ is
+a *product*, the whole sentence probability becomes $0$ (perplexity $\infty$).
+Smoothing shifts some mass onto unseen events so that nothing is exactly $0$.
+</details>
+
+<details><summary><b>2. What is the central idea of Kneser-Ney compared with add-$k$?</b></summary>
+
+Two things. (1) **Absolute discounting:** a fixed amount $d$ is subtracted from
+every count (instead of proportionally as with add-$k$), which empirically
+matches the Good-Turing rescaling well. (2) The actual clever part — the
+**continuation probability** for the lower order: a word is only a probable
+fallback if it appears in *many different contexts*, not merely often.
+"Francisco" is frequent, but almost only after "San" → low as a unigram fallback.
+Add-$k$ has neither of these ideas and smooths bluntly.
+</details>
+
+<details><summary><b>3. Interpret perplexity. Why is lower better?</b></summary>
+
+Perplexity is $PP=P(w_{1:n})^{-1/n}=2^{H}$ with $H$ = the cross-entropy per word.
+It is the **effective branching factor**: the number of equally probable
+alternatives the model wavers between at every position on average. A good model
+is *less surprised* by the actual words, gives them a higher probability →
+a smaller $H$ → a smaller perplexity. A model that predicted the test text
+perfectly would have $PP=1$.
+</details>
+
+<details><summary><b>4. Naive Bayes makes an obviously false assumption. Why does it work anyway?</b></summary>
+
+The conditional independence of the words given the class is factually false
+(words correlate strongly). But for the *classification decision* only which class
+gets the highest score matters — and the errors in the estimated probabilities
+often cancel far enough that the *ranking* of the classes stays correct.
+Furthermore NB is extremely data efficient (few parameters, no overfitting on
+small data) and fast. Hence: a weak estimate of probabilities, but often a strong
+classification.
+</details>
+
+<details><summary><b>5. Generative vs. discriminative: naive Bayes vs. logistic regression.</b></summary>
+
+**Generative** (naive Bayes) models $P(d\mid c)$ and $P(c)$, that is, the joint
+distribution — it "explains" how the data arise. **Discriminative** (logistic
+regression) models $P(c\mid d)$ directly, only the decision boundary. The
+consequences: NB learns faster / with less data and is robust, but it makes the
+independence assumption; LR can use **correlated, overlapping features** without
+double counting and is usually more accurate given enough data. Both are linear
+classifiers in log space.
+</details>
+
+<details><summary><b>6. Why does TF-IDF weight rare words higher? What is the logarithm for?</b></summary>
+
+The **inverse document frequency** $\log\frac{N}{\text{df}(w)}$ is large when $w$
+occurs in *few* documents — such words are discriminative. Words in *all*
+documents (the, is) have $\text{df}\approx N$, so $\log 1=0$, and they are faded
+out. The logarithm damps: the jump from df=1 to df=2 counts far more than from
+df=1000 to 1001 — it prevents extremely rare words from dominating the vectors.
+</details>
+
+<details><summary><b>7. Explain the distributional hypothesis and how Word2Vec implements it.</b></summary>
+
+The distributional hypothesis: words that appear in similar contexts have similar
+meanings ("know a word by the company it keeps"). Word2Vec (skip-gram) implements
+it by learning vectors such that a word predicts its actual context words well (a
+high dot product for real pairs) and random words badly (negative sampling).
+Words with similar contexts thus get similar vectors; semantic relations become
+consistent directions in the space (analogies).
+</details>
+
+<details><summary><b>8. How does an HMM tag parts of speech, and what does Viterbi do in it?</b></summary>
+
+The HMM treats the tags as hidden states: it looks for
+$\arg\max_t\prod_i P(w_i\mid t_i)P(t_i\mid t_{i-1})$ from emission and transition
+probabilities (estimated by MLE from a treebank). **Viterbi** solves this
+maximization over all exponentially many tag sequences exactly, by dynamic
+programming in $O(n|T|^2)$: $v_t(j)=\max_i v_{t-1}(i)P(t_j\mid t_i)P(w_t\mid t_j)$,
+with back pointers for reconstructing the best sequence.
+</details>
+
+<details><summary><b>9. What is the label bias problem, and how does a CRF solve it?</b></summary>
+
+An MEMM normalizes the transition probabilities **locally, per position**. States
+with *few* possible successor states distribute their entire mass over those few
+— regardless of how well the observation fits. Such transitions are thereby
+artificially favoured (*label bias*). A **CRF** instead normalizes **globally**
+over the entire sequence (one partition function $Z(w)$ for the whole sentence),
+so that local observations weight the overall decision correctly — the bias
+disappears.
+</details>
+
+<details><summary><b>10. Why is CKY $O(n^3)$, and what does the PCFG variant achieve?</b></summary>
+
+CKY fills a triangular table over all **spans** $w_{i:j}$: there are $O(n^2)$
+spans, and for each it tries all $O(n)$ **split points** — together $O(n^3)$
+(times the grammar size). For every span it stores which non-terminals can
+generate it. The **probabilistic** CKY variant stores, instead of
+"possible/not", the **probability** of the best subtree (the product of the rule
+and subtree probabilities) and thereby finds the *most probable* parse — the
+standard method for resolving syntactic ambiguity.
+</details>
+
+---
+
+## Literature and sources
+
+**Textbooks**
+- **Jurafsky & Martin, *Speech and Language Processing*, 3rd ed. (draft)** — *the*
+  standard reference of NLP. Chapters on n-grams, naive Bayes, logistic
+  regression, vector semantics, POS tagging (HMM), sequence labeling (CRF),
+  CFG/CKY. **Free** as a PDF at `web.stanford.edu/~jurafsky/slp3`. *The primary
+  source — beginner friendly and complete.*
+- **Manning & Schütze, *Foundations of Statistical NLP*, MIT Press** — the classic
+  of statistical NLP, deeper on smoothing and grammars. *Advanced.*
+- **Eisenstein, *Introduction to Natural Language Processing*, MIT Press** — a
+  modern, mathematically clean presentation. **The draft is free** online. *Advanced.*
+
+**Freely available courses and materials** (free)
+- **Stanford CS124 / CS224N (the pre-neural parts)** — videos and slides on
+  n-grams, naive Bayes, TF-IDF. *Beginner friendly.*
+- **The NLTK book** (`nltk.org/book`) — a practical introduction with Python
+  (tokenization, tagging, parsing). *Beginner friendly, hands-on.*
+- **The scikit-learn documentation on "Working with Text Data"** — TF-IDF, naive
+  Bayes, a classification pipeline. *Directly practical.*
+- **Universal Dependencies** (`universaldependencies.org`) — freely available
+  tagged corpora in many languages (the basis for the POS project). *Practical.*
+
+**Interactive / visualizations** (free)
+- **The TensorFlow Embedding Projector** (`projector.tensorflow.org`) — explore
+  Word2Vec/GloVe embeddings in 3D (neighbours, analogies). *Very beginner friendly.*
+- **Jurafsky & Martin** contains excellent worked examples of Viterbi and CKY.
+
+**Classical papers** (free, advanced)
+- Chen & Goodman (1999): *An Empirical Study of Smoothing Techniques* — the
+  definitive study of smoothing (Kneser-Ney).
+- Mikolov et al. (2013): *Efficient Estimation of Word Representations* &
+  *Distributed Representations* — Word2Vec.
+- Pennington et al. (2014): *GloVe: Global Vectors for Word Representation*.
+- Lafferty, McCallum & Pereira (2001): *Conditional Random Fields*.
+
+---
+
+## The three projects
+
+The three projects cover the three parts of the module — language models,
+classification, sequence labeling — with real text data and increasing amounts of
+your own work:
+
+- **01 – basic** (`projects/01-basic/`): **an n-gram language model.** A guided
+  notebook: tokenization, unigram/bigram/trigram with add-$k$ smoothing and
+  interpolation, **perplexity** on held-out data, and **text generation** by
+  sampling. A real corpus (a public domain book). Plenty of guidance.
+- **02 – medium** (`projects/02-medium/`): **text classification.** A Python
+  project: implement **multinomial naive Bayes by hand**, compare it with
+  **TF-IDF + logistic regression** (scikit-learn), evaluate cleanly with
+  precision/recall/F1. Real data (20 newsgroups). Little guidance.
+- **03 – final** (`projects/03-final/`): **an HMM POS tagger with Viterbi.** No
+  given code: estimate the emission/transition probabilities (with smoothing for
+  unknown words), **Viterbi from scratch**, evaluated on real **Universal
+  Dependencies** data (about 91 % tag accuracy on the noisy EWT web text; unknown
+  words are the bottleneck — WSJ-like corpora reach about 95–96 %). Master's
+  level, a direct application of module 07.
+
+Details, setup and reference solutions are in the `README.md` of each project folder.
+
+---
+---
+
+# Modul 08 — Natural Language Processing 1 (deutsche Fassung)
 
 **Worum geht es?** Dieses Modul behandelt die **statistische, „klassische" NLP**
 — die Grundlagen der maschinellen Sprachverarbeitung *vor* der Transformer-Ära

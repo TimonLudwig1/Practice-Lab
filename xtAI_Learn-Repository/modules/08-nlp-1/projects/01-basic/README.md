@@ -1,4 +1,81 @@
-# Projekt 01 (basic) — Ein N-Gramm-Sprachmodell
+# Project 01 (basic) — An n-gram language model
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Module 08 — NLP 1** · Format: **Jupyter notebook** (`language_model.ipynb`)
+
+## Why this format?
+
+You understand a language model once you *feed it, measure it and let it
+generate*. A notebook connects loading the corpus, counting the n-grams,
+measuring the perplexity and generating text step by step, with visible
+intermediate results — ideal for this guided start with plenty of instruction.
+
+## Goal
+
+You build a statistical **n-gram language model** on real text and check the core
+statements of part 1 of the script empirically:
+
+- n-gram counts (unigram/bigram/trigram) and **add-$k$ smoothing**;
+- **perplexity** as the evaluation measure on a held-out test set;
+- **one central aha moment:** with blunt add-1 the *trigram is worse* than the
+  unigram (over-smoothing with a large vocabulary) — only **interpolation**
+  (mixing the orders with a small $k$) lowers the perplexity substantially;
+- **text generation** by sampling — locally plausible, globally nonsense: the
+  limit of n-grams (an outlook on the neural models in module 09).
+
+## Prior knowledge
+
+- Part 1 of the script (tokenization, n-gram models, add-$k$/interpolation, perplexity).
+- Python: `collections.Counter`/`defaultdict`, `math.log`, `random.choices`.
+
+## Setup
+
+Only the standard library. The first cell **downloads the corpus** (*The
+Adventures of Sherlock Holmes*, about 600 KB) from Project Gutenberg into
+`datasets/` and caches it (not checked in, via `.gitignore`). In Jupyter/VS Code
+select the kernel of the repository `.venv` and run the cells from top to bottom.
+
+```bash
+source ../../../../.venv/bin/activate
+jupyter lab    # or open language_model.ipynb in VS Code
+```
+
+## Tasks (step by step)
+
+Part A (the data, tokenization, the vocabulary with `<unk>`, the n-gram counts) is
+given. Then three tasks:
+
+1. **Add-$k$ and perplexity:** implement `p_unigram/p_bigram/p_trigram` (the
+   add-$k$ formula) and `perplexity`. Observe that add-1 makes the trigram
+   *worse*.
+2. **Interpolation:** mix the three orders ($\lambda_1,\lambda_2,\lambda_3$) with
+   a small $k$ — the perplexity should fall substantially.
+3. **Text generation:** sample sentences from the bigram model.
+
+At the end there is a short written part for reflection.
+
+## What should work in the end
+
+- Perplexities for the uni-/bi-/trigram (add-1) — with the observation that the
+  higher order gets *worse* here (reference order of magnitude: unigram about
+  350, trigram about 2000).
+- **Interpolation** clearly better (reference: about 190).
+- Generated sentences that "sound like" the corpus but are grammatically crude.
+
+The exact numbers depend slightly on the random split (the seed is set), the
+tendencies do not.
+
+## Reference solution
+
+The folder **`solution/`** holds `language_model_solution.ipynb` — fully
+implemented and **executed**, with the answers to the reflection questions at the
+end. Look only after your own attempt.
+
+---
+---
+
+# Projekt 01 (basic) — Ein N-Gramm-Sprachmodell (deutsche Fassung)
 
 **Modul 08 — NLP 1** · Format: **Jupyter Notebook** (`language_model.ipynb`)
 
