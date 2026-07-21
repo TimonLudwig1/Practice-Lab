@@ -1,12 +1,12 @@
-"""Trainiert den Mini-Transformer auf dem Negations-Sentiment-Datensatz und
-vergleicht mit einer Unigramm-Bag-of-Words-Baseline (vorgegeben).
+"""Trains the mini transformer on the negation-sentiment dataset and compares it
+with a unigram bag-of-words baseline (given).
 
     python train.py
 
-Erwartung: Der Transformer lernt die Negations-Interaktion (Test-Acc ~0.95+),
-die Unigramm-Baseline bleibt nahe am Zufall (~0.5), weil kein einzelnes Wort das
-Label verraet. Am Ende werden die Attention-Gewichte eines Beispielsatzes gezeigt:
-der Negator 'schaut' auf das folgende Polaritaetswort.
+Expectation: the transformer learns the negation interaction (test accuracy
+~0.95+), the unigram baseline stays near chance (~0.5), because no single word
+reveals the label. At the end the attention weights of an example sentence are
+shown: the negator 'looks' at the following polarity word.
 """
 import numpy as np
 import torch
@@ -50,10 +50,10 @@ def accuracy(model, loader, device):
 
 
 def bow_baseline(train_data, test_data):
-    """Unigramm-Bag-of-Words + logistische Regression (scikit-learn)."""
+    """Unigram bag-of-words + logistic regression (scikit-learn)."""
     from sklearn.feature_extraction.text import CountVectorizer
     from sklearn.linear_model import LogisticRegression
-    vec = CountVectorizer(analyzer=lambda toks: toks)   # Tokens sind schon gegeben
+    vec = CountVectorizer(analyzer=lambda toks: toks)   # tokens are already given
     Xtr = vec.fit_transform([toks for toks, _ in train_data])
     Xte = vec.transform([toks for toks, _ in test_data])
     ytr = [y for _, y in train_data]
@@ -73,7 +73,7 @@ def main():
     test_data = make_dataset(1000, seed=2)
     vocab = build_vocab(train_data)
     pad_idx = vocab[PAD]
-    print(f"Vokabular: {len(vocab)} Tokens, Train {len(train_data)}, Test {len(test_data)}")
+    print(f"Vocabulary: {len(vocab)} tokens, train {len(train_data)}, test {len(test_data)}")
 
     train_loader = DataLoader(SeqDataset(train_data, vocab), batch_size=64,
                               shuffle=True, collate_fn=lambda b: collate(b, pad_idx))
@@ -82,7 +82,7 @@ def main():
 
     model = TransformerClassifier(len(vocab), d_model=32, n_heads=4, d_ff=64,
                                   n_layers=2, n_classes=2, pad_idx=pad_idx).to(device)
-    print(f"Parameter: {sum(p.numel() for p in model.parameters()):,}")
+    print(f"Parameters: {sum(p.numel() for p in model.parameters()):,}")
 
     opt = torch.optim.Adam(model.parameters(), lr=3e-3)
     crit = nn.CrossEntropyLoss()
@@ -94,24 +94,24 @@ def main():
             loss = crit(model(x), y)
             loss.backward()
             opt.step()
-        print(f"Epoche {epoch:2d} | Test-Acc {accuracy(model, test_loader, device):.3f}")
+        print(f"Epoch {epoch:2d} | test acc {accuracy(model, test_loader, device):.3f}")
 
-    print("\n--- Vergleich ---")
-    print(f"Transformer  Test-Acc: {accuracy(model, test_loader, device):.3f}")
-    print(f"Unigramm-BoW Test-Acc: {bow_baseline(train_data, test_data):.3f}  (nahe Zufall!)")
+    print("\n--- Comparison ---")
+    print(f"Transformer  test acc: {accuracy(model, test_loader, device):.3f}")
+    print(f"Unigram BoW  test acc: {bow_baseline(train_data, test_data):.3f}  (near chance!)")
 
-    # Attention inspizieren: Beispiel mit Negator
+    # Inspect attention: example with a negator
     demo_tokens = ["the", "movie", "was", "not", "good"]
     x = torch.tensor([encode(demo_tokens, vocab)], dtype=torch.long).to(device)
-    maps = model.attention_maps(x)                    # Liste je (1, H, T, T)
-    attn = maps[-1][0].mean(0)                         # ueber Koepfe gemittelt (T, T)
-    print(f"\nAttention (letzter Block, kopf-gemittelt) fuer: {' '.join(demo_tokens)}")
+    maps = model.attention_maps(x)                    # list, each (1, H, T, T)
+    attn = maps[-1][0].mean(0)                         # averaged over heads (T, T)
+    print(f"\nAttention (last block, head-averaged) for: {' '.join(demo_tokens)}")
     header = "        " + " ".join(f"{t:>7.7}" for t in demo_tokens)
     print(header)
     for i, t in enumerate(demo_tokens):
         row = " ".join(f"{attn[i, j].item():7.3f}" for j in range(len(demo_tokens)))
         print(f"{t:>7.7} {row}")
-    print("(Zeile = Query-Token, Spalte = worauf es schaut)")
+    print("(row = query token, column = what it looks at)")
 
 
 if __name__ == "__main__":

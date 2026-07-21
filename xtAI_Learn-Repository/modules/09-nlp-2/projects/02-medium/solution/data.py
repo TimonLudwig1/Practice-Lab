@@ -1,18 +1,19 @@
-"""Synthetischer 'Negations-Sentiment'-Datensatz  (vorgegeben).
+"""Synthetic 'negation sentiment' dataset  (given).
 
-Zweck: eine Aufgabe konstruieren, die **nur ueber Wort-Interaktion / Reihenfolge**
-loesbar ist und an der ein Bag-of-Words-Modell (Unigramme) *scheitert*.
+Purpose: construct a task that is solvable **only through word interaction /
+order** and on which a bag-of-words model (unigrams) *fails*.
 
-Jeder Satz enthaelt genau EIN Polaritaetswort (positiv/negativ). Mit
-Wahrscheinlichkeit 0.5 steht unmittelbar davor ein Negator ('not'/'never'), der das
-Label **umdreht**. Das Polaritaetswort (samt evtl. Negator) wird an eine zufaellige
-Stelle zwischen Fuellwoertern gesetzt.
+Every sentence contains exactly ONE polarity word (positive/negative). With
+probability 0.5 a negator ('not'/'never') stands immediately before it and
+**flips** the label. The polarity word (together with a possible negator) is
+placed at a random position among filler words.
 
-Folge fuer Unigramm-BoW: 'good' erscheint in ~gleich vielen positiven wie negativen
-Saetzen (mal mit, mal ohne 'not'), ebenso 'not' -> **keine** einzelne-Wort-Evidenz.
-Erst die Bigramm-Interaktion 'not good' loest die Aufgabe. Genau das kann Attention
-lernen (der Negator 'schaut' auf das folgende Polaritaetswort), ein Unigramm-Modell
-nicht. Das schliesst direkt an Projekt 01 an ('not ... good').
+Consequence for unigram BoW: 'good' appears in roughly as many positive as
+negative sentences (sometimes with, sometimes without 'not'), and so does 'not'
+-> **no** single-word evidence. Only the bigram interaction 'not good' solves the
+task. That is exactly what attention can learn (the negator 'looks' at the
+following polarity word), a unigram model cannot. This connects directly to
+project 01 ('not ... good').
 """
 import random
 
@@ -26,15 +27,15 @@ PAD, UNK = "<pad>", "<unk>"
 
 
 def _make_sentence(rng):
-    """Baut (tokens, label). label 1 = positiv, 0 = negativ."""
+    """Builds (tokens, label). label 1 = positive, 0 = negative."""
     positive = rng.random() < 0.5
     word = rng.choice(POS if positive else NEG)
     label = 1 if positive else 0
     chunk = [word]
-    if rng.random() < 0.5:                 # Negator -> Label dreht sich um
+    if rng.random() < 0.5:                 # negator -> the label flips
         chunk = [rng.choice(NEGATORS), word]
         label = 1 - label
-    # Fuellwoerter drumherum; Polaritaets-Chunk an zufaelliger Position einsetzen
+    # Filler words around it; insert the polarity chunk at a random position
     n_before = rng.randint(0, 4)
     n_after = rng.randint(0, 4)
     tokens = ([rng.choice(FILLER) for _ in range(n_before)]
