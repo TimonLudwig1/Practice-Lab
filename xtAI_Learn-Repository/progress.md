@@ -52,7 +52,8 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 ## Englisch-Umstellung (laufender Auftrag, Vorrang vor Modul 22)
 
 > ### NEXT ACTION dieses Auftrags
-> **Modul 09 „NLP 2": READMEs FERTIG (`35e7123`), P01-Notebook FERTIG+ausgeführt (`83af0b6`, LSTM 0.788/Train 0.993/BoW 0.860). Als Nächstes: die .py-Projekte P02 (`attention.py`/`transformer.py`/`data.py`/`train.py`/`test_attention.py` + solution/) und P03 (`solution/gpt.py`) auf Englisch — Docstrings/Kommentare/prints/Bezeichner. Danach Testsuiten erneut laufen lassen (`__main__`/nbconvert).**
+> **Modul 09 „NLP 2" ist KOMPLETT auf Englisch/bilingual (READMEs `35e7123`, P01-Notebook `83af0b6`, P02 `.py` `f006195`, P03 `gpt.py` `303b7b8`). Verifiziert: P01 LSTM 0.788/Train 0.993/BoW 0.860; P02 8/8 Tests grün, Transformer 1.000 vs BoW 0.503; P03 Smoke-Test 200 Iter läuft (Start-Loss 3.96 ~ ln 65, 818k Params).**
+> **Als Nächstes: Modul 10 „Multilingual NLP" — Modul-README + 3 Projekt-READMEs bilingual, P01-Notebook englisch, P02/P03 `.py` englisch (Procrustes+CSLS, IBM Model 1 + Enc-Dec-Transformer). Format wie 08/09: Notebook nur P01, P02+P03 sind .py. Vorher `grep -rnE '"daten"|cd loesung|loesung/' modules/10-multilingual-nlp/` (Falle 8).**
 > **Modul 08 ist komplett.** Modul 09 hat wieder das 06/07/08-Format: **Notebook nur P01**, P02+P03 sind .py-Projekte (LSTM-Sentiment, SDPA/MHA/Encoder von Hand, Char-GPT from scratch).
 > Zielzahlen Modul 09: P01 **BoW 0.86 schlaegt LSTM 0.79** (neuronal ist datenhungrig); P02 synthet. Negations-Task **BoW 0.50 vs Transformer 1.00**, 8/8 Tests; P03 Char-GPT auf Tiny-Shakespeare Val-Loss 4.2 -> **1.77** in ~1:50 min auf MPS.
 > **Achtung Laufzeit/Hitze:** Modul 09 trainiert echte torch-Modelle (P01 ~34 s MPS, P03 ~2 min MPS). torch 2.12.1 liegt im Repo-.venv, MPS verfuegbar. Daten: UCI Sentiment (Download), Tiny-Shakespeare (Download).
@@ -93,8 +94,9 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 06 Theorie der KI 1 | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `033b87a`, `1d3e467`, `f1bc5b3` |
 | 07 Theorie der KI 2 | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `d2bb460`, `a1b92c6` |
 | 08 NLP 1 | ✓ | ✓ 3/3 (+2 datasets) | ✓ Notebook + alle .py | `678c6c1`, `50b79a5` |
-| **09 NLP 2** | **offen — als Nächstes** | offen | offen | — |
-| 10–21 | offen | offen | offen | — |
+| 09 NLP 2 | ✓ | ✓ 3/3 (+2 datasets) | ✓ Notebook + alle .py | `35e7123`, `83af0b6`, `f006195`, `303b7b8` |
+| **10 Multilingual NLP** | **offen — als Nächstes** | offen | offen | — |
+| 11–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)
 1. Altes Notebook dumpen: `python -c "import json; nb=json.load(open(PFAD)); [print('####',i,c['cell_type'],''.join(c['source'])) for i,c in enumerate(nb['cells'])]"`.
