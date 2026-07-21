@@ -1,8 +1,8 @@
-"""Sudoku auf zwei Wegen loesen: als CSP und als SAT-Instanz (via DPLL).
+"""Solving Sudoku by two routes: as a CSP and as a SAT instance (via DPLL).
 
-Zeigt den Kern des Skripts praktisch: Ein Problem -> zwei Formalismen.
-Der CSP-Weg nutzt Backtracking+MRV+AC-3, der SAT-Weg kodiert Sudoku in
-aussagenlogische Klauseln und laesst DPLL entscheiden.
+It shows the core of the script in practice: one problem -> two formalisms.
+The CSP route uses backtracking+MRV+AC-3, the SAT route encodes Sudoku into
+propositional clauses and lets DPLL decide.
 """
 from csp import CSP, backtracking_search
 from dpll import dpll_satisfiable
@@ -10,11 +10,11 @@ from dpll import dpll_satisfiable
 N = 9
 BOX = 3
 
-# ---------------------------------------------------------------- Ein-/Ausgabe
+# ---------------------------------------------------------------- Input/output
 def parse_grid(s):
-    """81-Zeichen-String ('.' oder '0' = leer) -> 9x9-Liste von ints."""
+    """An 81-character string ('.' or '0' = empty) -> a 9x9 list of ints."""
     s = "".join(ch for ch in s if ch.isdigit() or ch == ".")
-    assert len(s) == 81, f"erwarte 81 Felder, bekam {len(s)}"
+    assert len(s) == 81, f"expected 81 cells, got {len(s)}"
     return [[0 if c in ".0" else int(c) for c in s[r*9:r*9+9]] for r in range(9)]
 
 
@@ -44,10 +44,10 @@ def is_valid_solution(grid):
     return True
 
 
-# ---------------------------------------------------------------- CSP-Modell
+# ---------------------------------------------------------------- The CSP model
 def sudoku_neighbors():
-    """Fuer jede Zelle (r,c) die Menge der Zellen in derselben Zeile, Spalte
-    oder demselben 3x3-Block (ohne die Zelle selbst)."""
+    """For every cell (r,c) the set of cells in the same row, column or 3x3
+    block (excluding the cell itself)."""
     nb = {}
     for r in range(9):
         for c in range(9):
@@ -69,7 +69,7 @@ def build_csp(grid):
     for (r, c) in variables:
         domains[(r, c)] = {grid[r][c]} if grid[r][c] else set(range(1, 10))
     neighbors = sudoku_neighbors()
-    constraints = lambda A, a, B, b: a != b        # AllDifferent, binaer zerlegt
+    constraints = lambda A, a, B, b: a != b        # AllDifferent, decomposed into binary form
     return CSP(variables, domains, neighbors, constraints)
 
 
@@ -81,16 +81,16 @@ def solve_csp(grid):
     return [[sol[(r, c)] for c in range(9)] for r in range(9)]
 
 
-# ---------------------------------------------------------------- SAT-Modell
+# ---------------------------------------------------------------- The SAT model
 def var(r, c, d):
-    """Boolesche Variable v(r,c,d): 'Zelle (r,c) traegt Ziffer d'.
-    Eindeutige positive ID in 1..729."""
+    """The boolean variable v(r,c,d): 'cell (r,c) carries the digit d'.
+    A unique positive ID in 1..729."""
     return r * 81 + c * 9 + (d - 1) + 1
 
 
 def at_most_one(lits):
-    """Klauseln, die erzwingen, dass hoechstens ein Literal der Liste wahr ist:
-    fuer jedes Paar (li, lj) die Klausel (-li v -lj)."""
+    """Clauses that enforce that at most one literal of the list is true:
+    for every pair (li, lj) the clause (-li v -lj)."""
     clauses = []
     for i in range(len(lits)):
         for j in range(i + 1, len(lits)):
@@ -99,30 +99,30 @@ def at_most_one(lits):
 
 
 def encode_sudoku(grid):
-    """Sudoku -> KNF-Klauselmenge (Liste von Mengen von Literalen)."""
+    """Sudoku -> a set of CNF clauses (a list of sets of literals)."""
     clauses = []
     digits = range(1, 10)
-    # (1) Jede Zelle traegt mindestens eine Ziffer.
+    # (1) Every cell carries at least one digit.
     for r in range(9):
         for c in range(9):
             clauses.append({var(r, c, d) for d in digits})
-            # (2) ... und hoechstens eine.
+            # (2) ... and at most one.
             clauses += at_most_one([var(r, c, d) for d in digits])
-    # (3) Jede Ziffer hoechstens einmal pro Zeile.
+    # (3) Every digit at most once per row.
     for r in range(9):
         for d in digits:
             clauses += at_most_one([var(r, c, d) for c in range(9)])
-    # (4) ... pro Spalte.
+    # (4) ... per column.
     for c in range(9):
         for d in digits:
             clauses += at_most_one([var(r, c, d) for r in range(9)])
-    # (5) ... pro 3x3-Block.
+    # (5) ... per 3x3 block.
     for br in range(0, 9, 3):
         for bc in range(0, 9, 3):
             for d in digits:
                 cells = [var(br + i, bc + j, d) for i in range(3) for j in range(3)]
                 clauses += at_most_one(cells)
-    # (6) Vorgaben als Unit-Klauseln.
+    # (6) The givens as unit clauses.
     for r in range(9):
         for c in range(9):
             if grid[r][c]:
@@ -158,20 +158,20 @@ PUZZLE = ("53..7...."
 if __name__ == "__main__":
     import time
     grid = parse_grid(PUZZLE)
-    print("Ausgangsraetsel:\n" + show(grid) + "\n")
+    print("The initial puzzle:\n" + show(grid) + "\n")
 
     t = time.perf_counter()
     csp_sol = solve_csp(grid)
     t_csp = time.perf_counter() - t
-    print(f"[CSP]  geloest in {t_csp*1000:.1f} ms, gueltig={is_valid_solution(csp_sol)}")
+    print(f"[CSP]  solved in {t_csp*1000:.1f} ms, valid={is_valid_solution(csp_sol)}")
     print(show(csp_sol) + "\n")
 
     t = time.perf_counter()
     sat_sol, ncl = solve_sat(grid)
     t_sat = time.perf_counter() - t
-    print(f"[SAT]  {ncl} Klauseln, DPLL in {t_sat*1000:.1f} ms, "
-          f"gueltig={is_valid_solution(sat_sol)}")
+    print(f"[SAT]  {ncl} clauses, DPLL in {t_sat*1000:.1f} ms, "
+          f"valid={is_valid_solution(sat_sol)}")
     print(show(sat_sol) + "\n")
 
-    assert csp_sol == sat_sol, "Beide Wege muessen dieselbe Loesung liefern!"
-    print("OK — CSP- und SAT-Loesung sind identisch und gueltig.")
+    assert csp_sol == sat_sol, "both routes must deliver the same solution!"
+    print("OK — the CSP and SAT solutions are identical and valid.")

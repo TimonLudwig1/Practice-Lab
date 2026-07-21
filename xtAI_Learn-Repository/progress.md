@@ -52,10 +52,11 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 ## Englisch-Umstellung (laufender Auftrag, Vorrang vor Modul 22)
 
 > ### NEXT ACTION dieses Auftrags
-> **Modul 06, Projekt 01-basic: `search.ipynb` + `solution/search_solution.ipynb` auf Englisch.**
-> Die **4 READMEs von Modul 06 sind fertig**. Modul 06 wird **in einem Rutsch inkl. der .py-Projekte** gemacht (User-Freigabe) — also nach P01 direkt P02 (`csp.py`/`dpll.py`/`sudoku.py`/`test_solver.py` je im Root UND in solution/) und P03 (`logic.py`/`scenarios.py`/`test_prover.py` in solution/). Das ist fuer Modul 06 ein Vorgriff auf Schritt 3.
-> Zielzahlen: P01 Arad->Bukarest **418 km** (UCS/A*) vs 450 (BFS/Greedy), 8-Puzzle **5257 >> 457 >> 147** expandierte Knoten; P02 `python test_solver.py` -> alle Tests, CSP ~10 ms, ~11 800 Klauseln, DPLL 1-2 s; P03 (A) ~600 Resolutionsschritte, (B) 2, (C) 2, (D) terminiert ohne Beweis.
-> **pytest fehlt** -> die Testsuiten haben eigene `__main__`-Runner, einfach `python test_solver.py` / `python test_prover.py`.
+> **Modul 06, Projekt 03-final: `solution/logic.py`, `solution/scenarios.py`, `solution/test_prover.py` auf Englisch.**
+> Danach ist **Modul 06 komplett** (Modul 06 wird auf User-Wunsch inkl. .py-Dateien in einem Rutsch gemacht) und Modul 07 ist dran.
+> Erledigt in Modul 06: 4 READMEs · P01 (verifiziert: 418 km, 5257/457/147) · P02 (verifiziert: alle Tests OK, CSP 10.5 ms, **11 775** Klauseln, DPLL 1.5 s; Stub wirft korrekt NotImplementedError).
+> Zielzahlen P03: (A) Colonel West in ~600 Resolutionsschritten bewiesen, (B) 2, (C) 2, (D) terminiert ohne Beweis; Occurs-Check lehnt `unify(x, f(x))` ab. Test: `python test_prover.py` (kein pytest noetig).
+> **Nur solution/ vorhanden** (P03 ist bewusst ohne Code-Vorgabe) — es gibt also keine Stub-Dateien zu uebersetzen.
 >
 > Rezept siehe „Arbeitsablauf pro Notebook" weiter unten.
 
@@ -89,7 +90,7 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 03 Data Science 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `598a668`, `b723e1d` |
 | 04 Machine Learning 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `92ab92d`, `d172564`, `028b8a5`, `90817ad` |
 | 05 Machine Learning 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `af83312`, `f56b29f`, `4c879f7`, `5f8afc3` |
-| **06 Theorie der KI 1** | ✓ | ✓ 3/3 | **offen (Notebook + .py)** | `033b87a` |
+| **06 Theorie der KI 1** | ✓ | ✓ 3/3 | **P01+P02 ✓, P03 offen** | `033b87a`, `<neu>` |
 | 07–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)

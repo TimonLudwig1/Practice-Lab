@@ -1,32 +1,32 @@
-"""DPLL — Erfuellbarkeits-Solver fuer Aussagenlogik in KNF.
+"""DPLL — a satisfiability solver for propositional logic in CNF.
 
-Kodierung: Eine Variable ist eine positive ganze Zahl. Ein Literal ist +v
-(positiv) oder -v (negiert). Eine Klausel ist eine Menge von Literalen
-(Disjunktion), eine Formel eine Liste von Klauseln (Konjunktion).
+The encoding: a variable is a positive integer. A literal is +v (positive) or
+-v (negated). A clause is a set of literals (a disjunction), a formula a list
+of clauses (a conjunction).
 
-Rueckgabe: ein Modell {var: bool} (SAT) oder None (UNSAT).
+Returns: a model {var: bool} (SAT) or None (UNSAT).
 """
 import sys
 sys.setrecursionlimit(100000)
 
 
 def clause_value(clause, model):
-    """Wahrheitswert einer Klausel unter (partiellem) model:
-    True (erfuellt), False (verletzt) oder None (noch offen)."""
+    """The truth value of a clause under the (partial) model:
+    True (satisfied), False (violated) or None (still open)."""
     unknown = False
     for lit in clause:
         v = abs(lit)
         if v in model:
             if model[v] == (lit > 0):
-                return True                # ein wahres Literal genuegt
+                return True                # one true literal is enough
         else:
             unknown = True
     return None if unknown else False
 
 
 def find_unit_clause(clauses, model):
-    """Eine noch offene Klausel mit genau EINEM unbelegten Literal (alle
-    anderen falsch). Gibt (var, wert) zurueck, den das Literal erzwingt."""
+    """A still open clause with exactly ONE unassigned literal (all others
+    false). Returns (var, value) that the literal forces."""
     for clause in clauses:
         if clause_value(clause, model) is not None:
             continue
@@ -38,8 +38,8 @@ def find_unit_clause(clauses, model):
 
 
 def find_pure_symbol(symbols, clauses, model):
-    """Ein Symbol, das in allen noch offenen Klauseln nur mit EINER Polaritaet
-    auftritt. Gibt (var, wert) zurueck."""
+    """A symbol that occurs in all still open clauses with only ONE polarity.
+    Returns (var, value)."""
     lits = set()
     for clause in clauses:
         if clause_value(clause, model) is None:
@@ -60,24 +60,24 @@ def dpll_satisfiable(clauses):
 
 
 def _dpll(clauses, symbols, model):
-    # 1) Fruehterminierung: verletzte Klausel? -> UNSAT auf diesem Zweig.
+    # 1) Early termination: a violated clause? -> UNSAT on this branch.
     for clause in clauses:
         if clause_value(clause, model) is False:
             return None
-    # alle erfuellt?
+    # all satisfied?
     if all(clause_value(c, model) is True for c in clauses):
         return dict(model)
-    # 2) Unit Propagation (der wirkungsvollste Schritt).
+    # 2) Unit propagation (the most effective step).
     P, val = find_unit_clause(clauses, model)
     if P is not None:
         m = dict(model); m[P] = val
         return _dpll(clauses, [s for s in symbols if s != P], m)
-    # 3) Pure-Literal-Regel.
+    # 3) The pure literal rule.
     P, val = find_pure_symbol(symbols, clauses, model)
     if P is not None:
         m = dict(model); m[P] = val
         return _dpll(clauses, [s for s in symbols if s != P], m)
-    # 4) Verzweigen ueber ein freies Symbol.
+    # 4) Branch on a free symbol.
     P, rest = symbols[0], symbols[1:]
     for val in (True, False):
         m = dict(model); m[P] = val

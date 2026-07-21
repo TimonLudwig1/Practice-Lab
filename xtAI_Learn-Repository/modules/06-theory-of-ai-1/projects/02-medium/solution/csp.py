@@ -1,8 +1,8 @@
-"""Generisches CSP-Framework: Backtracking + MRV + AC-3 (Kantenkonsistenz).
+"""A generic CSP framework: backtracking + MRV + AC-3 (arc consistency).
 
-Ein CSP ist (Variablen, Domaenen, Nachbarn, Constraint-Praedikat). Die
-Constraints hier sind binaer: constraints(A, a, B, b) -> bool sagt, ob die
-Belegung A=a, B=b erlaubt ist. Fuer Sudoku ist das schlicht "a != b".
+A CSP is (variables, domains, neighbours, a constraint predicate). The
+constraints here are binary: constraints(A, a, B, b) -> bool says whether the
+assignment A=a, B=b is permitted. For Sudoku that is simply "a != b".
 """
 from collections import deque
 
@@ -10,15 +10,15 @@ from collections import deque
 class CSP:
     def __init__(self, variables, domains, neighbors, constraints):
         self.variables = list(variables)
-        self.domains = {v: set(domains[v]) for v in variables}  # volle Domaenen
+        self.domains = {v: set(domains[v]) for v in variables}  # the full domains
         self.neighbors = neighbors                              # var -> iterable(var)
-        self.constraints = constraints                         # (A,a,B,b) -> bool
+        self.constraints = constraints                          # (A,a,B,b) -> bool
 
 
 # ---------------------------------------------------------------- AC-3
 def revise(csp, domains, Xi, Xj):
-    """Streicht aus domains[Xi] jeden Wert ohne zulaessigen Partner in
-    domains[Xj]. Gibt True zurueck, wenn etwas entfernt wurde."""
+    """Deletes from domains[Xi] every value without a permitted partner in
+    domains[Xj]. Returns True if something was removed."""
     revised = False
     for x in set(domains[Xi]):
         if not any(csp.constraints(Xi, x, Xj, y) for y in domains[Xj]):
@@ -28,8 +28,8 @@ def revise(csp, domains, Xi, Xj):
 
 
 def ac3(csp, domains, queue=None):
-    """Stellt Kantenkonsistenz auf domains (mutierend) her.
-    Gibt False zurueck, sobald eine Domaene leer wird (Inkonsistenz)."""
+    """Establishes arc consistency on domains (mutating it).
+    Returns False as soon as a domain becomes empty (an inconsistency)."""
     if queue is None:
         queue = deque((Xi, Xj) for Xi in csp.variables for Xj in csp.neighbors[Xi])
     else:
@@ -47,22 +47,22 @@ def ac3(csp, domains, queue=None):
 
 # ---------------------------------------------------------------- Backtracking
 def select_unassigned_variable(csp, domains, assignment):
-    """MRV: waehle die unbelegte Variable mit den wenigsten Restwerten."""
+    """MRV: pick the unassigned variable with the fewest remaining values."""
     unassigned = [v for v in csp.variables if v not in assignment]
     return min(unassigned, key=lambda v: len(domains[v]))
 
 
 def consistent(csp, var, value, assignment):
-    """Vertraeglich mit allen bereits belegten Nachbarn?"""
+    """Compatible with all already assigned neighbours?"""
     return all(csp.constraints(var, value, B, assignment[B])
                for B in csp.neighbors[var] if B in assignment)
 
 
 def backtracking_search(csp):
-    """Backtracking mit MRV und MAC (Maintaining Arc Consistency via AC-3).
-    Gibt eine vollstaendige Belegung (dict) oder None zurueck."""
+    """Backtracking with MRV and MAC (maintaining arc consistency via AC-3).
+    Returns a complete assignment (a dict) or None."""
     domains = {v: set(csp.domains[v]) for v in csp.variables}
-    if not ac3(csp, domains):           # Vorverarbeitung
+    if not ac3(csp, domains):           # preprocessing
         return None
 
     def backtrack(assignment):
@@ -71,14 +71,14 @@ def backtracking_search(csp):
         var = select_unassigned_variable(csp, domains, assignment)
         for value in list(domains[var]):
             if consistent(csp, var, value, assignment):
-                saved = {v: set(domains[v]) for v in domains}   # Snapshot
+                saved = {v: set(domains[v]) for v in domains}   # snapshot
                 assignment[var] = value
                 domains[var] = {value}
                 if ac3(csp, domains, [(Xk, var) for Xk in csp.neighbors[var]]):
                     result = backtrack(assignment)
                     if result is not None:
                         return result
-                domains.update(saved)                           # Rollback
+                domains.update(saved)                           # rollback
                 del assignment[var]
         return None
 

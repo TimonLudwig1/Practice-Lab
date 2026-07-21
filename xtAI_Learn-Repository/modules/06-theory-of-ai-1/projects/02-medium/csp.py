@@ -1,12 +1,12 @@
-"""Generisches CSP-Framework: Backtracking + MRV + AC-3 (Kantenkonsistenz).
+"""A generic CSP framework: backtracking + MRV + AC-3 (arc consistency).
 
-DEINE AUFGABE: Fuelle die mit TODO markierten Funktionen. Die Datenstruktur
-(CSP-Klasse) und die MRV-Auswahl sind vorgegeben. Kern des Projekts sind
-`revise`, `ac3` und `backtracking_search`.
+YOUR TASK: fill in the functions marked with TODO. The data structure (the CSP
+class) and the MRV selection are given. The core of the project are `revise`,
+`ac3` and `backtracking_search`.
 
-Ein CSP ist (Variablen, Domaenen, Nachbarn, Constraint-Praedikat). Die
-Constraints sind binaer: constraints(A, a, B, b) -> bool sagt, ob die
-Belegung A=a, B=b erlaubt ist. Fuer Sudoku ist das schlicht "a != b".
+A CSP is (variables, domains, neighbours, a constraint predicate). The
+constraints are binary: constraints(A, a, B, b) -> bool says whether the
+assignment A=a, B=b is permitted. For Sudoku that is simply "a != b".
 """
 from collections import deque
 
@@ -14,35 +14,35 @@ from collections import deque
 class CSP:
     def __init__(self, variables, domains, neighbors, constraints):
         self.variables = list(variables)
-        self.domains = {v: set(domains[v]) for v in variables}  # volle Domaenen
+        self.domains = {v: set(domains[v]) for v in variables}  # the full domains
         self.neighbors = neighbors                              # var -> iterable(var)
-        self.constraints = constraints                         # (A,a,B,b) -> bool
+        self.constraints = constraints                          # (A,a,B,b) -> bool
 
 
 # ---------------------------------------------------------------- AC-3
 def revise(csp, domains, Xi, Xj):
-    """Streiche aus domains[Xi] jeden Wert x, fuer den es in domains[Xj]
-    KEINEN Partnerwert y mit constraints(Xi, x, Xj, y) gibt.
-    Gib True zurueck, wenn mindestens ein Wert entfernt wurde.
+    """Delete from domains[Xi] every value x for which there is NO partner
+    value y in domains[Xj] with constraints(Xi, x, Xj, y).
+    Return True if at least one value was removed.
 
-    Tipp: iteriere ueber set(domains[Xi]) (Kopie!), sonst aenderst du,
-    worueber du gerade laeufst.
+    Hint: iterate over set(domains[Xi]) (a copy!), otherwise you are modifying
+    what you are iterating over.
     """
     # TODO
     raise NotImplementedError
 
 
 def ac3(csp, domains, queue=None):
-    """Stelle Kantenkonsistenz auf `domains` (mutierend) her.
-    Gib False zurueck, sobald eine Domaene leer wird (Inkonsistenz), sonst True.
+    """Establish arc consistency on `domains` (mutating it).
+    Return False as soon as a domain becomes empty (an inconsistency), else True.
 
-    Geruest:
-      - queue = alle gerichteten Kanten (Xi, Xj), falls None uebergeben.
-      - solange queue nicht leer:
+    The scaffold:
+      - queue = all directed arcs (Xi, Xj), if None was passed.
+      - while the queue is not empty:
             (Xi, Xj) = queue.popleft()
-            wenn revise(...):  # Xi hat sich geaendert
-                wenn domains[Xi] leer: return False
-                fuege alle (Xk, Xi) fuer Nachbarn Xk != Xj wieder hinzu
+            if revise(...):  # Xi has changed
+                if domains[Xi] is empty: return False
+                add all (Xk, Xi) back for the neighbours Xk != Xj
       - return True
     """
     if queue is None:
@@ -55,36 +55,36 @@ def ac3(csp, domains, queue=None):
 
 # ---------------------------------------------------------------- Backtracking
 def select_unassigned_variable(csp, domains, assignment):
-    """MRV (vorgegeben): unbelegte Variable mit den wenigsten Restwerten."""
+    """MRV (given): the unassigned variable with the fewest remaining values."""
     unassigned = [v for v in csp.variables if v not in assignment]
     return min(unassigned, key=lambda v: len(domains[v]))
 
 
 def consistent(csp, var, value, assignment):
-    """Vertraeglich mit allen bereits belegten Nachbarn? (vorgegeben)"""
+    """Compatible with all already assigned neighbours? (given)"""
     return all(csp.constraints(var, value, B, assignment[B])
                for B in csp.neighbors[var] if B in assignment)
 
 
 def backtracking_search(csp):
-    """Backtracking mit MRV und MAC (Maintaining Arc Consistency via AC-3).
-    Gib eine vollstaendige Belegung (dict) oder None zurueck.
+    """Backtracking with MRV and MAC (maintaining arc consistency via AC-3).
+    Return a complete assignment (a dict) or None.
 
-    Geruest:
-      domains = frische Kopie der Domaenen
-      wenn nicht ac3(csp, domains): return None      # Vorverarbeitung
+    The scaffold:
+      domains = a fresh copy of the domains
+      if not ac3(csp, domains): return None      # preprocessing
 
       def backtrack(assignment):
-          wenn alle Variablen belegt: return dict(assignment)
+          if all variables are assigned: return dict(assignment)
           var = select_unassigned_variable(...)
-          fuer jeden value in domains[var]:
-              wenn consistent(csp, var, value, assignment):
-                  saved = Snapshot aller domains
+          for every value in domains[var]:
+              if consistent(csp, var, value, assignment):
+                  saved = a snapshot of all domains
                   assignment[var] = value ; domains[var] = {value}
-                  wenn ac3(csp, domains, [(Xk, var) fuer Xk in neighbors[var]]):
+                  if ac3(csp, domains, [(Xk, var) for Xk in neighbors[var]]):
                       result = backtrack(assignment)
-                      wenn result: return result
-                  domains zuruecksetzen (saved) ; del assignment[var]
+                      if result: return result
+                  restore the domains (saved) ; del assignment[var]
           return None
       return backtrack({})
     """
