@@ -1,4 +1,83 @@
-# Projekt 01 (basic) — Ein STRIPS-Vorwärtsplaner
+# Project 01 (basic) — A STRIPS forward planner
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Module 07 — Theory of AI 2** · Format: **Jupyter notebook** (`planning.ipynb`)
+
+## Why this format?
+
+Planning becomes tangible once you see a planner *run*: the states, the
+applicable actions, the plan that emerges, the number of expanded states. A
+notebook combines the STRIPS representation, the search and the output in one
+place and ties in seamlessly with the search procedures of module 06 — hence the
+guided, exploratory start with plenty of guidance.
+
+## Goal
+
+You implement a **classical forward planner (progression)** and experience how
+planning is formulated as a search problem (module 06) and how a **heuristic
+obtained automatically from the action description** guides the search:
+
+- STRIPS states (a `frozenset` of fluents) and actions `⟨PRE, ADD, DEL⟩`,
+  progression $(s\setminus\mathrm{DEL})\cup\mathrm{ADD}$ (given);
+- forward search with **BFS** (as a model, given);
+- the **$h_{\text{add}}$ heuristic** from the **delete relaxation** (task 1);
+- **A\*** with $h_{\text{add}}$ (task 2) and a comparison (task 3).
+
+The test case is the **Sussman anomaly** of the blocks world — a famous small
+problem on which naive planners that decompose the goal fail, while state search
+cleanly finds an optimal 6-step plan.
+
+## Prior knowledge
+
+- Part 1 of the script (STRIPS/PDDL, progression/regression, relaxation heuristics).
+- Module 06: BFS, A\*, heuristics (the search infrastructure is the same).
+- Python: `frozenset`, `dataclass`, `heapq`.
+
+## Setup
+
+Only the standard library. In Jupyter/VS Code select the kernel of the
+repository `.venv` (see `SETUP.md` in the root directory) and run the cells from
+top to bottom; then solve tasks 1–3.
+
+```bash
+source ../../../../.venv/bin/activate
+jupyter lab    # or open planning.ipynb in VS Code
+```
+
+## Tasks (step by step)
+
+Open **`planning.ipynb`**. Part A (STRIPS + blocks world) and part B (search
+nodes, BFS, generic best-first search) are given — read them and run them. Then:
+
+1. **`h_add` (task 1):** implement the delete-relaxation heuristic by fixed-point
+   iteration: $\Delta(p)=0$ for $p\in s$, otherwise
+   $\min_{a:\,p\in\mathrm{ADD}(a)}\big(1+\sum_{q\in\mathrm{PRE}(a)}\Delta(q)\big)$;
+   $h_{\text{add}}(s)=\sum_{g\in\text{goal}}\Delta(g)$. (Reference: $h_{\text{add}}(s_0)=5$.)
+2. **`astar_plan` (task 2):** wire the given `best_first_plan` up with
+   $f(s,g)=g+h_{\text{add}}(s)$.
+3. **The comparison (task 3):** BFS vs. A\*(h_add) — the plan length and the
+   expanded states.
+
+Finally part C verifies that the plan is executable and reaches the goal.
+
+## What should work in the end
+
+- Both procedures find an **optimal 6-step plan**
+  (`Unstack(C,A) → PutDown(C) → PickUp(B) → Stack(B,C) → PickUp(A) → Stack(A,B)`).
+- A\*(h_add) expands **fewer** states than BFS (reference: **about 11 vs. 18**).
+- The verification confirms: the plan is applicable step by step and reaches the goal.
+
+## Reference solution
+
+The folder **`solution/`** holds `planning_solution.ipynb` — fully implemented
+and **executed**, with the answers to the reflection questions at the end. Look
+only after your own attempt.
+
+---
+---
+
+# Projekt 01 (basic) — Ein STRIPS-Vorwärtsplaner (deutsche Fassung)
 
 **Modul 07 — Theorie der KI 2** · Format: **Jupyter Notebook** (`planning.ipynb`)
 

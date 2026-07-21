@@ -1,4 +1,138 @@
-# Projekt 03 (final) — Ein entscheidungstheoretischer MDP-Agent
+# Project 03 (final) — A decision-theoretic MDP agent
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Module 07 — Theory of AI 2** · Format: **a Python project, built from scratch by you**
+
+> **The final project of the module.** There is **no given code** — you design
+> and implement everything yourself. The project consolidates part 3 (utility
+> theory, MDPs, the Bellman equations, value/policy iteration) and builds the
+> bridge to reinforcement learning (module 13). Level: a genuine master's
+> examination piece.
+
+## Why this format and this topic?
+
+An MDP agent is the direct, executable implementation of the Bellman optimality
+equation and of the MEU principle. If you write **value iteration** and **policy
+iteration** yourself and *observe* their convergence, you understand the core of
+sequential decision making — and you see exactly the building blocks that RL is
+built on (only that there $P$ and $R$ are unknown). A real, modularized code base
+is right here; the procedure itself is too structured for a throwaway notebook.
+
+## Goal
+
+Build an agent that computes the optimal policy of a stochastic MDP — by **two**
+routes, whose agreement you check:
+
+- **Value iteration** — iterate the Bellman optimality operator to convergence;
+- **Policy iteration** — alternate policy evaluation and policy improvement.
+
+The environment is the classical **stochastic 4×3 gridworld** (Russell &
+Norvig): movement succeeds in the intended direction with probability 80 %, with
+10 % each perpendicular to it; one wall cell; a +1 and a −1 terminal; a living
+reward of $-0.04$ per step. You are to **visualize** the optimal policy (a grid
+of arrows), check the **convergence** empirically and investigate **how $\gamma$
+and the living reward change the optimal policy**.
+
+## Prior knowledge
+
+Part 3 of the script, in particular:
+- the MDP definition, policy, value function, the **Bellman (optimality) equation**;
+- **value iteration** and the **contraction proof** (why $B$ converges);
+- **policy iteration** (policy evaluation as a linear system, policy improvement).
+
+Python: `dict`, iteration, optionally `matplotlib` for a nicer visualization.
+
+## What you should build — the components
+
+1. **The MDP environment.** Represent the states (grid cells), the actions
+   (N/S/E/W), the **noisy transition model** $P(s'\mid s,a)$ (0.8/0.1/0.1, against
+   a wall or the border → stay put), the reward $R(s)$ (the living reward, the ±1
+   terminals) and $\gamma$. Terminal states are absorbing.
+
+2. **Value iteration.** Implement the Bellman optimality update
+   $$V_{k+1}(s) \leftarrow R(s) + \gamma \max_a \sum_{s'} P(s'\mid s,a)\,V_k(s'),$$
+   iterate until the **maximum Bellman residual** $\lVert V_{k+1}-V_k\rVert_\infty$
+   falls below a bound, and count the iterations. Read off the **greedy policy**
+   $\pi^\ast(s)=\arg\max_a\sum_{s'}P(s'\mid s,a)V^\ast(s')$.
+
+3. **Policy iteration.** Implement **policy evaluation** (solve or iterate
+   $V^\pi(s)=R(s)+\gamma\sum_{s'}P(s'\mid s,\pi(s))V^\pi(s')$) and **policy
+   improvement** (greedy with respect to $V^\pi$); alternate until the policy is
+   stable.
+
+4. **Analysis and visualization.**
+   - Print $V^\ast$ as a grid of numbers and $\pi^\ast$ as a **grid of arrows**.
+   - Show that VI and PI deliver **the same** policy and (up to a tolerance) the
+     same values, and compare the **number of iterations**.
+   - **The $\gamma$ study:** compute $\pi^\ast$ for several $\gamma$ (e.g. 1.0,
+     0.9, 0.5, 0.2) and describe how the policy changes.
+   - **The living-reward study:** vary $R$ (e.g. $-0.04, -0.5, -2.0, 0.0$) and
+     explain the qualitative behaviour (with a strongly negative $R$ the agent
+     takes risky shortcuts, even towards the $-1$ terminal).
+
+## Acceptance criteria
+
+- [ ] Value iteration reproduces the known AIMA utilities of the 4×3 world
+      (among others $V(0,0)\approx0.705$, $V(2,2)\approx0.918$, $V(3,0)\approx0.388$;
+      tolerance $<0.005$);
+- [ ] the optimal policy read off from them agrees with the classical solution
+      (the top row → → →, below ↑ ← ← ←, with ↑ next to the wall);
+- [ ] policy iteration delivers **the same** policy and values as value iteration
+      (and needs **considerably fewer** outer iterations for it);
+- [ ] the $\gamma$ and living-reward studies show comprehensible changes of the
+      policy;
+- [ ] VI reports the number of iterations until convergence (reference: about 30
+      at $\gamma=1$, with a residual $<10^{-8}$).
+
+## Self-check questions (answer them in writing)
+
+1. **Why does value iteration converge?** Sketch the contraction argument (the
+   Bellman operator is a $\gamma$-contraction in $\lVert\cdot\rVert_\infty$, the
+   Banach fixed point theorem). Why does it converge in this world **even at
+   $\gamma=1$** (keyword: absorbing terminals / a proper policy)?
+2. **Why does policy iteration need so many fewer iterations** than value
+   iteration, even though every iteration is more expensive?
+3. **Why does a smaller $\gamma$ change the policy** towards shorter and riskier
+   routes? Argue via the discounted return.
+4. **Why does the agent take shortcuts even towards the $-1$ terminal when the
+   living reward is strongly negative?** Connect that with the sign and the
+   magnitude of $R$.
+5. **Where exactly is the bridge to reinforcement learning (module 13)?** What
+   does an RL agent *not* know that your MDP agent assumes here, and how does
+   that change the approach (keyword: sampling / temporal difference instead of
+   an exact $P,R$)?
+
+## Extensions (optional, for going deeper)
+
+- **Q-values and modified policy iteration** (policy evaluation with only a few sweeps).
+- **A matplotlib heatmap** of the utilities with the policy arrows overlaid.
+- **A convergence curve** ($\lVert V_{k+1}-V_k\rVert_\infty$ over $k$, on a log
+  scale) — confirm the *geometric* rate $\gamma^k$.
+- **Asynchronous/prioritized value iteration** or a larger gridworld of your own
+  design with traps and several goals.
+
+## Reference solution
+
+**`solution/`** holds a complete, tested reference implementation:
+- `gridworld.py` — the 4×3 MDP environment + the ASCII visualization (arrows/values),
+- `mdp.py` — value iteration, the greedy policy, policy iteration (with policy evaluation),
+- `demo.py` — the utilities/policy, the VI-vs-PI comparison, the $\gamma$ and living-reward studies,
+- `test_mdp.py` — the acceptance test against the AIMA reference values.
+
+Reference: VI about 34 iterations ($\gamma=1$), PI about 5 iterations, an
+**identical policy**. **Look only after your own attempt.**
+
+```bash
+source ../../../../.venv/bin/activate    # only the standard library is needed
+cd solution && python demo.py            # the utilities, policy, gamma/reward studies
+python test_mdp.py                       # the acceptance test
+```
+
+---
+---
+
+# Projekt 03 (final) — Ein entscheidungstheoretischer MDP-Agent (deutsche Fassung)
 
 **Modul 07 — Theorie der KI 2** · Format: **Python-Projekt, von Grund auf selbst gebaut**
 
@@ -122,6 +256,6 @@ Referenz: VI ~34 Iterationen ($\gamma=1$), PI ~5 Iterationen, **identische Polic
 
 ```bash
 source ../../../../.venv/bin/activate    # nur Standardbibliothek nötig
-cd loesung && python demo.py             # Utilities, Policy, gamma-/Reward-Studie
+cd solution && python demo.py            # Utilities, Policy, gamma-/Reward-Studie
 python test_mdp.py                       # Abnahmetest
 ```

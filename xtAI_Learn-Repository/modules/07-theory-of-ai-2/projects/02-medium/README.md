@@ -1,4 +1,119 @@
-# Projekt 02 (medium) — Bayes-Netz: exakte & approximative Inferenz
+# Project 02 (medium) — A Bayesian network: exact and approximate inference
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Module 07 — Theory of AI 2** · Format: **Python project** (several modules + tests)
+
+## Why this format?
+
+Inference in Bayesian networks is a *family of algorithms* with a clear
+structure — one network data structure, several interchangeable inference
+engines, and a test suite that checks that they agree. This is a small **code
+base**, not an exploratory notebook. That is exactly how one uses libraries such
+as `pgmpy` in practice — and by writing the procedures yourself you understand
+what happens *inside* them.
+
+## Goal
+
+You implement the three central inference procedures from part 2 of the script
+and check that they deliver **the same distribution** (the exact ones exactly,
+the approximate one close to it):
+
+1. **Inference by enumeration** (`enumeration_ask`) — the direct sum over the
+   joint factorization.
+2. **Variable elimination** (`elimination_ask`) — factors with the **pointwise
+   product** and **summing out**.
+3. **Likelihood weighting** (`likelihood_weighting`) — weighted sampling.
+
+The validation happens on **Pearl's alarm network** (with the well-known result
+$P(\text{Burglary}\mid j,m)=0.284$) and a small **medical diagnosis network**.
+Along the way you make **"explaining away"** visible.
+
+## Prior knowledge
+
+- Part 2 of the script (Bayesian networks, factorization, d-separation, variable
+  elimination, sampling/likelihood weighting).
+- Python: recursion, generators (`yield`), `dict`, `random`.
+
+## Project structure
+
+```
+02-medium/
+  bayesnet.py         # the network data structure + the alarm/diagnosis nets  (given)
+  inference.py        # the three inference procedures     <- YOU: 3 cores
+  demo.py             # the comparison demonstration        (given)
+  test_inference.py   # the test suite                      (given)
+  solution/           # the complete reference solution
+```
+
+What is given is the **network data structure** (`BayesNode.p`, `.sample`), the
+**factor plumbing** (`make_factor`, `bool_events`, the `elimination_ask`
+orchestration) and the two example networks. **You implement the three
+conceptual cores**, marked with `TODO`:
+
+- `enumerate_all` (the enumeration recursion),
+- `Factor.pointwise_product` and `Factor.sum_out` (the two factor operations),
+- `weighted_sample` and `likelihood_weighting` (the weighted sampling).
+
+## Tasks (step by step)
+
+Test after every core with `python test_inference.py`:
+
+1. **Enumeration** — `enumerate_all`: recursively over the topologically ordered
+   variables; substitute the evidence variables, sum out the hidden ones.
+   *Test:* `test_enumeration_alarm` (the target: $0.2842$).
+2. **Variable elimination** — `Factor.pointwise_product` (the product over the
+   union of the variables) and `Factor.sum_out` (summing one variable out). The
+   orchestration calls your methods.
+   *Test:* `test_elimination_matches_enumeration` (it must agree *exactly* with
+   enumeration).
+3. **Likelihood weighting** — `weighted_sample` (weight the evidence instead of
+   sampling it) and `likelihood_weighting` (aggregate N samples).
+   *Test:* `test_likelihood_weighting`.
+
+Finally run `python demo.py`: a comparison of all three procedures plus the
+explaining-away demonstration.
+
+## What should work in the end
+
+```bash
+source ../../../../.venv/bin/activate    # only the standard library is needed
+python test_inference.py     # -> "All tests passed."
+python demo.py               # -> the three procedures are consistent, explaining away is visible
+```
+
+Reference: $P(\text{Burglary}\mid j,m)=0.2842$ (enumeration = VE, exactly equal);
+likelihood weighting close to it. **Explaining away:**
+$P(B\mid A)=0.374 \to P(B\mid A,E)=0.003$ — the earthquake report "explains the
+alarm away".
+
+> **An important observation (it is stated this way in the reference solution):**
+> with evidence *at the leaves* (JohnCalls/MaryCalls), likelihood weighting has
+> **high variance** and converges slowly — a real disadvantage of the procedure,
+> not a bug. That is why the tolerance in the test is generous. With evidence *at
+> the roots* (the diagnosis network with `Smoker`), LW is considerably more
+> accurate.
+
+## Reflection (in writing, briefly)
+
+1. Why do enumeration and variable elimination agree **exactly**, while
+   likelihood weighting only hits it approximately?
+2. What does the efficiency of variable elimination depend on? (Script:
+   treewidth / the elimination order.) Try a different order in the code.
+3. Why does likelihood weighting discard no samples (unlike rejection sampling),
+   and why does that help only partially when the evidence is rare?
+4. Explain "explaining away" in terms of d-separation: which path opens as soon
+   as `Alarm` is observed?
+
+## Reference solution
+
+Complete in **`solution/`** — all tests pass, `demo.py` runs through. Look only
+after your own attempt.
+
+---
+---
+
+# Projekt 02 (medium) — Bayes-Netz: exakte & approximative Inferenz (deutsche Fassung)
 
 **Modul 07 — Theorie der KI 2** · Format: **Python-Projekt** (mehrere Module + Tests)
 

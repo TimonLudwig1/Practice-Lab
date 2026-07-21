@@ -1,4 +1,722 @@
-# Modul 07 — Theorie der Künstlichen Intelligenz 2
+# Module 07 — Theory of Artificial Intelligence 2
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The projects themselves are English only.
+
+**What is this about?** Module 06 showed how an agent acts in a *known,
+deterministic* world through search and logic. This module goes three steps
+further: (1) **planning** — acting in structured but still deterministic worlds
+with a compact, logic-like representation of actions; (2) **reasoning under
+uncertainty** — when the world is no longer known for certain, we replace
+"true/false" by **probabilities** and compute with **Bayesian networks**; (3)
+**rational decision making** — when actions have uncertain outcomes, the agent
+maximizes the **expected utility**, in the sequential case via **Markov
+decision processes (MDPs)**. That is the transition from *symbolic* to
+*probabilistic* and *decision-theoretic* AI — and the theoretical bridge to
+reinforcement learning (modules 13/14).
+
+**Helpful prior knowledge.** Module 06 (search, logic — planning builds
+directly on it). The basics of probability and linear algebra (modules 02/03
+are enough). Some calculus for the convergence proofs (contraction).
+
+**Recommended earlier modules.** Module 06 "Theory of AI 1" (mandatory for the
+planning chapter), Data Science 1/2 for the probability basics.
+
+**Following modules.** Reinforcement learning (13) and deep RL (14) build
+directly on the MDP part. Bayesian networks reappear in ML, NLP and
+bioinformatics.
+
+---
+
+## Learning objectives
+
+After this module you should be able to
+
+- formalize a planning problem in **STRIPS/PDDL** and explain the difference
+  between **forward (progression), backward (regression) and plan-space search**;
+- derive **domain-independent heuristics** from **relaxation** (ignoring the
+  delete lists, $h_{\text{add}}$, $h_{\max}$, $h_{\text{FF}}$);
+- place **GraphPlan** (the planning graph, mutex relations) and **SATPlan** as
+  alternative planning paradigms;
+- apply the **axioms of probability**, conditional probability, **Bayes'
+  theorem** and **(conditional) independence** confidently;
+- construct a **Bayesian network**, justify its **factorization of the joint
+  distribution** and read off independences with **d-separation**;
+- carry out **exact inference** (enumeration, **variable elimination**) and
+  **approximate inference** (likelihood weighting, **Gibbs sampling/MCMC**);
+- understand **temporal models** (Markov chains, **HMMs**) and derive
+  **filtering, smoothing** and the **Viterbi algorithm**;
+- make **rational decisions** via the **maximum expected utility (MEU)**
+  principle and compute the **value of information (VPI)**;
+- define **MDPs**, set up the **Bellman equations** and understand **value
+  iteration** and **policy iteration** including the **convergence proof
+  (contraction)**;
+- explain the connection between planning, probabilistic reasoning and
+  sequential decision making.
+
+---
+
+## Part 1 — Foundations: classical planning
+
+### 1.1 Why planning instead of plain search?
+
+One *could* treat every planning problem as a search problem (module 06). The
+problem: in a world with many objects and predicates the state space is
+astronomical, and pure state search does not "see" the **structure** of the
+actions. **Planning** uses a **factored, logic-like representation** of states
+and actions. That makes it possible to (a) derive **domain-independent
+heuristics** automatically from the action description and (b) exploit actions
+that are independent of each other.
+
+### 1.2 STRIPS and PDDL
+
+In the **STRIPS** formalism (Stanford Research Institute Problem Solver) a
+**state** is a set of **ground fluents** (variable-free, true atomic statements)
+under the **closed-world assumption**: whatever is not in the set counts as
+false. A **planning problem** is $(\mathcal{F}, s_0, g, \mathcal{A})$ with
+
+- $\mathcal{F}$: the set of all fluents,
+- $s_0 \subseteq \mathcal{F}$: the **initial state**,
+- $g \subseteq \mathcal{F}$: the **goal condition** (a state $s$ satisfies the goal if $g \subseteq s$),
+- $\mathcal{A}$: the set of **action schemas**. A ground action $a$ consists of
+  - $\mathrm{PRE}(a)$ — the **preconditions** (fluents that must hold),
+  - $\mathrm{ADD}(a)$ — the **add list** (fluents that $a$ makes true),
+  - $\mathrm{DEL}(a)$ — the **delete list** (fluents that $a$ makes false).
+
+An action $a$ is **applicable** in $s$ if $\mathrm{PRE}(a) \subseteq s$. The
+**transition model** (progression) is purely set-theoretic:
+$$
+\mathrm{Result}(s, a) = (s \setminus \mathrm{DEL}(a)) \cup \mathrm{ADD}(a).
+$$
+
+**PDDL** (Planning Domain Definition Language) is the syntax commonly used for
+this today; it separates a **domain file** (predicates, action schemas with
+variables) from a **problem file** (objects, initial state, goal). Action
+schemas with variables are instantiated into ground actions before the search
+(*grounding*).
+
+> **Example (blocks world).** Fluents: `On(x,y)`, `OnTable(x)`, `Clear(x)`,
+> `Holding(x)`, `ArmEmpty`. The action `PickUp(x)`:
+> $\mathrm{PRE} = \{\mathrm{Clear}(x), \mathrm{OnTable}(x), \mathrm{ArmEmpty}\}$,
+> $\mathrm{ADD} = \{\mathrm{Holding}(x)\}$,
+> $\mathrm{DEL} = \{\mathrm{Clear}(x), \mathrm{OnTable}(x), \mathrm{ArmEmpty}\}$.
+
+The charm of it: the **frame problem** (what does *not* change?) is solved
+elegantly — everything that is not in ADD/DEL stays unchanged.
+
+### 1.3 Forward, backward and plan-space search
+
+**Progression (forward search)** searches the state space from $s_0$ towards the
+goal with the procedures from module 06 (usually A\* with one of the heuristics
+below). The advantage: simple states; the disadvantage: a high branching factor
+(many applicable actions).
+
+**Regression (backward search)** starts at the goal $g$ and works backwards.
+The regression step: in order to reach the state description $g'$ after
+applying $a$, the following must hold beforehand
+$$
+\mathrm{Regress}(g', a) = (g' \setminus \mathrm{ADD}(a)) \cup \mathrm{PRE}(a),
+\quad \text{provided } a \text{ is relevant } (\mathrm{ADD}(a)\cap g' \neq \emptyset)
+\text{ and consistent } (\mathrm{DEL}(a) \cap g' = \emptyset).
+$$
+The advantage: only **relevant** actions are considered (a small branching
+factor); the disadvantage: states are *partial descriptions* (sets of
+conditions), and good heuristic design is harder.
+
+**Plan-space search / partial-order planning (POP).** Instead of searching the
+state space, one searches the space of *partial plans*. A partial plan consists
+of (i) a set of actions, (ii) **ordering constraints** $a \prec b$ ("$a$ before
+$b$"), (iii) **causal links** $a \xrightarrow{p} b$ ("$a$ provides the
+precondition $p$ of $b$") and (iv) open preconditions. One refines the plan
+until no open precondition remains and all **threats** are resolved. An action
+$c$ **threatens** a link $a \xrightarrow{p} b$ if $c$ deletes $p$ and could lie
+between $a$ and $b$; one resolves that by **promotion** ($c \prec a$) or
+**demotion** ($b \prec c$). POP produces **partially ordered plans** — it does
+not commit prematurely to an ordering of independent actions (**least
+commitment**).
+
+### 1.4 Planning heuristics from relaxation
+
+The breakthrough of modern planning: **domain-independent** heuristics that
+arise automatically from the STRIPS description — analogous to relaxation in
+module 06, only systematic.
+
+**Delete relaxation.** One deletes *all* delete lists: $\mathrm{DEL}(a) =
+\emptyset$. In the relaxed world a property that has once been achieved can
+never be lost again (the set of fluents grows monotonically), and the relaxed
+problem is solvable in **polynomial time**. From it one obtains:
+
+- $h_{\text{add}}(s) = \sum_{p \in g}\, \Delta(p)$ — the sum of the estimated
+  costs of achieving every goal fluent individually (it overestimates when they
+  interact → **not admissible**, but informative).
+- $h_{\max}(s) = \max_{p \in g}\, \Delta(p)$ — the most expensive individual
+  goal fluent (**admissible**, but often weak).
+- $h_{\text{FF}}$ (Fast Forward): it extracts a concrete **relaxed plan** from
+  the relaxed planning graph and takes its length — usually the best heuristic
+  in practice (not admissible, but very accurate).
+
+Here $\Delta(p)$ is defined recursively: $\Delta(p)=0$ if $p\in s$, otherwise
+$\Delta(p) = \min_{a:\, p\in \mathrm{ADD}(a)} \big(\mathrm{cost}(a) + \text{combine}_{q\in \mathrm{PRE}(a)}\Delta(q)\big)$,
+where $\text{combine}=\sum$ for $h_{\text{add}}$ and $\text{combine}=\max$ for $h_{\max}$.
+
+### 1.5 GraphPlan and SATPlan
+
+**GraphPlan** builds a layered **planning graph** out of alternating **state
+levels** ($S_0, S_1, \dots$) and **action levels** ($A_0, A_1, \dots$). Every
+level contains *all* fluents/actions that are *possibly* reachable, plus
+**mutex relations** (mutual exclusion):
+- Two **actions** are mutex if one deletes the precondition/effect of the other
+  (*inconsistent effects*, *interference*) or if their preconditions are mutex
+  (*competing needs*).
+- Two **fluents** are mutex if every action producing them is mutex
+  (*inconsistent support*).
+
+The graph grows until all goal fluents appear non-mutex in one level (*levelling
+off*); then a backward search extracts a plan. At the same time the graph
+provides the admissible heuristic "the first level in which a goal fluent
+appears".
+
+**SATPlan.** Encode "does a plan of length $\le k$ exist?" as a **propositional
+formula** (fluents and actions with a time index, precondition/effect and frame
+axioms) and throw a **SAT solver** (module 06, DPLL/CDCL) at it; increase $k$
+iteratively. It shows impressively how the technique of module 06 is reused here.
+
+---
+
+## Part 2 — Building up: reasoning under uncertainty
+
+### 2.1 Why probability?
+
+Real agents do not know the world for certain: sensors are noisy, actions fail,
+knowledge is incomplete. Purely logical reasoning fails because one would have
+to enumerate all the exceptions (the "qualification problem"). **Probability**
+captures this uncertainty in *one number* per statement — as a **degree of
+belief** (the Bayesian view), not necessarily as a frequency. De Finetti's
+theorem shows: anyone who takes bets whose odds do *not* obey the axioms of
+probability is guaranteed to be exploitable by a **Dutch book** — rationality
+*forces* the probability calculus.
+
+### 2.2 Foundations: axioms, conditioning, Bayes
+
+For events the **Kolmogorov axioms** hold:
+$$
+0 \le P(a) \le 1, \quad P(\text{true}) = 1, \quad
+P(a \lor b) = P(a) + P(b) - P(a \land b).
+$$
+The **joint distribution** $P(X_1, \dots, X_n)$ over all variables determines
+*everything*. From it one obtains every query through:
+- **marginalization (summing out):** $P(\mathbf{Y}) = \sum_{\mathbf{z}} P(\mathbf{Y}, \mathbf{z})$,
+- **conditioning:** $\displaystyle P(a \mid b) = \frac{P(a \land b)}{P(b)}$ (for $P(b) > 0$).
+
+Rearranging the definition gives the **product rule** $P(a\land b) = P(a\mid b)\,P(b)$
+and, by equating, **Bayes' theorem**:
+$$
+\boxed{\,P(h \mid e) = \frac{P(e \mid h)\,P(h)}{P(e)}\,}
+$$
+the workhorse: from the **likelihood** $P(e\mid h)$ (how probable is the
+evidence under the hypothesis) and the **prior** $P(h)$ one obtains the
+**posterior** $P(h\mid e)$. The denominator $P(e) = \sum_{h'} P(e\mid h')P(h')$
+is the **normalization constant**; one often writes $P(h\mid e) = \alpha\, P(e\mid h)P(h)$.
+
+> **Worked through (a medical test).** A disease with prevalence $P(D)=0.01$;
+> a test with sensitivity $P(+\mid D)=0.9$ and false positive rate $P(+\mid \lnot D)=0.09$.
+> A positive test — how probable is the disease?
+> $$P(D\mid +) = \frac{0.9 \cdot 0.01}{0.9\cdot 0.01 + 0.09\cdot 0.99}
+> = \frac{0.009}{0.009 + 0.0891} \approx 0.092.$$
+> Only about 9 %! The low **base rate** dominates — the classical *base rate
+> fallacy*. A model example of why one must not ignore priors.
+
+**(Conditional) independence.** $X$ and $Y$ are **independent** if
+$P(X,Y)=P(X)P(Y)$. More important still is **conditional independence**:
+$X \perp Y \mid Z$ iff $P(X,Y\mid Z) = P(X\mid Z)\,P(Y\mid Z)$. It is the key
+that makes the exponentially large joint distribution **compactly factorizable**.
+
+### 2.3 Bayesian networks: structure and semantics
+
+A full joint distribution over $n$ boolean variables needs $2^n - 1$ numbers —
+unmanageable. A **Bayesian network** uses conditional independences to represent
+the same distribution *compactly*:
+
+- a **directed acyclic graph (DAG)**, nodes = random variables, an edge
+  $X \to Y$ = "$X$ influences $Y$ directly",
+- one **conditional probability table (CPT)** per node, $P(X_i \mid \mathrm{Parents}(X_i))$.
+
+**The central semantics (the chain rule for Bayesian networks):** the network
+represents the joint distribution as the **product of the local CPTs**:
+$$
+\boxed{\,P(x_1, \dots, x_n) = \prod_{i=1}^{n} P\big(x_i \mid \mathrm{parents}(x_i)\big)\,}
+$$
+That holds exactly when every variable is **conditionally independent of its
+non-descendants given its parents** (the *local Markov condition*). With a
+bounded number of parents $k$ the memory shrinks from $2^n$ to $n\cdot 2^k$ —
+often from astronomical to manageable.
+
+> **The classic (the alarm network, Pearl).** A burglary ($B$) or an earthquake
+> ($E$) can trigger an alarm ($A$); John ($J$) and Mary ($M$) call depending on
+> whether they hear the alarm. The structure: $B\to A \leftarrow E$, $A\to J$,
+> $A\to M$. The joint: $P(B,E,A,J,M) = P(B)P(E)P(A\mid B,E)P(J\mid A)P(M\mid A)$
+> — five small CPTs instead of one 32-row table.
+
+### 2.4 d-separation — reading independence off the graph structure
+
+When does $X \perp Y \mid Z$ hold *purely because of the structure*? That is
+answered by **d-separation**. Consider every undirected path between $X$ and
+$Y$; the path is **blocked** if it contains a node $n$ of the following kind:
+
+1. a **chain** $\to n \to$ or a **fork** $\leftarrow n \to$, and $n \in Z$
+   (observed) → blocked.
+2. a **collider** $\to n \leftarrow$ (a "v-structure"), and **neither $n$ nor a
+   descendant of $n$** is in $Z$ → blocked.
+
+If *all* paths are blocked, then $X \perp Y \mid Z$. The collider rule is the
+subtle point: an unobserved collider *blocks*, but **observing the collider (or
+a descendant) opens** it — that is **"explaining away"**: an earthquake and a
+burglary are a priori independent, but *given the alarm* they become dependent
+(hearing about the earthquake lowers the probability of a burglary).
+
+### 2.5 Exact inference
+
+The **inference task**: compute $P(\mathbf{X}_{\text{query}} \mid \mathbf{e})$
+for query variables given the evidence $\mathbf{e}$.
+
+**Inference by enumeration.** Directly from the joint factorization:
+$$
+P(X \mid \mathbf{e}) = \alpha \sum_{\mathbf{y}} P(X, \mathbf{e}, \mathbf{y}),
+$$
+where $\mathbf{y}$ are the *hidden* variables and the product of the CPTs is
+substituted. Correct, but $O(2^n)$ — the naive sum repeats subproducts.
+
+**Variable elimination (VE).** Speeds the enumeration up by **factoring out**
+(the distributive law) and **caching**. One works with **factors**
+(multidimensional tables). Two operations:
+- the **pointwise product** of two factors $f_1 \times f_2$,
+- **summing out** a variable: $\sum_x f(\dots, x, \dots)$.
+
+The algorithm: choose an **elimination order** for the hidden variables; for
+each one, multiply all the factors containing it and sum it out.
+$$
+P(B\mid j,m) = \alpha\, P(B) \sum_e P(e) \sum_a P(a\mid B,e)\,P(j\mid a)\,P(m\mid a).
+$$
+VE is dramatically faster than enumeration, but the cost depends strongly on
+the order (the largest intermediate factor determines it — the **treewidth** of
+the graph). **Bayesian network inference is NP-hard in general**; for networks
+of small treewidth (polytrees, for instance) it is polynomial.
+
+### 2.6 Approximate inference by sampling
+
+When exact inference is too expensive, one **estimates**
+$P(\mathbf{X}\mid\mathbf{e})$ from samples.
+
+- **Direct/prior sampling:** draw values in topological order according to the
+  CPTs → samples from the joint distribution.
+- **Rejection sampling:** as above, but discard every sample that contradicts
+  $\mathbf{e}$. Correct, but wasteful when the evidence is rare.
+- **Likelihood weighting:** fix the evidence variables at their observed values
+  and **weight** every sample by the product of the evidence likelihoods
+  $\prod_{e_i} P(e_i \mid \mathrm{parents}(e_i))$. It discards nothing and is
+  more efficient.
+- **Gibbs sampling (MCMC):** a **Markov chain Monte Carlo** procedure. Fix the
+  evidence, initialize the remaining variables arbitrarily; then repeatedly
+  resample *one* non-evidence variable from its distribution given its **Markov
+  blanket** (parents, children, co-parents). The chain generated this way has
+  the posterior as its **stationary distribution**; the sample means converge to
+  $P(\mathbf{X}\mid\mathbf{e})$.
+
+All sampling procedures are **consistent** (the error $\to 0$ as $N\to\infty$,
+at rate $O(1/\sqrt N)$), so they trade exactness for computation time — the
+usual deal with difficult networks.
+
+### 2.7 Temporal models: Markov chains and HMMs
+
+The world changes over time. A **discrete-time** model has state variables
+$\mathbf{X}_t$ and evidence variables $\mathbf{E}_t$ per step $t$. Two
+assumptions make it tractable:
+
+- **The (first-order) Markov assumption:** $P(\mathbf{X}_t \mid \mathbf{X}_{0:t-1}) =
+  P(\mathbf{X}_t \mid \mathbf{X}_{t-1})$ — the future depends on the past only
+  through the **current** state. → the **transition model**.
+- **The sensor Markov assumption:** $P(\mathbf{E}_t \mid \mathbf{X}_{0:t}, \mathbf{E}_{0:t-1})
+  = P(\mathbf{E}_t \mid \mathbf{X}_t)$. → the **sensor model**.
+
+A **hidden Markov model (HMM)** has a single discrete state variable that one
+cannot see directly (*hidden*), only through the evidence. Four standard tasks:
+
+**Filtering** — $P(\mathbf{X}_t \mid \mathbf{e}_{1:t})$ (the current state given
+all observations so far). Recursively (the **forward algorithm**):
+$$
+P(\mathbf{X}_{t+1}\mid \mathbf{e}_{1:t+1}) = \alpha\, \underbrace{P(\mathbf{e}_{t+1}\mid \mathbf{X}_{t+1})}_{\text{update (sensor)}}
+\sum_{\mathbf{x}_t} \underbrace{P(\mathbf{X}_{t+1}\mid \mathbf{x}_t)}_{\text{predict (transition)}} P(\mathbf{x}_t\mid \mathbf{e}_{1:t}).
+$$
+A "predict-update" loop — the same idea is inside the **Kalman filter** (the
+continuous Gaussian special case) and in the localization of robots (module 21).
+
+**Prediction** — $P(\mathbf{X}_{t+k}\mid\mathbf{e}_{1:t})$ (the future without new evidence).
+
+**Smoothing** — $P(\mathbf{X}_k\mid\mathbf{e}_{1:t})$ for $k<t$ (the past with
+hindsight). The **forward-backward algorithm** combines the forward message with
+a backward message $b_{k+1:t} = P(\mathbf{e}_{k+1:t}\mid\mathbf{X}_k)$.
+
+**The most likely explanation** — $\arg\max_{\mathbf{x}_{1:t}} P(\mathbf{x}_{1:t}\mid\mathbf{e}_{1:t})$.
+The **Viterbi algorithm** is dynamic programming: in the forward recursion it
+replaces the sum by a **maximum** and remembers back pointers in order to
+reconstruct the best path. The basis of speech recognition, POS tagging (module
+08) and sequence analysis in bioinformatics (module 28).
+---
+
+## Part 3 — Advanced: rational decisions and MDPs
+
+### 3.1 Utility theory and maximum expected utility
+
+So far we have *reasoned*, now we *act*. **Utility theory** (von Neumann &
+Morgenstern) shows: if a preference relation over uncertain outcomes
+("lotteries") satisfies six **rationality axioms** (completeness, transitivity,
+continuity, substitutability, monotonicity, decomposability), then a **utility
+function** $U$ **exists** such that the agent prefers lottery $L_1$ to $L_2$
+exactly when $\mathrm{EU}(L_1) > \mathrm{EU}(L_2)$, with the **expected utility**
+$$
+\mathrm{EU}(a\mid \mathbf{e}) = \sum_{s'} P(\mathrm{Result}(a) = s' \mid a, \mathbf{e})\; U(s').
+$$
+The **MEU principle (maximum expected utility):** a rational agent chooses the
+action that maximizes the expected utility:
+$a^\ast = \arg\max_a \mathrm{EU}(a\mid\mathbf{e})$. Important: utility is **not**
+the same as money — the typically **concave** utility function for money
+explains **risk aversion** (a certain 100 euros can have more utility than a
+50/50 chance at 0/220 euros).
+
+### 3.2 Decision networks and the value of information
+
+**Decision networks (influence diagrams)** extend Bayesian networks by
+**decision nodes** (actions the agent chooses) and a **utility node**. The
+evaluation picks the actions with the maximum expected utility.
+
+**Value of perfect information (VPI).** Is it worth measuring a variable $E_j$
+*before* the decision? The value of the information is the expected increase in
+utility:
+$$
+\mathrm{VPI}_{\mathbf{e}}(E_j) = \Big(\sum_{e_{j}} P(e_{j}\mid\mathbf{e})\;
+\mathrm{EU}(a^\ast_{e_{j}} \mid \mathbf{e}, e_{j})\Big) - \mathrm{EU}(a^\ast \mid \mathbf{e}).
+$$
+VPI is **never negative** (in expectation, more knowledge cannot hurt) and it is
+**not additive**. It provides the theoretical foundation for *rational
+information gathering* — which sensor or test to reach for.
+
+### 3.3 Markov decision processes (MDPs)
+
+Now the **sequential** case: decisions over many steps, with uncertain
+outcomes. An **MDP** is $(S, A, P, R, \gamma)$:
+
+- $S$ states, $A$ actions,
+- $P(s' \mid s, a)$ the **transition model** (stochastic! — this is where the
+  break with classical planning happens),
+- $R(s)$ (or $R(s,a,s')$) the **reward**,
+- $\gamma \in [0,1)$ the **discount factor** (later rewards count less; it also
+  secures convergence for an infinite horizon).
+
+We are looking for a **policy** $\pi: S \to A$ that maximizes the expected
+**discounted return** $\mathbb{E}\big[\sum_{t=0}^{\infty}\gamma^t R(s_t)\big]$.
+The **value** of a state under $\pi$ is $V^\pi(s) = \mathbb{E}\big[\sum_t \gamma^t
+R(s_t) \mid s_0=s, \pi\big]$.
+
+**The Bellman equation** characterizes $V^\pi$ self-consistently:
+$$
+V^\pi(s) = R(s) + \gamma \sum_{s'} P(s'\mid s, \pi(s))\, V^\pi(s').
+$$
+For the **optimal** policy $\pi^\ast$ the **Bellman optimality equation** holds:
+$$
+\boxed{\,V^\ast(s) = R(s) + \gamma \max_{a} \sum_{s'} P(s'\mid s, a)\, V^\ast(s')\,}
+$$
+and one reads the optimal policy off greedily:
+$\pi^\ast(s) = \arg\max_a \sum_{s'} P(s'\mid s,a)\,V^\ast(s')$.
+
+### 3.4 Value iteration and policy iteration
+
+**Value iteration.** Read the Bellman optimality equation as an **update** and
+iterate to convergence:
+$$
+V_{k+1}(s) \leftarrow R(s) + \gamma \max_a \sum_{s'} P(s'\mid s,a)\, V_k(s).
+$$
+
+> **Why does that converge? (The contraction proof.)** The **Bellman optimality
+> operator** $B$, defined by $(BV)(s) = R(s) + \gamma\max_a\sum_{s'}P(s'\mid s,a)V(s')$,
+> is a **contraction** with respect to the maximum norm $\lVert V\rVert_\infty = \max_s|V(s)|$
+> with factor $\gamma$: for arbitrary $V, V'$ we have
+> $$\lVert BV - BV'\rVert_\infty \le \gamma\,\lVert V - V'\rVert_\infty.$$
+> *Proof sketch:* $|\max_a f(a) - \max_a g(a)| \le \max_a|f(a)-g(a)|$, and
+> $\gamma\sum_{s'}P(s'\mid s,a)|V(s')-V'(s')| \le \gamma\lVert V-V'\rVert_\infty$, since
+> $\sum_{s'}P=1$. By the **Banach fixed point theorem**, $B$ has a **unique
+> fixed point** $V^\ast$, and $V_k \to V^\ast$ **geometrically**: $\lVert V_k - V^\ast\rVert_\infty
+> \le \gamma^k \lVert V_0 - V^\ast\rVert_\infty$. For $\gamma<1$ that guarantees
+> convergence — the closer $\gamma$ is to 1, the slower it is. $\quad\blacksquare$
+
+**Policy iteration.** It alternates two steps until the policy is stable:
+1. **Policy evaluation:** solve $V^{\pi}(s) = R(s) + \gamma\sum_{s'}P(s'\mid s,\pi(s))V^\pi(s')$
+   — a **linear system of equations** in $|S|$ unknowns (solvable exactly or
+   approximated iteratively).
+2. **Policy improvement:** set
+   $\pi'(s) \leftarrow \arg\max_a \sum_{s'}P(s'\mid s,a)V^\pi(s')$.
+
+Once the policy no longer changes, it is optimal. Policy iteration converges in
+**finitely many** steps (there are only finitely many policies, and every step
+either strictly improves or terminates) — often in *very few* iterations, but
+each one is more expensive than a value iteration step. Both are special cases
+of **generalized policy iteration**, the conceptual core of reinforcement
+learning (module 13): the only difference there is that $P$ and $R$ are
+**unknown** and have to be learned from experience.
+
+### 3.5 Partial observability (POMDPs) — an outlook
+
+If the agent cannot observe the state directly (only noisy sensors), the MDP
+becomes a **POMDP**. The trick: the agent keeps a **belief state** $b(s)$ (a
+probability distribution over states, updated by the filtering of section 2.7)
+and solves an MDP in the *continuous* belief space. POMDPs are theoretically
+elegant, but solving them exactly is **PSPACE-hard** — in practice one uses
+approximations. They connect filtering (part 2) with MDPs (part 3) into the
+complete picture of the rational agent under uncertainty.
+
+### 3.6 An outlook: non-monotonic reasoning and description logics
+
+Two further answers to uncertainty — not probabilistic but **qualitative**:
+
+- **Non-monotonic reasoning.** Classical logic is *monotonic*: more premises →
+  never fewer conclusions. Everyday inferences, however, are **defeasible**
+  ("birds fly — but not penguins"). **Default logic**, **circumscription** and
+  **answer set programming** formalize such default assumptions, which new
+  information can *retract*. The basis of knowledge representation and of logic
+  programming with negation (module 33).
+- **Description logics (DL).** The decidable FOL fragment behind **ontologies**
+  and the **semantic web** (OWL). A **TBox** defines concepts/roles
+  ($\text{Father} \equiv \text{Man} \sqcap \exists\text{hasChild}.\top$), an
+  **ABox** contains the instance facts. The core inferences (subsumption,
+  instance checking) are decidable — the deliberate trade of expressive power
+  for decidability that module 06 (section 4.5) already announced. DL reasoners
+  (e.g. via tableau procedures) are the practical continuation of the theorem
+  proving from module 06.
+
+---
+
+## Summary / cheat sheet
+
+**Planning**
+
+| Notion | Core |
+|---|---|
+| A STRIPS action | $\langle\mathrm{PRE},\mathrm{ADD},\mathrm{DEL}\rangle$; applicable if $\mathrm{PRE}\subseteq s$ |
+| Progression | $\mathrm{Result}(s,a) = (s\setminus\mathrm{DEL})\cup\mathrm{ADD}$ |
+| Regression | $(g'\setminus\mathrm{ADD})\cup\mathrm{PRE}$, relevant + consistent |
+| POP | a partial order + causal links; threats via promotion/demotion |
+| Relaxation | delete the delete lists → $h_{\max}$ (admissible), $h_{\text{add}}$, $h_{\text{FF}}$ |
+| GraphPlan | a planning graph + mutexes; SATPlan: encode the plan as SAT |
+
+**Probability and Bayesian networks**
+
+| Notion | Core |
+|---|---|
+| Bayes | $P(h\mid e) = \dfrac{P(e\mid h)P(h)}{P(e)} = \alpha\,P(e\mid h)P(h)$ |
+| conditional indep. | $X\perp Y\mid Z \iff P(X,Y\mid Z)=P(X\mid Z)P(Y\mid Z)$ |
+| BN factorization | $P(x_1..x_n) = \prod_i P(x_i\mid\mathrm{parents}(x_i))$ |
+| d-separation | a chain/fork blocks when observed; a collider blocks when **un**observed |
+| explaining away | a collider opens on observation → the parents become dependent |
+| Enumeration | $P(X\mid\mathbf e)=\alpha\sum_{\mathbf y}\prod_i P(x_i\mid\mathrm{parents})$ |
+| Variable elim. | factors: pointwise product + summing out; cost ~ treewidth; BN inference NP-hard |
+| Sampling | prior/rejection/**likelihood weighting**/**Gibbs (MCMC)**; consistent, $O(1/\sqrt N)$ |
+
+**Temporal models**
+
+| Notion | Core |
+|---|---|
+| 1st-order Markov | $P(\mathbf X_t\mid\mathbf X_{0:t-1})=P(\mathbf X_t\mid\mathbf X_{t-1})$ |
+| Filtering (forward) | $\alpha\,P(\mathbf e_{t+1}\mid\mathbf X_{t+1})\sum_{\mathbf x_t}P(\mathbf X_{t+1}\mid\mathbf x_t)f_t$ |
+| Smoothing | forward-backward (the forward × the backward message) |
+| Viterbi | like filtering, but $\max$ instead of $\sum$ + back pointers; the best state sequence |
+
+**Decisions and MDPs**
+
+| Notion | Core |
+|---|---|
+| MEU | $a^\ast=\arg\max_a\sum_{s'}P(s'\mid a,\mathbf e)U(s')$ |
+| VPI | the expected increase in utility from a measurement; $\ge 0$, not additive |
+| MDP | $(S,A,P,R,\gamma)$; maximize $\mathbb E[\sum_t\gamma^t R]$ |
+| Bellman opt. | $V^\ast(s)=R(s)+\gamma\max_a\sum_{s'}P(s'\mid s,a)V^\ast(s')$ |
+| Value iteration | iterate the Bellman update; $B$ is a $\gamma$-contraction → $V_k\to V^\ast$ geometrically |
+| Policy iteration | evaluation (a linear system) + improvement; terminates in finitely many steps |
+---
+
+## Self-test
+
+<details><summary><b>1. What is the difference between progression and regression in STRIPS, and when does one prefer which?</b></summary>
+
+*Progression* searches forwards from $s_0$: states are complete sets of fluents,
+$\mathrm{Result}(s,a)=(s\setminus\mathrm{DEL})\cup\mathrm{ADD}$. The branching
+factor is high (all applicable actions), but the states are concrete and can be
+evaluated heuristically well — which is why in practice (with $h_{\text{FF}}$ or
+similar) it is usually the winner. *Regression* searches backwards from the goal:
+states are partial descriptions,
+$\mathrm{Regress}(g',a)=(g'\setminus\mathrm{ADD})\cup\mathrm{PRE}$ for relevant,
+consistent $a$. The branching factor is small (only relevant actions), but
+heuristics are harder. Regression pays off when few actions are relevant to the goal.
+</details>
+
+<details><summary><b>2. Why is the delete relaxation useful even though $h_{\text{add}}$ is not admissible?</b></summary>
+
+If one deletes all delete lists, the set of fluents grows monotonically and the
+relaxed problem is solvable in polynomial time — so one gets an estimate
+*cheaply*. $h_{\max}$ (the maximum) is even admissible, but weak. $h_{\text{add}}$
+(the sum) overestimates, because it treats the goal fluents as independent and
+counts shared subplans twice — in exchange it is far more informative and guides
+the search well. $h_{\text{FF}}$ extracts a real relaxed plan and is usually the
+best. In practice informativeness often counts for more than strict admissibility
+(as long as you do not have to guarantee optimality).
+</details>
+
+<details><summary><b>3. A test is 90 % sensitive and has 9 % false positives; the disease has a prevalence of 1 %. Why is $P(\text{ill}\mid+)$ only about 9 %?</b></summary>
+
+Bayes: $P(D\mid+)=\frac{0.9\cdot0.01}{0.9\cdot0.01+0.09\cdot0.99}\approx0.092$.
+The reason is the low **base rate**: there are 99 times as many healthy people
+as ill ones. Even at only 9 % false positives, the many healthy people
+($0.09\cdot0.99\approx0.089$) produce almost ten times as many positive tests as
+the few genuinely ill ones ($0.9\cdot0.01=0.009$). The prior must never be
+ignored (*base rate fallacy*).
+</details>
+
+<details><summary><b>4. Explain the Bayesian network factorization and why it saves memory.</b></summary>
+
+A BN asserts $P(x_1,\dots,x_n)=\prod_i P(x_i\mid\mathrm{parents}(x_i))$. That
+follows from the local Markov condition (every variable is conditionally
+independent of its non-descendants given its parents). Instead of the full joint
+table with $2^n-1$ entries one stores only $2^k$ numbers per node ($k$ = the
+number of parents), $n\cdot2^k$ in total. With a bounded $k$ that is linear
+instead of exponential in $n$ — the entire point of Bayesian networks.
+</details>
+
+<details><summary><b>5. What is "explaining away"? State it in terms of d-separation.</b></summary>
+
+At a collider $A\to C\leftarrow B$, $A$ and $B$ are **a priori independent** (the
+unobserved collider blocks the path). If one observes $C$ (or a descendant), the
+path **opens**: $A$ and $B$ become *conditionally dependent*. If $C$ has occurred
+and one learns that $A$ explains it, the probability of $B$ falls — the one cause
+"explains the other away". An example: the alarm ($C$) caused by a burglary ($A$)
+or an earthquake ($B$); an earthquake report lowers
+$P(\text{burglary}\mid\text{alarm})$.
+</details>
+
+<details><summary><b>6. Why is variable elimination faster than inference by enumeration, and what do the costs depend on?</b></summary>
+
+Enumeration computes the same subproducts over and over again (the naive double
+sum has exponentially many repeated factors). VE factors them out via the
+distributive law and **stores intermediate factors**, so that every subproduct is
+computed only once. The cost is dominated by the **largest intermediate factor**,
+whose size depends on the **elimination order** and ultimately on the
+**treewidth** of the graph. With a small treewidth (polytrees) it is polynomial;
+in general BN inference is NP-hard.
+</details>
+
+<details><summary><b>7. When does one use likelihood weighting instead of rejection sampling?</b></summary>
+
+Rejection sampling discards all samples that contradict the evidence — with
+*rare* evidence almost everything ends up in the bin (exponentially
+inefficient). Likelihood weighting instead fixes the evidence variables at their
+values and **weights** every sample by $\prod_{e_i}P(e_i\mid\mathrm{parents}(e_i))$;
+no sample is discarded. It is consistent and considerably more efficient, but it
+can also have high variance when the evidence sits "far down" in the network —
+then use Gibbs/MCMC.
+</details>
+
+<details><summary><b>8. Derive the filtering recursion of the HMM (predict/update).</b></summary>
+
+We want $f_{1:t+1}=P(\mathbf X_{t+1}\mid\mathbf e_{1:t+1})$. Bayes with respect
+to the new evidence: $\propto P(\mathbf e_{t+1}\mid\mathbf X_{t+1},\mathbf e_{1:t})\,P(\mathbf X_{t+1}\mid\mathbf e_{1:t})$.
+By the sensor Markov assumption the first factor $=P(\mathbf e_{t+1}\mid\mathbf X_{t+1})$
+(**update**). The second is the **prediction**: marginalize over $\mathbf X_t$,
+$P(\mathbf X_{t+1}\mid\mathbf e_{1:t})=\sum_{\mathbf x_t}P(\mathbf X_{t+1}\mid\mathbf x_t)P(\mathbf x_t\mid\mathbf e_{1:t})$
+(the Markov transition × the previous filter message). Together:
+$f_{1:t+1}=\alpha\,P(\mathbf e_{t+1}\mid\mathbf X_{t+1})\sum_{\mathbf x_t}P(\mathbf X_{t+1}\mid\mathbf x_t)f_{1:t}$.
+</details>
+
+<details><summary><b>9. Prove that value iteration converges.</b></summary>
+
+The Bellman optimality operator $B$ with $(BV)(s)=R(s)+\gamma\max_a\sum_{s'}P(s'\mid s,a)V(s')$
+is a $\gamma$-contraction in the maximum norm: for arbitrary $V,V'$ we have
+$\lVert BV-BV'\rVert_\infty\le\gamma\lVert V-V'\rVert_\infty$ (use
+$|\max_a f-\max_a g|\le\max_a|f-g|$ and $\sum_{s'}P=1$). By the Banach fixed
+point theorem, $B$ has a unique fixed point $V^\ast$, and the iteration
+$V_{k+1}=BV_k$ converges geometrically: $\lVert V_k-V^\ast\rVert_\infty\le\gamma^k\lVert V_0-V^\ast\rVert_\infty$.
+For $\gamma<1$ convergence follows; $\gamma\to1$ makes it arbitrarily slow.
+</details>
+
+<details><summary><b>10. Value iteration vs. policy iteration — advantages and disadvantages?</b></summary>
+
+*Value iteration*: one cheap Bellman update over all states per step, but many
+steps until convergence (geometrically in $\gamma$), and the policy often
+stabilizes *before* the values have converged. *Policy iteration*: more expensive
+per step (the policy evaluation solves an $|S|\times|S|$ system of equations),
+but very few steps — it terminates exactly, in finitely many iterations, since
+there are only finitely many policies and every iteration improves strictly. A
+compromise: *modified* policy iteration (evaluating only approximately). Both are
+instances of generalized policy iteration — the core of RL (module 13).
+</details>
+
+---
+
+## Literature and sources
+
+**Textbooks**
+- **Russell & Norvig, *AIMA*, 4th ed.** — ch. 11 (classical planning), 12
+  (planning in the real world), 13 (quantifying uncertainty), 14 (probabilistic
+  reasoning/Bayesian networks), 15 (temporal models), 16 (simple decisions),
+  17 (complex decisions/MDPs). *The primary source for this module.*
+- **Koller & Friedman, *Probabilistic Graphical Models*, MIT Press** — the
+  exhaustive reference on Bayesian networks, inference and learning. *Advanced, demanding.*
+- **Sutton & Barto, *Reinforcement Learning: An Introduction*, 2nd ed.** — ch. 3–4
+  (MDPs, dynamic programming) as the perfect deepening of the MDP part and a
+  bridge to module 13. **Free** at `incompleteideas.net/book/the-book.html`. *Highly recommended.*
+- **Ghallab, Nau & Traverso, *Automated Planning and Acting***, for the planning part. *Advanced.*
+
+**Freely available courses and materials** (free)
+- **UC Berkeley CS188** — the units on Bayesian networks, HMMs and MDPs with the
+  Pac-Man projects (`inst.eecs.berkeley.edu/~cs188`). *Beginner friendly, practical.*
+- **Stanford CS228 "Probabilistic Graphical Models"** — notes online, `ermongroup.github.io/cs228-notes`. *Advanced.*
+- **David Silver, *RL Course* (DeepMind/UCL)** — lecture videos; lectures 2–3 on
+  MDPs and dynamic programming. *Very good for the MDP part.*
+- **Fast Downward / the PDDL editor** (`editor.planning.domains`) — write PDDL in
+  the browser and run a real planner. *Practical.*
+
+**Interactive / visualizations** (free)
+- **"Seeing Theory"** (`seeing-theory.brown.edu`) — interactive probability and Bayes. *Beginner friendly.*
+- **Bayesian network demos** (e.g. `github.com/mbilalzonjy/BayesNetVisualization`) and the **SamIam** reasoner to play with.
+- **Gridworld MDP visualizations** (value/policy iteration step by step), e.g. Andrej Karpathy's `reinforcejs`.
+
+**Classical papers** (free, advanced)
+- Pearl (1988): *Probabilistic Reasoning in Intelligent Systems* — the birth of Bayesian networks.
+- Blum & Furst (1997): *Fast Planning Through Planning Graph Analysis* — GraphPlan.
+- Hoffmann & Nebel (2001): *The FF Planning System* — the $h_{\text{FF}}$ heuristic.
+
+---
+
+## The three projects
+
+The three projects mirror the three parts of the module — planning,
+probabilistic reasoning, sequential decision making — and increase in difficulty
+and in the amount of your own work:
+
+- **01 – basic** (`projects/01-basic/`): **a STRIPS forward planner.** A guided
+  notebook: STRIPS states/actions, forward search with BFS *and* with a
+  relaxation heuristic ($h_{\text{add}}$) via A\*; applied to the blocks world.
+  Plenty of guidance, it ties in directly with module 06.
+- **02 – medium** (`projects/02-medium/`): **a Bayesian network with exact and
+  approximate inference.** A Python project: the network structure + CPTs,
+  inference by enumeration *and* variable elimination *and* likelihood
+  weighting; validated on the alarm network and a diagnostic scenario. Little
+  guidance.
+- **03 – final** (`projects/03-final/`): **a decision-theoretic MDP agent.** No
+  given code: value iteration *and* policy iteration on a gridworld with
+  stochastic movement, checking convergence empirically, visualizing the optimal
+  policy, a $\gamma$ study. Master's level, a bridge to RL.
+
+Details, setup and reference solutions are in the `README.md` of each project folder.
+
+---
+---
+
+# Modul 07 — Theorie der Künstlichen Intelligenz 2 (deutsche Fassung)
 
 **Worum geht es?** Modul 06 hat gezeigt, wie ein Agent in einer *bekannten,
 deterministischen* Welt durch Suche und Logik handelt. Dieses Modul macht drei

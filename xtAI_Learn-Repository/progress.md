@@ -52,10 +52,9 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 ## Englisch-Umstellung (laufender Auftrag, Vorrang vor Modul 22)
 
 > ### NEXT ACTION dieses Auftrags
-> **Modul 07 „Theorie der KI 2": Modul-README + 3 Projekt-READMEs bilingual, dann die Projekte.**
-> **Modul 06 ist komplett** — als erstes Modul **inklusive der .py-Dateien** (User-Freigabe „in einem Rutsch"). Modul 07 hat dasselbe Format: **Notebook nur P01**, P02+P03 sind .py-Projekte (STRIPS-Planer, Bayes-Netz, MDP-Agent) — also genauso in einem Rutsch machen.
-> Zielzahlen Modul 07: P01 Sussman BFS vs A*(h_add) **18 vs 11**; P02 Alarm **0.2842**, explaining away 0.374→0.003, Enumeration==VE exakt; P03 AIMA-Utilities reproduziert, VI 34 / PI 5 Iterationen, gleiche Policy.
-> **pytest fehlt** -> Testsuiten via `python test_*.py`.
+> **Modul 07, Projekt 01-basic: `planning.ipynb` + `solution/planning_solution.ipynb` auf Englisch.**
+> Die **4 READMEs von Modul 07 sind fertig**. Danach P02 (5 .py: bayesnet/inference/demo/test_inference, Stub + solution) und P03 (nur solution/: gridworld/mdp/demo/test_mdp) — Modul 07 laeuft wie 06 in einem Rutsch inkl. .py.
+> Zielzahlen: P01 Sussman **6-Schritte-Plan**, BFS 18 vs A*(h_add) ~11 expandierte Zustaende, h_add(s0)=5; P02 **P(B|j,m)=0.2842** (Aufzaehlung==VE exakt), explaining away 0.374→0.003; P03 AIMA-Utilities V(0,0)~0.705 / V(2,2)~0.918 / V(3,0)~0.388, VI ~34 Iter. bei gamma=1, PI ~5, identische Policy.
 >
 > Rezept siehe „Arbeitsablauf pro Notebook" weiter unten.
 
@@ -90,7 +89,7 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 04 Machine Learning 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `92ab92d`, `d172564`, `028b8a5`, `90817ad` |
 | 05 Machine Learning 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `af83312`, `f56b29f`, `4c879f7`, `5f8afc3` |
 | 06 Theorie der KI 1 | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `033b87a`, `1d3e467`, `f1bc5b3` |
-| **07 Theorie der KI 2** | **offen — als Nächstes** | offen | offen | — |
+| **07 Theorie der KI 2** | ✓ | ✓ 3/3 | **offen (Notebook + .py)** | `<neu>` |
 | 08–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)
