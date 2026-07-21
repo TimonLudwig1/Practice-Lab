@@ -52,11 +52,11 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 ## Englisch-Umstellung (laufender Auftrag, Vorrang vor Modul 22)
 
 > ### NEXT ACTION dieses Auftrags
-> **Modul 05, Projekt 03-final: `customer_segmentation.ipynb` + `solution/solution.ipynb` auf Englisch.**
-> Danach ist **Modul 05 komplett** und Modul 06 ist dran. P03 ist reines CPU-Clustering (<1 min Laufzeit), Daten werden in der ersten Zelle geladen (~15 KB Download).
-> Zielzahlen: ~2 Hauptsegmente (k-Means/GMM/Ward einig), **GMM-full bester ARI ~0,6**, DBSCAN scheitert instruktiv.
+> **Modul 06 „Theorie der KI 1": Modul-README + 3 Projekt-READMEs bilingual, dann die Projekte.**
+> **Modul 05 ist komplett** (4 READMEs + 6 Notebooks, alle ausgefuehrt). Modul 06 hat ein anderes Format als 01-05: **Notebook nur fuer P01**, P02 und P03 sind **.py-Projekte** (BFS/A*, CSP+DPLL, FOL-Resolutionsbeweiser) mit Testsuiten. Die .py-Dateien gehoeren eigentlich in Schritt 3 — pruefen, ob man sie fuer Modul 06 gleich mitnimmt (sinnvoll: dann ist das Modul in einem Rutsch fertig) statt spaeter separat.
+> Zielzahlen Modul 06: P01 Romania 418 km optimal, Dominanz 5257 >> 457 >> 147 Knoten; P02 Sudoku ueber beide Wege identisch; P03 West-Kriminalfall bewiesen (~600 Schritte).
 >
-> **Erledigt in Modul 05:** 4 READMEs bilingual · P01 (Gradient-Check 6.49e-11, Test-Acc 0.950) · P02 (alle Zahlen bit-identisch zum alten Notebook reproduziert).
+> **Erledigt in Modul 05:** 4 READMEs bilingual · P01 (Gradient-Check 6.49e-11, Test-Acc 0.950) · P02 (alle Zahlen bit-identisch reproduziert, 2 Bestandsfehler behoben) · P03 (ARI GMM-full **0.622** > Ward 0.539 > kMeans 0.514, DBSCAN -0.016; PC1+PC2 71 %; Silhouette k=2 0.290; BIC-Min k=4 full).
 >
 > Rezept siehe „Arbeitsablauf pro Notebook" weiter unten.
 
@@ -89,7 +89,8 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 02 Data Science 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `0cae09f`, `374a81e`, `6c7e61f`, `80ca895` |
 | 03 Data Science 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `598a668`, `b723e1d` |
 | 04 Machine Learning 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `92ab92d`, `d172564`, `028b8a5`, `90817ad` |
-| **05 Machine Learning 2** | ✓ | ✓ 3/3 | **4/6 — als Nächstes P03** | `af83312` |
+| 05 Machine Learning 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `af83312`, `f56b29f`, `4c879f7`, `<neu>` |
+| **06 Theorie der KI 1** | **offen — als Nächstes** | offen | offen | — |
 | 06–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)
