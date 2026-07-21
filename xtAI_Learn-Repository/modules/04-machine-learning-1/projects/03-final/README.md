@@ -32,7 +32,7 @@ Consolidate the module end to end: ColumnTransformer pipelines for mixed types, 
 
 ## What should work in the end
 
-- CV PR-AUC: logistic regression about 0.76, random forest about 0.71, gradient boosting about 0.83 (gradient boosting wins clearly).
+- CV PR-AUC: logistic regression about 0.76, random forest about 0.71 to 0.73, gradient boosting about 0.83 (gradient boosting wins clearly). The random forest value fluctuates a little between environments (thread and BLAS configuration), the other two are reproducible to four decimals.
 - The tuned gradient boosting model reaches PR-AUC about 0.83 on the test set; at threshold 0.5: recall(`>50K`) about 0.87, precision about 0.60.
 - The cost-minimal threshold lies at about 0.44 (moderately below 0.5 — `class_weight="balanced"` has already shifted the scores, so the cost threshold only fine-tunes).
 - The fairness table shows a real gap: recall for `Female` (base rate `>50K` about 11 %) is about 0.80, for `Male` (base rate about 30 %) about 0.91 — a concrete result worth discussing, not an artefact.
@@ -81,7 +81,7 @@ Das Modul end-to-end konsolidieren: ColumnTransformer-Pipelines für gemischte T
 
 ## Was am Ende funktionieren soll
 
-- CV-PR-AUC: Logistische Regression ≈ 0,76, Random Forest ≈ 0,71, Gradient Boosting ≈ 0,83 (Gradient Boosting gewinnt deutlich).
+- CV-PR-AUC: Logistische Regression ≈ 0,76, Random Forest ≈ 0,71 bis 0,73, Gradient Boosting ≈ 0,83 (Gradient Boosting gewinnt deutlich). Der Random-Forest-Wert schwankt je nach Umgebung (Thread- und BLAS-Konfiguration) leicht, die anderen beiden sind auf vier Nachkommastellen reproduzierbar.
 - Getuntes Gradient-Boosting-Modell erreicht auf dem Testsatz PR-AUC ≈ 0,83, bei Schwelle 0,5: Recall(`>50K`) ≈ 0,87, Precision ≈ 0,60.
 - Kostenminimale Schwelle liegt bei ≈ 0,44 (moderat unter 0,5 — `class_weight="balanced"` hat die Scores schon vorverschoben, die Kostenschwelle korrigiert nur noch fein nach).
 - Fairness-Tabelle zeigt eine reale Kluft: Recall für `Female` (Basisrate `>50K` ≈ 11 %) liegt bei ≈ 0,80, für `Male` (Basisrate ≈ 30 %) bei ≈ 0,91 — ein konkretes, diskussionswürdiges Ergebnis, kein Artefakt.

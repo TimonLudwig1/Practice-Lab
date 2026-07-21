@@ -52,10 +52,9 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 ## Englisch-Umstellung (laufender Auftrag, Vorrang vor Modul 22)
 
 > ### NEXT ACTION dieses Auftrags
-> **Modul 04, Projekt 03-final: `income_prediction.ipynb` + `solution/solution.ipynb` auf Englisch.**
-> Das ist das letzte offene Notebook von Modul 04; danach ist Modul 04 komplett und **Modul 05** ist dran (dort beginnen die Notebooks mit PyTorch/CNN — Rechenzeit beachten).
-> Rezept siehe „Arbeitsablauf pro Notebook" weiter unten. Zielzahlen für dieses Notebook stehen in `modules/04-machine-learning-1/projects/03-final/README.md`.
-> **Achtung:** `fetch_openml("adult", version=2)` braucht beim ersten Lauf Internet (danach gecacht in `~/scikit_learn_data/`). Das Notebook ist das rechenintensivste in Modul 04 (GridSearch auf 48.842 Zeilen) — mit einigen Minuten Laufzeit rechnen.
+> **Modul 05 „Machine Learning 2": Modul-README + 3 Projekt-READMEs bilingual, dann die Notebooks auf Englisch.**
+> Modul 04 ist mit `income_prediction` **komplett fertig**. In Modul 05 beginnen die rechenintensiven Notebooks (P01 MLP von Hand, **P02 CNN Fashion-MNIST**, P03 Clustering) — Laufzeit und MacBook-Hitze beachten, torch/MPS im Repo-.venv.
+> Rezept siehe „Arbeitsablauf pro Notebook" weiter unten. Zielzahlen stehen jeweils in den Projekt-READMEs.
 
 **Auftrag:** Jede README bekommt den vollständigen englischen Text als Block **über** dem bestehenden deutschen. Die Projektinhalte selbst (Notebooks, .py) werden **ausschließlich englisch**, inklusive Bezeichnern. Datei- und Ordnernamen ebenfalls englisch. Die verbindliche Regel steht in `CLAUDE.md` im Abschnitt **„Sprachregel"**.
 
@@ -85,8 +84,9 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 01 Introduction in AI | ✓ | ✓ 3/3 | ✓ 4/4 ausgeführt | `0684b51` |
 | 02 Data Science 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `0cae09f`, `374a81e`, `6c7e61f`, `80ca895` |
 | 03 Data Science 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `598a668`, `b723e1d` |
-| **04 Machine Learning 1** | ✓ | ✓ 3/3 | **4/6 — `income_prediction` fehlt** | `92ab92d`, `d172564`, `028b8a5` |
-| 05–21 | offen | offen | offen | — |
+| 04 Machine Learning 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `92ab92d`, `d172564`, `028b8a5`, `<neu>` |
+| **05 Machine Learning 2** | **offen — als Nächstes** | offen | offen | — |
+| 06–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)
 1. Altes Notebook dumpen: `python -c "import json; nb=json.load(open(PFAD)); [print('####',i,c['cell_type'],''.join(c['source'])) for i,c in enumerate(nb['cells'])]"`.
@@ -108,12 +108,13 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 3. **Reihenfolge der rng-Aufrufe** darf sich nicht ändern (Modul 03 P02: `rng` seed 42 für Daten, `rng_boot` seed 1 für Resampling — eine umsortierte Zelle verschiebt KI und p-Werte).
 4. **Bestandsfehler in READMEs/Notebooks.** Beim Nachrechnen tauchten mehrere auf; die gemessenen Werte gewinnen, der Text wird korrigiert (nicht der Fehler mitübersetzt). Bisher gefunden und behoben: Tippfehler „klener"→„kleiner" (Modul 04 Skript); „78 %/96 %" statt gemessener 76,7 %/95,1 % (04 P01); „alle Modelle > 0.95 CV-ROC-AUC" obwohl der Entscheidungsbaum bei 0.918 liegt (04 P02); Emoji in der Abnahmezelle (02 P02).
 5. **Leere Musterlösungen.** Enthält die deutsche Lösung Stellen wie „*(Deine Notiz hier …)*", werden sie in der englischen Lösung **ausformuliert beantwortet** (so geschehen in 04 P02: Boxplot-Streuung, Feature-Plausibilität, Lernkurven-Diagnose, 3 Reflexionsfragen).
+6. **Nicht jede Zahlenabweichung ist ein Übersetzungsfehler.** In 04 P03 lieferte der `RandomForestClassifier` 0.7327 statt der in der README notierten 0.71. Gegenprobe: das **alte deutsche** Notebook aus `git show HEAD:...` liefert unter nbconvert **exakt dieselben** 0.7327 (per Skript-Lauf dagegen 0.7129) → umgebungsabhängig (Thread-/BLAS-Konfiguration), nicht von der Übersetzung verursacht. Alle anderen Zahlen des Notebooks stimmen auf vier Nachkommastellen. **Rezept: bei einer Abweichung immer erst die alte Version gegenprüfen, bevor man die Übersetzung verdächtigt** — und die README auf eine Spanne setzen statt auf einen Punktwert.
 
 #### Verifizierte Kennzahlen der fertigen Module (zum Wiedererkennen bei Regressionen)
 - **01**: BFS 29 Schritte/54 Knoten, A\* 29/35, greedy 31/32; Spam-Accuracy 0.9857.
 - **02**: Penguins 19 fehlende Werte / 124 Gentoo / r 0.871; Bereinigung 15 Duplikate, 500 Zeilen, 12 fehlende Preise, 41 globale IQR-Treffer vs. 3 pro Kategorie, „ACCEPTANCE PASSED"; EDA 165 fehlende Stunden, r 0.405 stündlich / 0.627 täglich.
 - **03**: SQL 5/5 Checks (Top-Kategorie Electronics, Top-Kunde Emma Schulz, Dezember-Peak 124); Bootstrap Median B 61.21, Differenz 12.29, KI [3.49, 20.47], Konversions-p 0.187; Regression R² 0.394→0.453→0.794, Scheitel 29.1 °C, MAE 859 < 952 < 1458, Leakage-Split 625.
-- **04** (bisher): kNN unskaliert 0.767 → skaliert 0.951, k=1 Train 1.000/Test 0.922, k=151 0.741/0.767; Modellrennen CV-ROC-AUC LogReg 0.9959 / SVM 0.9956 / GB 0.9918 / RF 0.9896 / kNN 0.9882 / Baum 0.9179, getunte LogReg Test-ROC-AUC 0.9954.
+- **04**: kNN unskaliert 0.767 → skaliert 0.951, k=1 Train 1.000/Test 0.922, k=151 0.741/0.767; Modellrennen CV-ROC-AUC LogReg 0.9959 / SVM 0.9956 / GB 0.9918 / RF 0.9896 / kNN 0.9882 / Baum 0.9179, getunte LogReg Test-ROC-AUC 0.9954; **Adult/Income** (P03) Dummy 0.761, CV-PR-AUC LogReg 0.7613 / RF 0.7327 / GB 0.8265, beste Params `learning_rate 0.1 / max_iter 200 / max_leaf_nodes 15` (CV 0.8272), Test-PR-AUC 0.8293 (Recall >50K 0.87, Precision 0.60), kostenminimale Schwelle **0.44** (128750 → 124000 $), Fairness Female Basisrate 0.111 Recall 0.798 FPR 0.074 vs Male 0.304 / 0.911 / 0.281.
 
 ---
 
