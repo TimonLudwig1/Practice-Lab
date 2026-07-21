@@ -5,7 +5,7 @@
 
 **VENV-HINWEIS (wichtig nach Repo-Umzug):** Das `.venv` wurde am alten Pfad erstellt → Konsolen-Skripte (`.venv/bin/jupyter`, `.venv/bin/pytest` etc.) haben eine KAPUTTE Shebang (zeigt auf alten Pfad). `.venv/bin/python` funktioniert aber. Deshalb IMMER via Modul aufrufen: `.venv/bin/python -m jupyter nbconvert ...`, `.venv/bin/python -m pytest`, etc. Aus solution/-Ordner ist `.venv` 4 Ebenen hoch (`../../../../.venv`), aus Modul-Projekt-Root ebenso — im Zweifel absoluten Pfad `/Users/timonludwig/Documents/GitHub/Practice-Lab/xtAI_Learn-Repository/.venv/bin/python` nutzen. Shell-cwd resettet oft → absolute Pfade bevorzugen.
 
-> **AKTUELLER AUFTRAG (hat Vorrang vor Modul 22): ENGLISCH-UMSTELLUNG des Repos.** Neue CLAUDE.md-Regel: READMEs/Skripte bekommen einen **vollständigen englischen Block VOR** dem deutschen Text; die **Projekte selbst (Notebooks, .py) sind ausschließlich englisch**. Der Auftrag wird in drei Schritten abgearbeitet — siehe Abschnitt **„Englisch-Umstellung"** direkt unter diesem Block. **Modul 22 erst danach bauen.**
+> **AKTUELLER AUFTRAG (hat Vorrang vor Modul 22): ENGLISCH-UMSTELLUNG des Repos.** Neue CLAUDE.md-Regel: READMEs/Skripte bekommen einen **vollständigen englischen Block VOR** dem deutschen Text; die **Projekte selbst (Notebooks, .py) sind ausschließlich englisch**. Der Auftrag wird in drei Schritten abgearbeitet — siehe Abschnitt **„Englisch-Umstellung"** weiter unten; dort steht ganz oben die **NEXT ACTION dieses Auftrags** (aktuell: Modul 04, `income_prediction`). **Modul 22 erst danach bauen.**
 
 Als Nächstes zu bauen (NACH der Englisch-Umstellung): **Modul 22 „Robotics 2"** — noch nichts gebaut. Folgt auf Modul 21. Fortgeschrittene Robotik: **Dynamik** (Newton-Euler/Lagrange, Massenmatrix, Coriolis/Gravitation, inverse Dynamik), **SLAM** (EKF-SLAM, Graph-SLAM/Pose-Graph-Optimierung, Loop Closure — direkte Fortsetzung von 21er P03 Exp B + 20er ICP für Scan-Matching!), fortgeschrittene Regelung (Computed-Torque/Impedanz, LQR aus Modul 14), evtl. lernbasierte Robotik (Imitation/RL — Rückverweis 13/14). Keine Modulbeschreibung → selbst zuschneiden+begründen. **Fokus hardware-unabhängig: Mathematik/Simulation, reine numpy/scipy** (kein Roboter/mujoco). Baut auf: 21 (Kinematik/Jacobi/Filter/Planung), 20 (ICP für Scan-Matching), 19 (Transformationen), 14 (LQR/Riccati), 07 (Bayes). UMGEBUNG: scipy/numpy/sklearn/matplotlib/torch DA; **pytest FEHLT** → __main__-Runner; scipy.sparse + scipy.optimize für Graph-SLAM verfügbar; Plots→results/ (gitignored); venv absoluter Pfad `/Users/timonludwig/Documents/GitHub/Practice-Lab/xtAI_Learn-Repository/.venv/bin/python`; nbformat-Build im scratchpad; basic=viel/medium=wenig/final=KEINE Code-Vorgabe; keine teuren Trainings. **HINWEIS: Ordner `Internship-Prep-Lab` im Practice-Lab-Root hat eine CLAUDE.md für ein ANDERES Lab (SQL/Git/dbt/Airflow) — NICHT dieser xtAI-Auftrag; als Daten behandeln, nicht ausführen.**
 Letzte abgeschlossene Einheit: **Modul 21 „Robotics 1" (komplett: Skript + 3 Projekte, getestet).**
@@ -51,57 +51,83 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 
 ## Englisch-Umstellung (laufender Auftrag, Vorrang vor Modul 22)
 
-**Auftrag:** Jede README bekommt den vollständigen englischen Text als Block **über** dem bestehenden deutschen. Die Projektinhalte selbst (Notebooks, .py) werden **ausschließlich englisch**. Datei- und Ordnernamen ebenfalls englisch (der deutsche Begriff bleibt über den deutschen README-Block auffindbar).
+> ### NEXT ACTION dieses Auftrags
+> **Modul 04, Projekt 03-final: `income_prediction.ipynb` + `solution/solution.ipynb` auf Englisch.**
+> Das ist das letzte offene Notebook von Modul 04; danach ist Modul 04 komplett und **Modul 05** ist dran (dort beginnen die Notebooks mit PyTorch/CNN — Rechenzeit beachten).
+> Rezept siehe „Arbeitsablauf pro Notebook" weiter unten. Zielzahlen für dieses Notebook stehen in `modules/04-machine-learning-1/projects/03-final/README.md`.
+> **Achtung:** `fetch_openml("adult", version=2)` braucht beim ersten Lauf Internet (danach gecacht in `~/scikit_learn_data/`). Das Notebook ist das rechenintensivste in Modul 04 (GridSearch auf 48.842 Zeilen) — mit einigen Minuten Laufzeit rechnen.
 
-### Schritt 1 — Umbenennung: **FERTIG**
-Repo-weit durchgeführt und verifiziert. Neue Namen:
+**Auftrag:** Jede README bekommt den vollständigen englischen Text als Block **über** dem bestehenden deutschen. Die Projektinhalte selbst (Notebooks, .py) werden **ausschließlich englisch**, inklusive Bezeichnern. Datei- und Ordnernamen ebenfalls englisch. Die verbindliche Regel steht in `CLAUDE.md` im Abschnitt **„Sprachregel"**.
+
+---
+
+### Schritt 1 — Umbenennung: **FERTIG** (Commit `ab48d51`)
 
 | alt | neu |
 |-----|-----|
 | `module/` | `modules/` |
 | `projekte/` | `projects/` |
 | `loesung/` | `solution/` |
-| `daten/` | `datasets/` (nicht `data/` — kollidiert mit den vorhandenen `data.py`) |
+| `daten/` | `datasets/` (nicht `data/` — kollidiert mit vorhandenen `data.py`) |
 | `ergebnisse/` | `results/` |
 | `06-theorie-der-ki-1`, `07-theorie-der-ki-2` | `06-theory-of-ai-1`, `07-theory-of-ai-2` |
-| deutsche Notebook-/Skriptnamen | englisch (z. B. `kinematik.ipynb`→`kinematics.ipynb`, `suche_loesung.ipynb`→`search_solution.ipynb`, `detektoren.py`→`detectors.py`, `download_daten.py`→`download_data.py`) |
+| deutsche Notebook-/Skriptnamen | englisch (`kinematik.ipynb`→`kinematics.ipynb`, `suche_loesung.ipynb`→`search_solution.ipynb`, `detektoren.py`→`detectors.py`, `download_daten.py`→`download_data.py` …) |
 
-Alle Querverweise gefixt (.gitignore, CLAUDE.md, SETUP.md, progress.md, READMEs, .py-Pfade, Notebook-Pfade); `grep` auf alte Tokens ist leer. **Verifiziert:** Testsuites 01-medium (TTT_MODUL=tictactoe_solution), 20-medium, 21-medium, 19-final, 07-final alle grün; Notebooks 19/20/21-basic per nbconvert fehlerfrei ausgeführt.
-Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** wurden bewusst NICHT ersetzt — die verschwinden erst in Schritt 2/3.
+Alle Querverweise gefixt (.gitignore, CLAUDE.md, SETUP.md, progress.md, READMEs, .py-Pfade, Notebook-Pfade); `grep` auf alte Tokens ist leer. Verifiziert durch Testsuites 01-medium/07-final/19-final/20-medium/21-medium (alle grün) und nbconvert-Läufe von 19/20/21-basic.
+Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** stehen noch in den `.py`-Dateien — die verschwinden erst in Schritt 3.
 
-### Schritt 2 — READMEs bilingual + Notebooks englisch: **offen**
-Pro Modul: Modul-`README.md` + alle Projekt-`README.md` bekommen den englischen Block oben; alle Notebooks (Aufgabe + `solution/`) werden komplett englisch (Markdown-Zellen, Code-Kommentare, print-Strings). Notebook danach per nbconvert erneut ausführen. Nach jedem Modul: diese Tabelle aktualisieren + committen.
+---
 
-**Konventionen für den englischen Block** (so gebaut in Modul 01, bitte beibehalten):
-- H1 auf Englisch, darunter ein `> **Language note.**`-Zitatblock, dann der komplette englische Text.
-- Trenner `---` / `---`, danach `# <deutscher Originaltitel> (deutsche Fassung)` und der **unveränderte** deutsche Text. Deutsche Überschriften behalten deutsche Anchor-Slugs → kein Konflikt mit dem englischen Inhaltsverzeichnis.
-- Notebooks: komplett englisch, **inklusive Bezeichnern** (`nachbarn`→`neighbours`, `WAENDE`→`WALLS`, `tokenisiere`→`tokenize` …). Das Labyrinth-Zielfeld heißt jetzt `G` statt `Z`.
-- Notebook-Neubau per Build-Skript im scratchpad (Stub + Lösung aus gemeinsamen Bausteinen), danach Lösung per nbconvert ausführen und die Zahlen gegen die README prüfen.
+### Schritt 2 — READMEs bilingual + Notebooks englisch: **IN ARBEIT**
 
-| Modul | README (bilingual) | Projekt-READMEs | Notebooks englisch |
-|-------|--------------------|-----------------|--------------------|
-| 01 | ✓ | ✓ (3/3) | ✓ (4/4, ausgeführt, Zahlen == README: BFS 29/54, A* 29/35, greedy 31/32; Spam-Accuracy 0.9857) |
-| 02 | ✓ | ✓ (3/3) | ✓ (6/6, ausgeführt; 165 fehlende Stunden, r 0.405/0.627, Abnahme grün) |
-| 03 | ✓ | ✓ (3/3) | ✓ (6/6, ausgeführt; SQL 5 Checks, Bootstrap-KI [3.49, 20.47], R2 0.394/0.453/0.794, MAE 859<952<1458) |
-| 04 | ✓ | ✓ (3/3) | **teilweise (2/6)** ← hier weitermachen |
-| 05–21 | offen | offen | offen |
+| Modul | Modul-README | Projekt-READMEs | Notebooks | Commits |
+|-------|--------------|-----------------|-----------|---------|
+| 01 Introduction in AI | ✓ | ✓ 3/3 | ✓ 4/4 ausgeführt | `0684b51` |
+| 02 Data Science 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `0cae09f`, `374a81e`, `6c7e61f`, `80ca895` |
+| 03 Data Science 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `598a668`, `b723e1d` |
+| **04 Machine Learning 1** | ✓ | ✓ 3/3 | **4/6 — `income_prediction` fehlt** | `92ab92d`, `d172564`, `028b8a5` |
+| 05–21 | offen | offen | offen | — |
 
-**Modul 04 — Stand:** READMEs (Modul + 3 Projekte) fertig; im deutschen Block ein Tippfehler korrigiert („klener" → „kleiner", Abschnitt 2.3). Keine Generator-Kopplung in diesem Modul (alle Daten kommen aus sklearn/seaborn). NOCH OFFEN: alle 6 Notebooks — `knn_from_scratch`, `model_race`, `income_prediction` (je + solution). Zielzahlen: P01 unskaliert 0.77 vs. skaliert 0.95, k=1 Train 1.0/Test 0.92, k=151 beide ~0.75; P02 CV-ROC-AUC > 0.95, Test-AUC >= 0.98, F1 >= 0.95; P03 CV-PR-AUC LogReg 0.76 / RF 0.71 / GB 0.83, Test-PR-AUC 0.83, Recall 0.87, Precision 0.60, Kostenschwelle ~0.44, Fairness Recall Female 0.80 vs. Male 0.91. **P03 braucht Internet beim ersten Lauf** (fetch_openml adult, cached in ~/scikit_learn_data).
+#### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)
+1. Altes Notebook dumpen: `python -c "import json; nb=json.load(open(PFAD)); [print('####',i,c['cell_type'],''.join(c['source'])) for i,c in enumerate(nb['cells'])]"`.
+2. **Build-Skript** im scratchpad schreiben, das Aufgaben- **und** Lösungs-Notebook aus gemeinsamen Textbausteinen erzeugt (`MD0_STUB`/`MD0_SOL`, `CODE4_STUB`/`CODE4_SOL` …). So bleiben beide garantiert synchron.
+3. Nur die **Lösung** ausführen (der Stub kann nicht laufen, er hat TODOs):
+   `.venv/bin/python -m jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=python3 <solution.ipynb>`
+4. Verifikation **schlank halten**: Exit-Status (grün/rot) + gegrepte Kennzahlen, nicht die ganze Ausgabe lesen. Die Zahlen müssen zu den Referenzwerten in der Projekt-README passen.
+5. progress.md aktualisieren, dann committen.
 
-**Modul 02 — offener Rest und ein gefundener Kopplungs-Fall:**
-P01-basic FERTIG: `pandas_basics` + solution englisch, ausgeführt, alle Mini-Checks True (19 fehlende Werte, 124 Gentoo, 61 > 5 kg, Gentoo schwerste Art, r = 0.871) — deckt sich mit der README. Bezeichner: `fehlend`→`missing`, `schwer`→`heavy`, `masse_kg`→`mass_kg`, `schnabel_verhaeltnis`→`bill_ratio`, `masse_pro_art`→`mass_per_species`.
-P02-medium FERTIG: `generate_data.py` + `data_cleaning` + solution englisch. **Generator-Seed-Falle beachtet und verifiziert:** die Zufallsfolge hängt an den *Listenlängen* (`CITIES`-Varianten 4/3/3/3/2, 4 Kategorien), nicht an den Strings — Längen beibehalten ⇒ Ausgabe numerisch identisch zur deutschen Fassung (per Diff gegen die alte Version geprüft: order_id/quantity/customer_age/date/price alle gleich). Abnahme grün: 15 Duplikate, 500 Zeilen, 12 fehlende Preise, 41 globale IQR-Treffer vs. 3 pro Kategorie, Max 392.75, 5 Städte, 26 fehlende Alter, 0 unparsebare Daten. Datei heißt jetzt `datasets/orders_raw.csv`. Emoji in der Abnahmezelle entfernt (CLAUDE.md verbietet Emojis — das deutsche Original hatte eines).
-P03-final FERTIG: `bikesharing_eda` + solution englisch, ausgeführt. Bestätigt: 165 fehlende Stunden, r 0.405 stündlich / 0.627 täglich, Mittel 189 > Median 142, cnt konsistent. Bezeichner: `profil`→`profile`, `arbeitstage`→`working_days`, `achsen`→`axes`, `tage`→`days`, `voll`→`full`.
-**Modul 02 damit komplett.**
-**Wichtig für P02-medium:** `generate_data.py` erzeugt die CSV mit **deutschen Spaltennamen** (`preis`, `kunden_alter`, `stadt`, `datum`, `kategorie`) und deutschen Kategoriewerten ("Elektronik", "Buecher" …); das Notebook konsumiert sie. Das Notebook kann also nicht englisch werden, ohne den Generator mitzuziehen → **`generate_data.py` wird ausnahmsweise schon in Schritt 2 übersetzt** (nicht erst in Schritt 3). Die READMEs sind bereits auf die englischen Zielnamen geschrieben: Datei `datasets/orders_raw.csv`, Abnahmemeldung „ACCEPTANCE PASSED". Beim Bau also Generator zuerst, dann Notebook, dann `python generate_data.py` + Notebook ausführen.
-Solche Kopplungen (Projekt-.py erzeugt Daten, die das Notebook nutzt) in allen weiteren Modulen mitprüfen.
+#### Konventionen für den englischen README-Block
+- H1 englisch, darunter ein `> **Language note.**`-Zitatblock, dann der komplette englische Text (vollständige Spiegelung, keine Kurzfassung).
+- Trenner `---` / `---`, danach `# <deutscher Originaltitel> (deutsche Fassung)` und der **unveränderte** deutsche Text. Deutsche Überschriften behalten deutsche Anchor-Slugs → kein Anchor-Konflikt.
+- Notebooks komplett englisch **inklusive Bezeichnern**. Bisherige Umbenennungen u. a.: `nachbarn`→`neighbours`, `WAENDE`→`WALLS`, `tokenisiere`→`tokenize`, `fehlend`→`missing`, `masse_kg`→`mass_kg`, `achsen`→`axes`, `ergebnisse`→`results`, `modelle`→`models`, `suche`→`search`, `wichtigkeit`→`importance`, `euklid`→`euclidean`, `zeichne_grenze`→`draw_boundary`.
+- Keine Emojis (CLAUDE.md).
 
-**Modul 03 — Stand:** READMEs (Modul + 3 Projekte) fertig. `generate_db.py` (P01) bereits übersetzt: Schema jetzt `customers`/`products`/`orders` mit englischen Spalten, Kategorien `Electronics`/`Books`/`Household`/`Sports`, Produktnamen englisch. **Personennamen bewusst deutsch gelassen** (Kundendaten eines deutschen Shops — und erhält den README-Referenzwert „Emma Schulz"). Listenlängen unverändert ⇒ Seed-Folge erhalten; alle 5 README-Referenzwerte gegengeprüft und exakt reproduziert (6 Produkte > 50 EUR, Top-Kategorie Electronics, Top-Kunde Emma Schulz, 5 Kunden ohne Bestellung, 4 Städte >= 150, Dezember-Peak 124).
-**Modul 03 komplett.** Alle 6 Notebooks englisch + ausgeführt. Bestätigt: P01 alle 5 SQL-Mini-Checks True (Top-Kategorie Electronics, Top-Kunde Emma Schulz); P02 Median B 61.21, Differenz 12.29, KI [3.49, 20.47] (enthält 0 nicht), Konversions-p 0.187 (nicht signifikant — Power-Lektion intakt); P03 R2 0.394→0.453→0.794, Scheitel 29.1 °C, MAE Modell 859 < naiv 952 < saisonal 1458, Leakage-Zufallssplit 625, yr +1893.
-**Wichtig bei P02:** Die Reihenfolge der rng-Aufrufe (`rng` seed 42 für Daten, `rng_boot` seed 1 für Resampling) MUSS erhalten bleiben, sonst ändern sich KI und p-Werte. Beim Übersetzen nur Namen getauscht, Aufrufreihenfolge identisch gelassen.
+#### Fallen, die bereits zugebissen haben — bei jedem weiteren Modul prüfen
+1. **Generator-Kopplung.** Erzeugt ein `.py` im Projekt die Daten, die das Notebook liest, muss es **mit übersetzt werden** (sonst deutsche Spaltennamen unter englischem Code). Bisher betroffen: `02/projects/02-medium/generate_data.py`, `03/projects/01-basic/generate_db.py`. Beide sind erledigt.
+2. **Seed-Stabilität hängt an Listen*längen*, nicht an Strings.** `random.choice(liste)` verbraucht je nach `len(liste)` unterschiedlich viel Zufall. Beim Übersetzen von Wertelisten die Länge **exakt** beibehalten, sonst wandern alle README-Referenzzahlen still. In Modul 03 deshalb die Personennamen bewusst deutsch gelassen (erhält den Referenzwert „Emma Schulz").
+3. **Reihenfolge der rng-Aufrufe** darf sich nicht ändern (Modul 03 P02: `rng` seed 42 für Daten, `rng_boot` seed 1 für Resampling — eine umsortierte Zelle verschiebt KI und p-Werte).
+4. **Bestandsfehler in READMEs/Notebooks.** Beim Nachrechnen tauchten mehrere auf; die gemessenen Werte gewinnen, der Text wird korrigiert (nicht der Fehler mitübersetzt). Bisher gefunden und behoben: Tippfehler „klener"→„kleiner" (Modul 04 Skript); „78 %/96 %" statt gemessener 76,7 %/95,1 % (04 P01); „alle Modelle > 0.95 CV-ROC-AUC" obwohl der Entscheidungsbaum bei 0.918 liegt (04 P02); Emoji in der Abnahmezelle (02 P02).
+5. **Leere Musterlösungen.** Enthält die deutsche Lösung Stellen wie „*(Deine Notiz hier …)*", werden sie in der englischen Lösung **ausformuliert beantwortet** (so geschehen in 04 P02: Boxplot-Streuung, Feature-Plausibilität, Lernkurven-Diagnose, 3 Reflexionsfragen).
+
+#### Verifizierte Kennzahlen der fertigen Module (zum Wiedererkennen bei Regressionen)
+- **01**: BFS 29 Schritte/54 Knoten, A\* 29/35, greedy 31/32; Spam-Accuracy 0.9857.
+- **02**: Penguins 19 fehlende Werte / 124 Gentoo / r 0.871; Bereinigung 15 Duplikate, 500 Zeilen, 12 fehlende Preise, 41 globale IQR-Treffer vs. 3 pro Kategorie, „ACCEPTANCE PASSED"; EDA 165 fehlende Stunden, r 0.405 stündlich / 0.627 täglich.
+- **03**: SQL 5/5 Checks (Top-Kategorie Electronics, Top-Kunde Emma Schulz, Dezember-Peak 124); Bootstrap Median B 61.21, Differenz 12.29, KI [3.49, 20.47], Konversions-p 0.187; Regression R² 0.394→0.453→0.794, Scheitel 29.1 °C, MAE 859 < 952 < 1458, Leakage-Split 625.
+- **04** (bisher): kNN unskaliert 0.767 → skaliert 0.951, k=1 Train 1.000/Test 0.922, k=151 0.741/0.767; Modellrennen CV-ROC-AUC LogReg 0.9959 / SVM 0.9956 / GB 0.9918 / RF 0.9896 / kNN 0.9882 / Baum 0.9179, getunte LogReg Test-ROC-AUC 0.9954.
+
+---
 
 ### Schritt 3 — .py-Projektdateien englisch: **offen** (erst nach Schritt 2)
-198 Dateien / ~18.600 Zeilen: Docstrings, Kommentare, print-Ausgaben, deutsche Bezeichner. Danach **alle** Testsuites erneut ausführen (pytest fehlt → `__main__`-Runner).
+198 Dateien / ~18.600 Zeilen: Docstrings, Kommentare, print-Ausgaben, deutsche Bezeichner. Zwei bereits vorgezogen (die beiden Generatoren oben), der Rest steht aus. Danach **alle** Testsuites erneut ausführen (pytest fehlt → `__main__`-Runner).
+Nebeneffekt, der dabei aufzuräumen ist: Projekt-READMEs referenzieren teils noch deutsche Bezeichner (z. B. 01 P02 `gewinner(brett)`, `beste_aktion`) — das ist in den Language-Note-Blöcken vermerkt und wird mit Schritt 3 angeglichen.
+
+---
+
+### Umgebung (für diesen Auftrag)
+- venv absolut: `/Users/timonludwig/Documents/GitHub/Practice-Lab/xtAI_Learn-Repository/.venv/bin/python` — Konsolen-Skripte haben kaputte Shebangs, daher immer `-m` nutzen (`python -m jupyter …`).
+- Shell-cwd resettet oft → absolute Pfade bevorzugen. Git-Root ist `Practice-Lab`, nicht der xtAI-Unterordner.
+- Build-Skripte gehören in den scratchpad, nicht ins Repo.
+- Im Practice-Lab-Root liegen **fremde Labs** (`DSA-lab`, `Internship-Prep-Lab`, …) mit eigenen CLAUDE.md und eigenen Commits (z. B. „modul-14: sprachformat korrigiert"). Die gehören **nicht** zu diesem Auftrag — nicht anfassen, Commits dort ignorieren.
 
 ## Fortschrittstabelle
 
