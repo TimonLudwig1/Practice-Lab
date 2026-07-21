@@ -1,25 +1,30 @@
-"""Erzeugt den absichtlich verschmutzten Bestell-Datensatz fuer das Bereinigungsprojekt.
+"""Generates the deliberately dirty order data set for the cleaning project.
 
-Ausfuehren (aus dem Ordner 02-medium, venv aktiv):
-    python generate_data.py        ->  datasets/bestellungen_roh.csv
+Run (from the folder 02-medium, venv active):
+    python generate_data.py        ->  datasets/orders_raw.csv
 
-Was die Daten darstellen: 500 Bestellungen eines fiktiven Online-Shops
-(ID, Datum, Stadt, Kategorie, Preis, Menge, Kundenalter).
+What the data represent: 500 orders of a fictional online shop
+(id, date, city, category, price, quantity, customer age).
 
-Eingebaute Probleme (alle absichtlich, alle realistisch):
-  1. Preis als Text mit Komma und Euro-Zeichen ("49,99 EUR")     -> Typkonvertierung
-  2. 12 fehlende Preise (leeres Feld)                            -> NaN-Behandlung
-  3. 3 Preis-Ausreisser (Kommafehler: Faktor 100)                -> IQR-Regel
-  4. Sondercode -999 im Kundenalter (= "keine Angabe", 25x)      -> Sondercodes
-  5. 1 unmoegliches Alter (234)                                  -> Plausibilitaet
-  6. Staedtenamen inkonsistent (berlin / Berlin /  Berlin  /
-     Muenchen / München ...)                                     -> Textnormalisierung
-  7. Zwei Datumsformate gemischt (2024-03-14 und 14.03.2024)     -> to_datetime
-  8. 15 exakte Duplikat-Zeilen                                   -> drop_duplicates
+Built-in problems (all deliberate, all realistic):
+  1. price as text with a comma and a currency word ("49,99 EUR")  -> type conversion
+  2. 12 missing prices (empty field)                               -> NaN handling
+  3. 3 price outliers (decimal-point error: factor 100)            -> IQR rule
+  4. special code -999 in the customer age (= "no answer", 25x)    -> special codes
+  5. 1 impossible age (234)                                        -> plausibility
+  6. inconsistent city names (berlin / Berlin /  Berlin  /
+     Munich / München ...)                                         -> text normalisation
+  7. two date formats mixed (2024-03-14 and 14.03.2024)            -> to_datetime
+  8. 15 exact duplicate rows                                       -> drop_duplicates
 
-Warum synthetisch? Damit jedes Problem GENAU EINMAL in kontrollierter Form
-vorkommt und du am Ende pruefen kannst, ob du alle gefunden hast (die "Wahrheit"
-steht in diesem Skript). Fester Seed -> reproduzierbar.
+Why synthetic? So that every problem occurs EXACTLY ONCE in a controlled form and
+you can check at the end whether you found them all (the "truth" is in this
+script). Fixed seed -> reproducible.
+
+Note on the numbers: the random sequence depends on the *lengths* of the lists
+below, not on the strings themselves. Keep the list lengths as they are, otherwise
+the reference figures in the README (12 missing prices, median about 71.6, 26 NaN
+ages) no longer hold.
 """
 import csv
 import os
@@ -27,66 +32,66 @@ import random
 
 random.seed(42)
 
-STAEDTE = {
-    "Berlin":    ["Berlin", "berlin", " Berlin ", "BERLIN"],
-    "Muenchen":  ["Muenchen", "München", "muenchen"],
-    "Hamburg":   ["Hamburg", "hamburg", "Hamburg "],
-    "Koeln":     ["Koeln", "Köln", "koeln"],
-    "Leipzig":   ["Leipzig", "leipzig"],
+CITIES = {
+    "Berlin":   ["Berlin", "berlin", " Berlin ", "BERLIN"],
+    "Munich":   ["Munich", "München", "munich"],
+    "Hamburg":  ["Hamburg", "hamburg", "Hamburg "],
+    "Cologne":  ["Cologne", "Köln", "cologne"],
+    "Leipzig":  ["Leipzig", "leipzig"],
 }
-KATEGORIEN = ["Elektronik", "Buecher", "Kleidung", "Haushalt"]
-PREIS_BEREICH = {"Elektronik": (20, 400), "Buecher": (5, 60), "Kleidung": (10, 120), "Haushalt": (8, 200)}
+CATEGORIES = ["Electronics", "Books", "Clothing", "Household"]
+PRICE_RANGE = {"Electronics": (20, 400), "Books": (5, 60), "Clothing": (10, 120), "Household": (8, 200)}
 
-zeilen = []
+rows = []
 for i in range(500):
-    kategorie = random.choice(KATEGORIEN)
-    lo, hi = PREIS_BEREICH[kategorie]
-    preis = round(random.uniform(lo, hi), 2)
-    stadt_norm = random.choice(list(STAEDTE))
-    stadt = random.choice(STAEDTE[stadt_norm])
-    monat, tag = random.randint(1, 12), random.randint(1, 28)
+    category = random.choice(CATEGORIES)
+    lo, hi = PRICE_RANGE[category]
+    price = round(random.uniform(lo, hi), 2)
+    city_norm = random.choice(list(CITIES))
+    city = random.choice(CITIES[city_norm])
+    month, day = random.randint(1, 12), random.randint(1, 28)
     if random.random() < 0.5:
-        datum = f"2024-{monat:02d}-{tag:02d}"
+        date = f"2024-{month:02d}-{day:02d}"
     else:
-        datum = f"{tag:02d}.{monat:02d}.2024"
-    alter = random.randint(18, 79)
-    zeilen.append({
-        "bestell_id": 10000 + i,
-        "datum": datum,
-        "stadt": stadt,
-        "kategorie": kategorie,
-        "preis": f"{preis:.2f}".replace(".", ",") + " EUR",
-        "menge": random.randint(1, 5),
-        "kunden_alter": alter,
+        date = f"{day:02d}.{month:02d}.2024"
+    age = random.randint(18, 79)
+    rows.append({
+        "order_id": 10000 + i,
+        "date": date,
+        "city": city,
+        "category": category,
+        "price": f"{price:.2f}".replace(".", ",") + " EUR",
+        "quantity": random.randint(1, 5),
+        "customer_age": age,
     })
 
-# Problem 2: 12 fehlende Preise
+# Problem 2: 12 missing prices
 for idx in random.sample(range(500), 12):
-    zeilen[idx]["preis"] = ""
+    rows[idx]["price"] = ""
 
-# Problem 3: 3 Ausreisser (Kommafehler, Faktor 100) — nur bei vorhandenen Preisen
-kandidaten = [i for i, z in enumerate(zeilen) if z["preis"]]
-for idx in random.sample(kandidaten, 3):
-    wert = float(zeilen[idx]["preis"].replace(" EUR", "").replace(",", "."))
-    zeilen[idx]["preis"] = f"{wert * 100:.2f}".replace(".", ",") + " EUR"
+# Problem 3: 3 outliers (decimal-point error, factor 100) — only where a price exists
+candidates = [i for i, r in enumerate(rows) if r["price"]]
+for idx in random.sample(candidates, 3):
+    value = float(rows[idx]["price"].replace(" EUR", "").replace(",", "."))
+    rows[idx]["price"] = f"{value * 100:.2f}".replace(".", ",") + " EUR"
 
-# Problem 4: Sondercode -999 (keine Angabe) im Alter, 25x
+# Problem 4: special code -999 (no answer) in the age, 25x
 for idx in random.sample(range(500), 25):
-    zeilen[idx]["kunden_alter"] = -999
+    rows[idx]["customer_age"] = -999
 
-# Problem 5: ein unmoegliches Alter
-zeilen[random.randrange(500)]["kunden_alter"] = 234
+# Problem 5: one impossible age
+rows[random.randrange(500)]["customer_age"] = 234
 
-# Problem 8: 15 exakte Duplikate anhaengen
-zeilen += [dict(zeilen[idx]) for idx in random.sample(range(500), 15)]
-random.shuffle(zeilen)
+# Problem 8: append 15 exact duplicates
+rows += [dict(rows[idx]) for idx in random.sample(range(500), 15)]
+random.shuffle(rows)
 
-ordner = os.path.join(os.path.dirname(os.path.abspath(__file__)), "datasets")
-os.makedirs(ordner, exist_ok=True)
-pfad = os.path.join(ordner, "bestellungen_roh.csv")
-with open(pfad, "w", newline="", encoding="utf-8") as f:
-    writer = csv.DictWriter(f, fieldnames=list(zeilen[0].keys()))
+folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "datasets")
+os.makedirs(folder, exist_ok=True)
+path = os.path.join(folder, "orders_raw.csv")
+with open(path, "w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
     writer.writeheader()
-    writer.writerows(zeilen)
+    writer.writerows(rows)
 
-print(f"{len(zeilen)} Zeilen geschrieben nach {pfad}")
+print(f"{len(rows)} rows written to {path}")
