@@ -82,8 +82,8 @@ Python: `dict`, iteration, optionally `matplotlib` for a nicer visualization.
       (and needs **considerably fewer** outer iterations for it);
 - [ ] the $\gamma$ and living-reward studies show comprehensible changes of the
       policy;
-- [ ] VI reports the number of iterations until convergence (reference: about 30
-      at $\gamma=1$, with a residual $<10^{-8}$).
+- [ ] VI reports the number of iterations until convergence (reference: 34 at
+      $\gamma=1$, with a residual $<10^{-8}$).
 
 ## Self-check questions (answer them in writing)
 
@@ -215,7 +215,7 @@ Python: `dict`, Iteration, optional `matplotlib` für eine schönere Visualisier
       (und braucht dafür **deutlich weniger** äußere Iterationen);
 - [ ] die $\gamma$- und Living-Reward-Studien zeigen nachvollziehbare
       Policy-Änderungen;
-- [ ] VI meldet die Zahl der Iterationen bis zur Konvergenz (Referenz: ~30 bei
+- [ ] VI meldet die Zahl der Iterationen bis zur Konvergenz (Referenz: 34 bei
       $\gamma=1$, Residuum $<10^{-8}$).
 
 ## Selbstcheck-Fragen (schriftlich beantworten)

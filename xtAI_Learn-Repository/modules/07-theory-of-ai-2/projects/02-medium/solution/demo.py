@@ -1,4 +1,4 @@
-"""Demonstration & Vergleich der drei Inferenzverfahren."""
+"""A demonstration and comparison of the three inference procedures."""
 from bayesnet import alarm_net, diagnosis_net
 from inference import enumeration_ask, elimination_ask, likelihood_weighting
 
@@ -12,12 +12,12 @@ def compare(name, X, e, bn, N=200000):
     velim = elimination_ask(X, e, bn)
     lw = likelihood_weighting(X, e, bn, N=N, seed=1)
     print(f"\n{name}:  P({X} | {e})")
-    print(f"  Aufzaehlung          : {fmt(enum)}")
-    print(f"  Variable Elimination : {fmt(velim)}")
-    print(f"  Likelihood Weighting : {fmt(lw)}   (N={N})")
-    assert abs(enum[True] - velim[True]) < 1e-9, "exakte Verfahren muessen uebereinstimmen!"
-    # LW hat bei Evidenz an den BLAETTERN (wie John/Mary) hohe Varianz -> grosszuegige Schranke
-    assert abs(enum[True] - lw[True]) < 0.03, "Sampling sollte grob nahe am Exakten liegen"
+    print(f"  Enumeration          : {fmt(enum)}")
+    print(f"  Variable elimination : {fmt(velim)}")
+    print(f"  Likelihood weighting : {fmt(lw)}   (N={N})")
+    assert abs(enum[True] - velim[True]) < 1e-9, "the exact procedures must agree!"
+    # LW has high variance with evidence at the LEAVES (like John/Mary) -> a generous bound
+    assert abs(enum[True] - lw[True]) < 0.03, "sampling should be roughly close to the exact value"
     return enum[True]
 
 
@@ -25,19 +25,19 @@ if __name__ == "__main__":
     alarm = alarm_net()
     diag = diagnosis_net()
 
-    p = compare("Alarm-Netz", "Burglary",
+    p = compare("Alarm network", "Burglary",
                 {"JohnCalls": True, "MaryCalls": True}, alarm)
-    print(f"  -> Erwartungswert ~0.2842 (bekanntes AIMA-Resultat): {'OK' if abs(p-0.2842)<0.001 else 'ABWEICHUNG'}")
+    print(f"  -> expected about 0.2842 (the known AIMA result): {'OK' if abs(p-0.2842)<0.001 else 'DEVIATION'}")
 
-    compare("Alarm-Netz (nur John)", "Burglary", {"JohnCalls": True}, alarm)
+    compare("Alarm network (John only)", "Burglary", {"JohnCalls": True}, alarm)
 
-    # explaining away: Erdbebenmeldung senkt P(Burglary | Alarm)
+    # explaining away: an earthquake report lowers P(Burglary | Alarm)
     p1 = enumeration_ask("Burglary", {"Alarm": True}, alarm)[True]
     p2 = enumeration_ask("Burglary", {"Alarm": True, "Earthquake": True}, alarm)[True]
     print(f"\nExplaining away:  P(Burglary|Alarm)={p1:.3f}  ->  "
-          f"P(Burglary|Alarm,Earthquake)={p2:.3f}  (sinkt: {'OK' if p2 < p1 else 'FEHLER'})")
+          f"P(Burglary|Alarm,Earthquake)={p2:.3f}  (it falls: {'OK' if p2 < p1 else 'AN ERROR'})")
 
-    compare("Diagnose-Netz", "Cancer",
+    compare("Diagnosis network", "Cancer",
             {"XRay": True, "Dyspnoea": True, "Smoker": True}, diag)
 
-    print("\nAlle Verfahren konsistent.")
+    print("\nAll procedures consistent.")

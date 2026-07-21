@@ -1,15 +1,15 @@
-"""Die klassische 4x3-Gridworld (Russell & Norvig) als MDP.
+"""The classical 4x3 gridworld (Russell & Norvig) as an MDP.
 
-Koordinaten (x, y) mit (0,0) unten links. Layout:
+Coordinates (x, y) with (0,0) at the bottom left. The layout:
 
     y=2 |  .    .    .   +1
     y=1 |  .  WALL   .   -1
     y=0 |  .    .    .    .
           x=0  x=1  x=2  x=3
 
-Bewegung ist verrauscht: mit Wahrscheinlichkeit 0.8 in die gewuenschte
-Richtung, je 0.1 nach links/rechts davon (senkrecht). Gegen Wand/Rand -> stehen
-bleiben. Jeder Nicht-Terminal-Schritt kostet R = -0.04 (Living Reward).
+Movement is noisy: with probability 0.8 in the intended direction, with 0.1 each
+to the left/right of it (perpendicular). Against a wall or the border -> stay
+put. Every non-terminal step costs R = -0.04 (the living reward).
 """
 
 ACTIONS = {"N": (0, 1), "S": (0, -1), "E": (1, 0), "W": (-1, 0)}
@@ -40,13 +40,13 @@ class GridworldMDP:
         nx, ny = s[0] + dx, s[1] + dy
         if 0 <= nx < self.cols and 0 <= ny < self.rows and (nx, ny) not in self.walls:
             return (nx, ny)
-        return s                      # gegen Wand/Rand -> bleiben
+        return s                      # against a wall or the border -> stay
 
     def transitions(self, s, action):
-        """Liste (Wahrscheinlichkeit, Folgezustand) fuer das verrauschte Modell."""
+        """A list of (probability, successor state) for the noisy model."""
         if self.is_terminal(s):
             return [(1.0, s)]
-        # senkrechte Fehlrichtungen
+        # the perpendicular wrong directions
         if action in ("N", "S"):
             perp = ("E", "W")
         else:
@@ -59,7 +59,7 @@ class GridworldMDP:
 
 
 def show_policy(mdp, policy):
-    """ASCII-Darstellung einer Policy (Pfeile)."""
+    """An ASCII rendering of a policy (arrows)."""
     lines = []
     for y in range(mdp.rows - 1, -1, -1):
         row = []

@@ -1,19 +1,19 @@
-"""Inferenz in Bayes-Netzen: exakt (Aufzaehlung, Variable Elimination) und
-approximativ (Likelihood Weighting)."""
+"""Inference in Bayesian networks: exact (enumeration, variable elimination) and
+approximate (likelihood weighting)."""
 import random
 
 
 def normalize(dist):
-    """dict {True: a, False: b} -> normalisiert auf Summe 1."""
+    """dict {True: a, False: b} -> normalized to sum 1."""
     total = sum(dist.values())
     return {k: v / total for k, v in dist.items()}
 
 
 # ====================================================================
-#  1) Inferenz durch Aufzaehlung
+#  1) Inference by enumeration
 # ====================================================================
 def enumeration_ask(X, e, bn):
-    """P(X | e) durch Aufzaehlung ueber alle versteckten Variablen."""
+    """P(X | e) by enumerating over all hidden variables."""
     Q = {}
     for xi in (True, False):
         e2 = dict(e); e2[X] = xi
@@ -36,18 +36,18 @@ def enumerate_all(variables, e, bn):
 
 
 # ====================================================================
-#  2) Variable Elimination
+#  2) Variable elimination
 # ====================================================================
 class Factor:
     def __init__(self, variables, cpt):
-        self.variables = variables            # Liste von Variablennamen
-        self.cpt = cpt                        # dict {Tupel der Werte in var-Reihenfolge: Zahl}
+        self.variables = variables            # a list of variable names
+        self.cpt = cpt                        # dict {tuple of the values in variable order: number}
 
     def get(self, event):
         return self.cpt[tuple(event[v] for v in self.variables)]
 
     def pointwise_product(self, other):
-        """Punktweises Produkt zweier Faktoren (ueber Vereinigung der Variablen)."""
+        """The pointwise product of two factors (over the union of the variables)."""
         variables = self.variables + [v for v in other.variables if v not in self.variables]
         cpt = {}
         for event in bool_events(variables):
@@ -55,7 +55,7 @@ class Factor:
         return Factor(variables, cpt)
 
     def sum_out(self, var):
-        """Variable var ausmarginalisieren (summing out)."""
+        """Marginalize the variable var out (summing out)."""
         variables = [v for v in self.variables if v != var]
         cpt = {}
         for event in bool_events(variables):
@@ -68,7 +68,7 @@ class Factor:
 
 
 def bool_events(variables):
-    """Alle booleschen Belegungen einer Variablenliste (als dicts)."""
+    """All boolean assignments of a list of variables (as dicts)."""
     if not variables:
         yield {}
         return
@@ -79,7 +79,7 @@ def bool_events(variables):
 
 
 def make_factor(var, e, bn):
-    """Faktor fuer Knoten var, mit fixierter Evidenz e (Evidenzvariablen fallen weg)."""
+    """The factor for the node var with the evidence e fixed."""
     node = bn.lookup[var]
     variables = [v for v in [var] + node.parents if v not in e]
     cpt = {}
@@ -90,13 +90,12 @@ def make_factor(var, e, bn):
 
 
 def elimination_ask(X, e, bn):
-    """P(X | e) mit Variable Elimination."""
+    """P(X | e) with variable elimination."""
     factors = []
     for var in reversed(bn.variables):
         factors.append(make_factor(var, e, bn))
-        if var != X and var not in e:                    # versteckte Variable
+        if var != X and var not in e:
             factors = sum_out_var(var, factors)
-    # verbleibende Faktoren multiplizieren -> Faktor ueber {X}
     result = factors[0]
     for f in factors[1:]:
         result = result.pointwise_product(f)
@@ -117,10 +116,10 @@ def sum_out_var(var, factors):
 
 
 # ====================================================================
-#  3) Likelihood Weighting (approximativ)
+#  3) Likelihood weighting (approximate)
 # ====================================================================
 def likelihood_weighting(X, e, bn, N=10000, seed=0):
-    """Schaetzt P(X | e) aus N gewichteten Stichproben."""
+    """Estimates P(X | e) from N weighted samples."""
     rng = random.Random(seed)
     W = {True: 0.0, False: 0.0}
     for _ in range(N):
@@ -130,13 +129,13 @@ def likelihood_weighting(X, e, bn, N=10000, seed=0):
 
 
 def weighted_sample(bn, e, rng):
-    """Eine Stichprobe: Evidenz fixieren, Rest samplen, mit Evidenz-Likelihood gewichten."""
+    """One sample: fix the evidence, sample the rest, weight by the evidence likelihood."""
     w = 1.0
     event = dict(e)
     for var in bn.variables:
         node = bn.lookup[var]
         if var in e:
-            w *= node.p(e[var], event)               # gewichten statt samplen
+            w *= node.p(e[var], event)               # weight it instead of sampling it
         else:
-            event[var] = node.sample(event, rng)     # aus P(var | Eltern) ziehen
+            event[var] = node.sample(event, rng)     # draw from P(var | parents)
     return event, w

@@ -1,8 +1,8 @@
-"""Testsuite. Fuehre sie aus, waehrend du inference.py fuellst:
+"""The test suite. Run it while you fill in inference.py:
 
     python test_inference.py
 
-Alle Tests muessen mit 'OK' enden.
+All tests have to end with 'OK'.
 """
 from bayesnet import alarm_net, diagnosis_net
 from inference import enumeration_ask, elimination_ask, likelihood_weighting
@@ -11,8 +11,8 @@ from inference import enumeration_ask, elimination_ask, likelihood_weighting
 def test_enumeration_alarm():
     bn = alarm_net()
     d = enumeration_ask("Burglary", {"JohnCalls": True, "MaryCalls": True}, bn)
-    assert abs(d[True] - 0.2842) < 0.001, d          # bekanntes AIMA-Resultat
-    print("  Aufzaehlung (Alarm) ........ OK  P(Burglary|j,m)=%.4f" % d[True])
+    assert abs(d[True] - 0.2842) < 0.001, d          # the known AIMA result
+    print("  Enumeration (alarm) ........ OK  P(Burglary|j,m)=%.4f" % d[True])
 
 
 def test_elimination_matches_enumeration():
@@ -24,14 +24,14 @@ def test_elimination_matches_enumeration():
         a = enumeration_ask(X, e, bn)[True]
         b = elimination_ask(X, e, bn)[True]
         assert abs(a - b) < 1e-9, (X, e, a, b)
-    print("  Variable Elimination == Aufzaehlung ... OK")
+    print("  Variable elimination == enumeration ... OK")
 
 
 def test_explaining_away():
     bn = alarm_net()
     p1 = enumeration_ask("Burglary", {"Alarm": True}, bn)[True]
     p2 = enumeration_ask("Burglary", {"Alarm": True, "Earthquake": True}, bn)[True]
-    assert p2 < p1, (p1, p2)          # Erdbeben "erklaert" den Alarm weg
+    assert p2 < p1, (p1, p2)          # the earthquake "explains" the alarm away
     print("  Explaining away ............ OK  %.3f -> %.3f" % (p1, p2))
 
 
@@ -41,7 +41,7 @@ def test_likelihood_weighting():
     exact = enumeration_ask(X, e, bn)[True]
     approx = likelihood_weighting(X, e, bn, N=100000, seed=1)[True]
     assert abs(exact - approx) < 0.02, (exact, approx)
-    print("  Likelihood Weighting ....... OK  exakt=%.4f approx=%.4f" % (exact, approx))
+    print("  Likelihood weighting ....... OK  exact=%.4f approx=%.4f" % (exact, approx))
 
 
 if __name__ == "__main__":
@@ -50,4 +50,4 @@ if __name__ == "__main__":
     test_elimination_matches_enumeration()
     test_explaining_away()
     test_likelihood_weighting()
-    print("\nAlle Tests bestanden.")
+    print("\nAll tests passed.")

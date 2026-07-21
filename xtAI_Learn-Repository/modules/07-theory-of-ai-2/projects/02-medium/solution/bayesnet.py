@@ -1,16 +1,16 @@
-"""Datenstruktur fuer diskrete (boolesche) Bayes-Netze + zwei Beispielnetze.
+"""A data structure for discrete (boolean) Bayesian networks + two example nets.
 
-Konvention: Variablen sind boolesch (True/False). Ein 'event' ist ein dict
-{Variablenname: bool}. Die CPT eines Knotens gibt P(Knoten=True | Eltern) an.
+The convention: variables are boolean (True/False). An 'event' is a dict
+{variable name: bool}. The CPT of a node gives P(node=True | parents).
 """
 from dataclasses import dataclass
 
 
 class BayesNode:
     def __init__(self, name, parents, cpt):
-        """parents: Liste von Elternnamen (Reihenfolge zaehlt!).
-        cpt: - ohne Eltern: eine Zahl P(name=True)
-             - mit Eltern:  dict {(elternwerte-Tupel): P(name=True)}"""
+        """parents: a list of parent names (the order matters!).
+        cpt: - without parents: a single number P(name=True)
+             - with parents:    a dict {(tuple of parent values): P(name=True)}"""
         if isinstance(parents, str):
             parents = parents.split()
         self.name = name
@@ -23,12 +23,12 @@ class BayesNode:
         self.children = []
 
     def p(self, value, event):
-        """P(name=value | Eltern wie in event)."""
+        """P(name=value | the parents as given in event)."""
         ptrue = self.cpt[tuple(event[p] for p in self.parents)]
         return ptrue if value else 1 - ptrue
 
     def sample(self, event, rng):
-        """Ziehe einen Wert fuer name gegeben die Elternwerte in event."""
+        """Draw a value for name given the parent values in event."""
         return rng.random() < self.cpt[tuple(event[p] for p in self.parents)]
 
     def __repr__(self):
@@ -37,7 +37,7 @@ class BayesNode:
 
 class BayesNet:
     def __init__(self, node_specs):
-        self.variables = []                 # topologisch geordnet
+        self.variables = []                 # topologically ordered
         self.lookup = {}
         for spec in node_specs:
             self.add(BayesNode(*spec))
@@ -45,7 +45,7 @@ class BayesNet:
     def add(self, node):
         assert node.name not in self.lookup
         assert all(p in self.lookup for p in node.parents), \
-            f"Eltern von {node.name} muessen vorher definiert sein (topologisch!)"
+            f"the parents of {node.name} must be defined beforehand (topologically!)"
         self.lookup[node.name] = node
         self.variables.append(node.name)
         for p in node.parents:
@@ -55,9 +55,9 @@ class BayesNet:
         return self.lookup[name]
 
 
-# --------------------------------------------------------------- Beispielnetze
+# --------------------------------------------------------------- Example nets
 def alarm_net():
-    """Pearls Alarm-Netz.  B,E -> A -> J,M."""
+    """Pearl's alarm network.  B,E -> A -> J,M."""
     T, F = True, False
     return BayesNet([
         ("Burglary", "", 0.001),
@@ -70,8 +70,8 @@ def alarm_net():
 
 
 def diagnosis_net():
-    """Kleines medizinisches Diagnosenetz.
-    Rauchen/Umwelt -> Bronchitis/Krebs -> Symptome (Husten, Roentgen, Dyspnoe)."""
+    """A small medical diagnosis network.
+    Smoking/pollution -> bronchitis/cancer -> symptoms (cough, x-ray, dyspnoea)."""
     T, F = True, False
     return BayesNet([
         ("Smoker", "", 0.30),
@@ -79,7 +79,7 @@ def diagnosis_net():
         ("Cancer", "Smoker Pollution",
             {(T, T): 0.05, (T, F): 0.03, (F, T): 0.02, (F, F): 0.001}),
         ("Bronchitis", "Smoker", {T: 0.25, F: 0.05}),
-        ("XRay", "Cancer", {T: 0.90, F: 0.20}),           # positiver Befund
+        ("XRay", "Cancer", {T: 0.90, F: 0.20}),           # a positive finding
         ("Dyspnoea", "Cancer Bronchitis",
             {(T, T): 0.90, (T, F): 0.70, (F, T): 0.80, (F, F): 0.10}),
     ])

@@ -1,27 +1,27 @@
-"""Loesungsverfahren fuer MDPs: Value Iteration und Policy Iteration.
+"""Solution procedures for MDPs: value iteration and policy iteration.
 
-Beide implementieren die Bellman-Gleichungen aus Teil 3 des Skripts.
+Both implement the Bellman equations from part 3 of the script.
 """
 
 
 def q_value(mdp, s, a, V):
-    """Q(s,a) = sum_{s'} P(s'|s,a) * V(s')   (der Erwartungswert-Term)."""
+    """Q(s,a) = sum_{s'} P(s'|s,a) * V(s')   (the expectation term)."""
     return sum(p * V[s2] for p, s2 in mdp.transitions(s, a))
 
 
 def bellman_update(mdp, s, V):
-    """(BV)(s) = R(s) + gamma * max_a Q(s,a).   Terminals: nur R(s)."""
+    """(BV)(s) = R(s) + gamma * max_a Q(s,a).   Terminals: only R(s)."""
     if mdp.is_terminal(s):
         return mdp.reward(s)
     return mdp.reward(s) + mdp.gamma * max(q_value(mdp, s, a, V) for a in mdp.actions(s))
 
 
 # ====================================================================
-#  Value Iteration
+#  Value iteration
 # ====================================================================
 def value_iteration(mdp, epsilon=1e-8, max_iter=10000):
-    """Iteriert den Bellman-Optimalitaets-Operator bis Konvergenz.
-    Rueckgabe: (V, Iterationen, delta_verlauf)."""
+    """Iterates the Bellman optimality operator to convergence.
+    Returns: (V, iterations, the history of deltas)."""
     V = {s: 0.0 for s in mdp.states}
     for s in mdp.terminals:
         V[s] = mdp.reward(s)
@@ -40,7 +40,7 @@ def value_iteration(mdp, epsilon=1e-8, max_iter=10000):
 
 
 def greedy_policy(mdp, V):
-    """Die aus V greedy abgelesene Policy: argmax_a Q(s,a)."""
+    """The policy read off greedily from V: argmax_a Q(s,a)."""
     policy = {}
     for s in mdp.states:
         if mdp.is_terminal(s):
@@ -51,11 +51,11 @@ def greedy_policy(mdp, V):
 
 
 # ====================================================================
-#  Policy Iteration
+#  Policy iteration
 # ====================================================================
 def policy_evaluation(mdp, policy, V=None, k=200, epsilon=1e-10):
-    """Iterative Policy Evaluation: loest V^pi(s)=R(s)+gamma*Q(s,pi(s))
-    naeherungsweise durch wiederholtes Anwenden (bis k Sweeps oder Konvergenz)."""
+    """Iterative policy evaluation: solves V^pi(s)=R(s)+gamma*Q(s,pi(s))
+    approximately by repeated application (up to k sweeps or convergence)."""
     if V is None:
         V = {s: 0.0 for s in mdp.states}
         for s in mdp.terminals:
@@ -76,9 +76,9 @@ def policy_evaluation(mdp, policy, V=None, k=200, epsilon=1e-10):
 
 
 def policy_iteration(mdp, max_iter=1000):
-    """Alterniert Policy Evaluation und Policy Improvement bis Stabilitaet.
-    Rueckgabe: (V, policy, Iterationen)."""
-    # beliebige Startpolicy (erste Aktion)
+    """Alternates policy evaluation and policy improvement until stability.
+    Returns: (V, policy, iterations)."""
+    # an arbitrary initial policy (the first action)
     policy = {s: (None if mdp.is_terminal(s) else mdp.actions(s)[0]) for s in mdp.states}
     V = {s: 0.0 for s in mdp.states}
     for s in mdp.terminals:

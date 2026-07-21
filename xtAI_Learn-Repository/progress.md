@@ -52,9 +52,10 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 ## Englisch-Umstellung (laufender Auftrag, Vorrang vor Modul 22)
 
 > ### NEXT ACTION dieses Auftrags
-> **Modul 07, Projekt 01-basic: `planning.ipynb` + `solution/planning_solution.ipynb` auf Englisch.**
-> Die **4 READMEs von Modul 07 sind fertig**. Danach P02 (5 .py: bayesnet/inference/demo/test_inference, Stub + solution) und P03 (nur solution/: gridworld/mdp/demo/test_mdp) — Modul 07 laeuft wie 06 in einem Rutsch inkl. .py.
-> Zielzahlen: P01 Sussman **6-Schritte-Plan**, BFS 18 vs A*(h_add) ~11 expandierte Zustaende, h_add(s0)=5; P02 **P(B|j,m)=0.2842** (Aufzaehlung==VE exakt), explaining away 0.374→0.003; P03 AIMA-Utilities V(0,0)~0.705 / V(2,2)~0.918 / V(3,0)~0.388, VI ~34 Iter. bei gamma=1, PI ~5, identische Policy.
+> **Modul 08 „NLP 1": Modul-README + 3 Projekt-READMEs bilingual, dann die Projekte.**
+> **Modul 07 ist komplett** (READMEs + Notebook + alle .py). Modul 08 hat wieder das 06/07-Format: **Notebook nur P01**, P02+P03 sind .py-Projekte (N-Gramm-LM, NB vs TF-IDF, HMM-POS-Tagger) — also ebenfalls in einem Rutsch.
+> Zielzahlen Modul 08: P01 Add-1-Trigramm schlaegt Unigramm, Interpolation Perplexitaet ~190; P02 NB von Hand vs TF-IDF+LogReg auf 20newsgroups beide ~0.89; P03 HMM-Viterbi auf UD-EWT **Acc 0.912** (unbekannte Woerter 0.65 = Flaschenhals).
+> **Achtung Daten:** Modul 08 laedt echte Daten (Gutenberg-Text, sklearn-20newsgroups, UD-EWT .conllu via urllib mit Retry bei 429) — beim Ausfuehren Netz noetig, danach gecacht.
 >
 > Rezept siehe „Arbeitsablauf pro Notebook" weiter unten.
 
@@ -89,8 +90,9 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 04 Machine Learning 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `92ab92d`, `d172564`, `028b8a5`, `90817ad` |
 | 05 Machine Learning 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `af83312`, `f56b29f`, `4c879f7`, `5f8afc3` |
 | 06 Theorie der KI 1 | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `033b87a`, `1d3e467`, `f1bc5b3` |
-| **07 Theorie der KI 2** | ✓ | ✓ 3/3 | **offen (Notebook + .py)** | `d2bb460` |
-| 08–21 | offen | offen | offen | — |
+| 07 Theorie der KI 2 | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `d2bb460`, `<neu>` |
+| **08 NLP 1** | **offen — als Nächstes** | offen | offen | — |
+| 09–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)
 1. Altes Notebook dumpen: `python -c "import json; nb=json.load(open(PFAD)); [print('####',i,c['cell_type'],''.join(c['source'])) for i,c in enumerate(nb['cells'])]"`.
