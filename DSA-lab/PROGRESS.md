@@ -7,7 +7,7 @@ Content-*Generierung* durch Claude Code, nicht den Lernfortschritt des Nutzers.
 
 ## NÄCHSTE AKTION
 
-> **Modul 14 (Greedy-Algorithmen): Theorie-Skript erstellen.**
+> **Modul 14 (Greedy-Algorithmen): Projekt 01-basic erstellen.**
 > Dazu ausschließlich den Abschnitt „Modul 14" sowie die Arbeitsanweisungen
 > aus `Moduluebersicht_DSA.md` lesen.
 
@@ -61,7 +61,7 @@ fünf Zellen `fertig` sind.
 | 11 | Heaps & Priority Queues | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 148/148 Tests; alle 11 Python-Dateien, 17 Theoriebeispiele, beide Demos, 18 Benchmark-Fälle, Generator und vollständige 300-Job-Scheduler-Simulation am 2026-07-20 erfolgreich |
 | 12 | Graphen I: Repräsentation & Traversierung | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV | FERTIG: 155/155 Tests; alle 10 Python-Dateien, 16 Theorieblöcke, beide Demos und vollständige Seed-1203-Pipeline mit 24 Tasks, 39 Kanten und 113-Minuten-Kritischem-Pfad am 2026-07-20 erfolgreich |
 | 13 | Graphen II: Kürzeste Wege, Union-Find & MST | fertig | fertig | fertig | fertig | fertig | Markdown, Python-Skripte, CSV, PNG | FERTIG: 188/188 Tests; alle 10 Python-Dateien, 19 Theorieblöcke, Dijkstra-/Union-Find-Demo, vier MST-Benchmarks und vollständiges Seed-1313-Routing mit 192 Knoten/356 Straßen und +5,2 %/+96,3 % Sperrungsverzögerung am 2026-07-21 erfolgreich |
-| 14 | Greedy-Algorithmen | offen | offen | offen | offen | offen | — | — |
+| 14 | Greedy-Algorithmen | fertig | offen | offen | offen | offen | Markdown | Umfassendes Theorie-Skript mit 21 gemeinsam erfolgreich ausgeführten Python-Beispielen zu Greedy-Denkmodell, Beweisstrategien, Gegenbeispielen, Interval Scheduling, Münzwechsel, fraktionalem Rucksack, Huffman-Codierung, Meeting-Räumen und Greedy-vs.-DP am 2026-07-21 fertiggestellt |
 | 15 | Backtracking | offen | offen | offen | offen | offen | — | — |
 | 16 | Dynamic Programming | offen | offen | offen | offen | offen | — | — |
 | 17 | Capstone: DSA im Data-Science-Kontext | offen | offen | offen | offen | offen | — | — |
@@ -147,3 +147,4 @@ Kurz halten — dieses Log ist Gedächtnisstütze, kein Bericht.)*
 | 2026-07-21 | Modul 13: 02-medium | Kruskal-/Prim-Werkstatt mit unabhängigem MST-Verifizierer und vier identischen Seed-Graphen bis 300 Knoten/1.500 Kanten; gleiche MST-Gewichte und Kantenmengen, CSV-/Markdown-Benchmark, zweisprachige README und 74 Tests erfolgreich. |
 | 2026-07-21 | Modul 13: 03-final | Seed-1313-Gitterstraßennetz mit 192 Knoten/356 Straßen, selbst implementiertem Dijkstra, Einzelstraßen-/Barrierenanalyse (+5,2 %/+96,3 %), zwei CSVs, englischem Bericht, dreiteiliger PNG-Visualisierung, zweisprachiger README und 56 Tests erfolgreich. |
 | 2026-07-21 | Modul 13: Test-Durchlauf | 188/188 Tests; alle 10 Python-Dateien, 19 Theorieblöcke, Dijkstra-/Union-Find-Demo, vier MST-Benchmarkfälle und vollständiges Seed-1313-Routing mit 192 Knoten/356 Straßen und +5,2 %/+96,3 % Sperrungsverzögerung erfolgreich. |
+| 2026-07-21 | Modul 14: Theorie | Umfassendes Greedy-Skript mit Greedy-Choice-Property, optimaler Teilstruktur, Exchange-Argument, Gegenbeispielmethodik, Interval Scheduling, Münzwechsel, fraktionalem Rucksack, Huffman-Codierung, Meeting-Räumen und Greedy-vs.-DP; alle 21 Python-Beispiele gemeinsam erfolgreich ausgeführt. |
