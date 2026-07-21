@@ -1,4 +1,41 @@
-# Projekt 01 (basic) — SQL: Daten holen, wo sie wohnen
+# Project 01 (basic) — SQL: fetching data where they live
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook and the generator are English only; the customer names in the data stay German on purpose (it is a German shop).
+
+**Format:** Jupyter notebook (`sql_basics.ipynb`) + database generator (`generate_db.py`).
+**Why this format?** You learn SQL by writing a query and looking at the result, second by second — with `pd.read_sql` in a notebook that is exactly what happens, and the transition SQL → pandas (the workflow in practice) becomes directly visible.
+
+**Data: synthetic — on purpose.** A small SQLite database (60 customers, 25 products, 800 orders, fixed seed 7): for SQL basics you need a clean, manageable schema with foreign keys and **known answers** for the mini checks. Deliberately built in are 5 customers without orders (the LEFT JOIN lesson) and a December peak (the GROUP BY lesson).
+
+## Goal
+
+Apply the basic SQL building blocks confidently: `SELECT`/`WHERE`/`ORDER BY`/`LIMIT`, aggregation with `GROUP BY`, `JOIN` across two and three tables, `LEFT JOIN` for "who is missing?", `WHERE` vs. `HAVING` — and the division of labour between SQL and pandas.
+
+## Prior knowledge
+
+- Section 2.4 of the module script (SQL) — read it first
+- Module 02 (pandas: merge/groupby as the mental counterpart)
+- Recommended: 15–30 minutes of https://sqlbolt.com as a warm-up
+
+## Tasks
+
+1. Create the database: `python generate_db.py` (the `.db` file is not committed, only the generator).
+2. Work through the notebook; write the SQL queries in the `TODO` cells yourself. Mini checks must evaluate to `True`.
+3. In section 6, deliberately produce the `WHERE COUNT(*)` error and read the error message.
+
+## What should work in the end
+
+- All mini checks `True`: 6 products above 50 EUR, Electronics as the category with the highest revenue, "Emma Schulz" as the top customer, exactly 5 customers without an order, 4 cities with at least 150 orders.
+- The monthly plot shows the December peak, the pivot table shows revenue by city and category.
+
+## Solution
+
+Fully executed reference solution: [`solution/solution.ipynb`](solution/solution.ipynb).
+
+---
+---
+
+# Projekt 01 (basic) — SQL: Daten holen, wo sie wohnen (deutsche Fassung)
 
 **Format:** Jupyter Notebook (`sql_basics.ipynb`) + DB-Generator (`generate_db.py`).
 **Warum dieses Format?** SQL lernt man durch Abfrage-schreiben-Ergebnis-anschauen im Sekundentakt — mit `pd.read_sql` im Notebook ist genau das möglich, und der Übergang SQL → pandas (der Praxis-Workflow) wird direkt sichtbar.

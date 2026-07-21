@@ -1,4 +1,41 @@
-# Projekt 02 (medium) — Bootstrap & Permutationstest: Statistik aus dem Computer
+# Project 02 (medium) — Bootstrap and permutation test: statistics from the computer
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Format:** Jupyter notebook (`bootstrap_permutation.ipynb`).
+**Why this format?** Resampling procedures are understood through the histograms of the bootstrap and null distributions — code and figure have to sit right next to each other.
+
+**Data: synthetic, with a known truth — that is the didactic core here.** An A/B test (2 x 4,000 visitors, conversion + order values, fixed seed 42) is generated in the first cell. Because the true effects are written in the generator, you can check at the end whether your tests found the truth — and you experience, under controlled conditions, the most important case in practice: **a genuine effect that the test fails to find for lack of power.**
+
+## Goal
+
+Implement bootstrap confidence intervals (median, difference of medians) and a permutation test by hand, apply them to both A/B questions and interpret the results correctly: the order value effect is significant (p about 0.005), the conversion effect is not detectable despite really existing (p about 0.19) → "not significant is not the same as no effect".
+
+## Prior knowledge
+
+- Sections 3.1 and 3.2 of the module script; module 02 section 3.1 (p-values, CIs)
+- numpy basics (`choice`, `permutation`, `percentile`)
+
+## Tasks
+
+1. Work through the notebook; to be implemented are `bootstrap_distribution`, the confidence interval of the difference, `permutation_test` and its application to the conversion rates.
+2. Mini checks must evaluate to `True`.
+3. To finish: formulate a three-sentence recommendation for the product team (a reference version can be unfolded).
+
+## What should work in the end
+
+- The bootstrap 95 % CI of the B median is about [53, 68] EUR; the CI of the difference is about [3.5, 20.5] EUR (it does not contain 0, but it does contain the true value of 6 EUR).
+- Permutation test on the order value: p below 0.02; on conversion: p above 0.05.
+- You can explain why the conversion test fails despite a genuine effect (power).
+
+## Solution
+
+Fully executed reference solution: [`solution/solution.ipynb`](solution/solution.ipynb).
+
+---
+---
+
+# Projekt 02 (medium) — Bootstrap & Permutationstest: Statistik aus dem Computer (deutsche Fassung)
 
 **Format:** Jupyter Notebook (`bootstrap_permutation.ipynb`).
 **Warum dieses Format?** Resampling-Verfahren versteht man über die Histogramme der Bootstrap- und Nullverteilungen — Code und Grafik müssen direkt nebeneinander stehen.

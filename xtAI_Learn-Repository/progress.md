@@ -82,7 +82,7 @@ Pro Modul: Modul-`README.md` + alle Projekt-`README.md` bekommen den englischen 
 |-------|--------------------|-----------------|--------------------|
 | 01 | ✓ | ✓ (3/3) | ✓ (4/4, ausgeführt, Zahlen == README: BFS 29/54, A* 29/35, greedy 31/32; Spam-Accuracy 0.9857) |
 | 02 | ✓ | ✓ (3/3) | ✓ (6/6, ausgeführt; 165 fehlende Stunden, r 0.405/0.627, Abnahme grün) |
-| 03 | offen | offen | offen | ← **hier weitermachen** |
+| 03 | ✓ | ✓ (3/3) | **offen (0/6)** ← hier weitermachen |
 | 04–21 | offen | offen | offen |
 
 **Modul 02 — offener Rest und ein gefundener Kopplungs-Fall:**
@@ -92,6 +92,9 @@ P03-final FERTIG: `bikesharing_eda` + solution englisch, ausgeführt. Bestätigt
 **Modul 02 damit komplett.**
 **Wichtig für P02-medium:** `generate_data.py` erzeugt die CSV mit **deutschen Spaltennamen** (`preis`, `kunden_alter`, `stadt`, `datum`, `kategorie`) und deutschen Kategoriewerten ("Elektronik", "Buecher" …); das Notebook konsumiert sie. Das Notebook kann also nicht englisch werden, ohne den Generator mitzuziehen → **`generate_data.py` wird ausnahmsweise schon in Schritt 2 übersetzt** (nicht erst in Schritt 3). Die READMEs sind bereits auf die englischen Zielnamen geschrieben: Datei `datasets/orders_raw.csv`, Abnahmemeldung „ACCEPTANCE PASSED". Beim Bau also Generator zuerst, dann Notebook, dann `python generate_data.py` + Notebook ausführen.
 Solche Kopplungen (Projekt-.py erzeugt Daten, die das Notebook nutzt) in allen weiteren Modulen mitprüfen.
+
+**Modul 03 — Stand:** READMEs (Modul + 3 Projekte) fertig. `generate_db.py` (P01) bereits übersetzt: Schema jetzt `customers`/`products`/`orders` mit englischen Spalten, Kategorien `Electronics`/`Books`/`Household`/`Sports`, Produktnamen englisch. **Personennamen bewusst deutsch gelassen** (Kundendaten eines deutschen Shops — und erhält den README-Referenzwert „Emma Schulz"). Listenlängen unverändert ⇒ Seed-Folge erhalten; alle 5 README-Referenzwerte gegengeprüft und exakt reproduziert (6 Produkte > 50 EUR, Top-Kategorie Electronics, Top-Kunde Emma Schulz, 5 Kunden ohne Bestellung, 4 Städte >= 150, Dezember-Peak 124).
+NOCH OFFEN Modul 03: alle 6 Notebooks (`sql_basics`, `bootstrap_permutation`, `regression_forecasting`, je + solution). P03 braucht `python datasets/download_data.py`; Zielzahlen R2 0.394/0.453/0.794, MAE 859 < 952 < 1458, Leakage-MAE 625.
 
 ### Schritt 3 — .py-Projektdateien englisch: **offen** (erst nach Schritt 2)
 198 Dateien / ~18.600 Zeilen: Docstrings, Kommentare, print-Ausgaben, deutsche Bezeichner. Danach **alle** Testsuites erneut ausführen (pytest fehlt → `__main__`-Runner).

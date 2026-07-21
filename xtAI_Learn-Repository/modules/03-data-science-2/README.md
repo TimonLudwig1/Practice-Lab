@@ -1,4 +1,320 @@
-# Modul 03 — Data Science 2
+# Module 03 — Data Science 2
+
+> **Language note.** This document is bilingual. The English version comes first; the German version (*deutsche Fassung*) follows below the horizontal rule.
+
+**What is this about?** Data Science 1 taught you to understand and describe data. Data Science 2 turns that into **models and reliable statements**: quantifying relationships (regression), analysing temporal structure (time series), constructing features (feature engineering), taming high-dimensional data (PCA) and fetching data from where they actually live (SQL). The module is the bridge between descriptive analysis and the machine learning of modules 04/05.
+
+**Prerequisites:** module 02 (pandas, EDA, descriptive and inferential statistics) is assumed throughout. School mathematics plus a willingness to look at a few matrices.
+
+**To do beforehand:** module 01, module 02.
+
+---
+
+## Learning objectives
+
+After this module you will be able to:
+
+- set up a **linear regression**, interpret its coefficients and goodness-of-fit measures ($R^2$, residuals) and check its assumptions,
+- explain why coefficients in multiple regression may only be interpreted "ceteris paribus" and what **multicollinearity** does,
+- use a **logistic regression** for yes/no questions and interpret odds ratios,
+- decompose **time series** into trend, season and remainder, read autocorrelation and produce simple forecasts (including clean time series validation),
+- systematically **construct features** (transformations, category encoding, date features) and avoid data leakage,
+- reduce dimensions with **PCA** and explain what principal components are (and what they are not),
+- write **basic SQL queries** (SELECT, JOIN, GROUP BY) and combine them with pandas,
+- set up an **A/B test design**: sample size, run time, evaluation, typical mistakes.
+
+---
+
+## 1. Basics
+
+### 1.1 Linear regression — the workhorse of data analysis
+
+**Idea:** we model a target quantity $y$ as a linear function of explanatory variables:
+
+$$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \dots + \varepsilon$$
+
+$\beta_0$ = intercept, $\beta_i$ = slopes, $\varepsilon$ = remainder (what the model does not explain). "Fitting" means: choose the $\beta$ so that the **sum of squared residuals** is minimal (**ordinary least squares, OLS**):
+
+$$\hat{\beta} = \arg\min_\beta \sum_i (y_i - \hat{y}_i)^2$$
+
+**Why squares?** They penalise large errors disproportionately, make the problem smoothly solvable (set the derivative to zero, giving a closed formula) and correspond to the maximum likelihood solution under normally distributed errors.
+
+**Worked mini example** (simple regression, $y = \beta_0 + \beta_1 x$): for the slope,
+
+$$\hat{\beta}_1 = \frac{\sum_i (x_i - \bar{x})(y_i - \bar{y})}{\sum_i (x_i - \bar{x})^2} = r \cdot \frac{s_y}{s_x}, \qquad \hat{\beta}_0 = \bar{y} - \hat{\beta}_1 \bar{x}$$
+
+The slope is therefore the **correlation, converted into the units of the data**. Example: an ice cream parlour, $x$ = temperature (degrees C), $y$ = revenue (euros). With $r = 0.8$, $s_y = 300$ euros, $s_x = 5$ degrees: $\hat{\beta}_1 = 0.8 \cdot 300/5 = 48$ euros per degree — one degree more means on average 48 euros more revenue.
+
+**Goodness-of-fit measure $R^2$:** the proportion of the variance of $y$ that the model explains:
+
+$$R^2 = 1 - \frac{\sum_i (y_i - \hat{y}_i)^2}{\sum_i (y_i - \bar{y})^2} \in (-\infty, 1]$$
+
+$R^2 = 0.64$ means: 64 % of the spread explained (in simple regression $R^2 = r^2$). Careful: $R^2$ rises *automatically* with every additional variable — hence the **adjusted $R^2$**, and hence model quality is ultimately to be measured on *new* data (see module 04).
+
+**Residual analysis — the underestimated step:** the assumptions of OLS (linearity, constant error spread / "homoscedasticity", independent errors) are checked on the **residual plot** (residuals against predictions):
+
+- pattern/curvature implies the relationship is not linear (transformation or a different model),
+- a funnel shape implies the variance grows with the level (often $\log y$ helps),
+- outliers with high **leverage** (extreme $x$ values) can tip the whole line.
+
+> **Note:** a high $R^2$ with a broken residual plot is worthless; a moderate $R^2$ with a clean residual plot can be very useful.
+
+### 1.2 Multiple regression: "ceteris paribus" and its pitfalls
+
+With several explanatory variables, $\beta_1$ means: *change in $y$ per unit of $x_1$ when all other variables are held constant.* That is the great strength — and the great trap:
+
+- **Confounder adjustment**: the relationship "ice cream sales → drowning accidents" disappears as soon as "temperature" is in the model. Regression can *partial out* confounders — but only those you know about and have measured!
+- **Multicollinearity**: if two predictors are strongly correlated (e.g. living space and number of rooms), the model cannot separate their influence: coefficients become unstable, signs flip seemingly arbitrarily, standard errors explode. Diagnosis: pairwise correlations, variance inflation factor (VIF). Incidentally, *prediction* hardly suffers from this — only *interpretation*.
+- **Omitted variable bias**: if a relevant variable is missing that correlates with one that is included, the included one "inherits" its effect. This is why regression coefficients from observational data are *not* causal statements (module 02 script, section 2.4 — it applies here even more strictly).
+
+**Categorical variables** enter the model as **dummy variables** (city = Berlin/Hamburg/Cologne → two 0/1 columns, one category is left out as the reference — otherwise there is perfect collinearity, the "dummy trap").
+
+### 1.3 Logistic regression: when y is a yes/no
+
+For binary targets (buys / does not buy) linear regression does not fit (predictions below 0 or above 1). The **logistic regression** models the *probability* instead, via the sigmoid function:
+
+$$P(y = 1 \mid x) = \sigma(\beta_0 + \beta_1 x_1 + \dots) = \frac{1}{1 + e^{-(\beta_0 + \beta_1 x_1 + \dots)}}$$
+
+Interpretation via **odds**: $\text{odds} = P/(1-P)$. It holds that $\log(\text{odds}) = \beta_0 + \beta_1 x_1 + \dots$ — the coefficients are additive on the log-odds scale, and $e^{\beta_1}$ is the **odds ratio**: the factor by which the odds change per unit of $x_1$. $e^{\beta_1} = 1.5$ means "50 % higher odds per unit", not "50 % higher probability"! Fitting is done by maximum likelihood (no closed formula, numerical optimisation — conceptually the same "downhill" idea as in module 01, section 3.1).
+
+Logistic regression is at the same time your first "real" classifier besides naive Bayes — and the standard baseline in practice. A deeper treatment (decision boundaries, regularisation, metrics) follows in Machine Learning 1.
+
+---
+
+## 2. Intermediate
+
+### 2.1 Time series analysis
+
+Time series (sales per day, temperature per hour, ...) violate the basic assumption of independent observations: **neighbouring values are related**. This needs its own tools.
+
+**The classical decomposition:**
+
+$$y_t = T_t + S_t + R_t \quad \text{(additive)} \qquad y_t = T_t \cdot S_t \cdot R_t \quad \text{(multiplicative)}$$
+
+- **Trend $T_t$**: the long-term direction (e.g. via a moving average / `rolling`)
+- **Season $S_t$**: a recurring pattern of fixed period (day of the week, month, time of day)
+- **Remainder $R_t$**: what is left over
+
+You choose multiplicative when the seasonal swings grow with the level (typical under growth: the "December peak" of a shop grows along).
+
+**Autocorrelation (ACF):** the correlation of the series with itself shifted by $k$ steps (lag $k$). The ACF is the ECG of a time series: peaks at lag 7 (daily data) reveal a weekly rhythm, a slowly decaying ACF reveals a trend.
+
+**Simple forecasting methods** (always as a baseline first!):
+
+| Method | Forecast | when |
+|--|--|--|
+| Naive | the last value | astonishingly hard to beat |
+| Seasonal naive | the value from one period ago ("like last Monday") | with strong seasonality |
+| Moving average | mean of the last $k$ values | smooth series |
+| Exponential smoothing | weighted mean, more recent values count more: $\hat{y}_{t+1} = \alpha y_t + (1-\alpha)\hat{y}_t$ | the standard all-rounder |
+
+**The golden rule of time series validation:** never split into train/test at random! Train on the past, test on the future (a **temporal split**), otherwise the model already "sees" the future during training — the forecast quality is massively overestimated. (This is the most important special case of *leakage*, see 2.2.)
+
+### 2.2 Feature engineering — casting knowledge into columns
+
+Models are only as good as their inputs. Feature engineering = building from raw data the attributes that make the relationship visible:
+
+- **Transformations**: $\log$ for right-skewed quantities (prices, incomes) — this makes multiplicative effects additive and tames outliers. Polynomials/interactions ($x_1 \cdot x_2$) when effects act together.
+- **Date features**: a timestamp becomes day of the week, month, hour, a holiday flag, "days since the last event", ... (in the bike sharing project of module 02, half the explanatory power sat in `hr` and `workingday`!). For cyclical quantities (hour 23 is close to hour 0!) one uses a sine/cosine encoding: $\sin(2\pi h/24), \cos(2\pi h/24)$.
+- **Category encoding**: one-hot/dummies for nominal attributes; ordinal encoding only where a genuine order exists.
+- **Lag and window features** (time series): $y_{t-1}$, $y_{t-7}$, a rolling 7-day mean — this turns a time series into a regression table.
+- **Scaling**: standardisation ($z = (x - \bar{x})/s$) — mandatory for regression with regularisation, for PCA and for distance-based methods.
+
+**Leakage — the cardinal error:** a feature contains information that would not exist at prediction time. Classics: the column "cancelled on" when predicting cancellations; scaling parameters computed jointly on train and test; a random split for time series. The symptom: suspiciously good test results that burst in reality. Rule: **everything that is learned (including means for scaling!) is learned only on the training data.**
+
+### 2.3 Principal component analysis (PCA)
+
+With many correlated variables (50 sensors, 1000 questionnaire items) you want to reduce the dimension without losing much information.
+
+**Idea:** find new axes (**principal components**) as linear combinations of the original variables such that the first axis captures the maximum variance of the data, the second the maximum remaining variance perpendicular to it, and so on. Mathematically: eigenvectors of the covariance matrix; the associated eigenvalues are the captured variances.
+
+- **Explained variance**: the scree plot (share of variance per component) shows how many components you need — often 80–90 % of the variance sits in a few components when the variables are strongly correlated.
+- **Loadings**: the weights of the original variables in a component — this is how you interpret what a component "stands for" (e.g. PC1 in the penguin data set is roughly "overall body size").
+- **Mandatory: standardise beforehand** — otherwise the variable with the largest numerical values (grams beats millimetres) dominates the analysis for purely numerical reasons.
+
+**What PCA is not:** it is not feature *selection* (components mix all variables), it is no guarantee that much variance means much *relevance* for a target quantity (PCA knows no $y$ — it is unsupervised), and with non-linear structures (curved manifolds) it falls short (see t-SNE/UMAP in later modules).
+
+### 2.4 SQL — fetching data where they live
+
+In companies, data live in relational databases, and analysis begins with **SQL**. You already know the mapping to pandas:
+
+| SQL | pandas |
+|--|--|
+| `SELECT col1, col2 FROM t` | `df[["col1", "col2"]]` |
+| `WHERE price > 100` | `df[df.price > 100]` |
+| `GROUP BY city` + aggregate | `df.groupby("city").agg(...)` |
+| `JOIN ... ON id` | `df.merge(..., on="id")` |
+| `ORDER BY x DESC LIMIT 10` | `df.sort_values("x", ascending=False).head(10)` |
+
+The skeleton of every query (and its logical order of evaluation: FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY):
+
+```sql
+SELECT   c.city, COUNT(*) AS n, AVG(o.price) AS mean_price
+FROM     orders o
+JOIN     customers c ON c.customer_id = o.customer_id
+WHERE    o.order_date >= '2024-01-01'
+GROUP BY c.city
+HAVING   COUNT(*) >= 10
+ORDER BY mean_price DESC;
+```
+
+- **Kinds of JOIN**: `INNER` (only matches), `LEFT` (all of the left side, NULL on the right where missing) — the two you need daily.
+- `WHERE` filters *rows before* the grouping, `HAVING` filters *groups afterwards* — a popular beginner's mistake.
+- **SQLite** is a fully-fledged SQL database in a single file, built into Python (`sqlite3`), and `pd.read_sql` fetches query results directly as a DataFrame — perfect for learning and for small projects.
+
+Rule of thumb for the division of labour: **coarse filtering and joins in SQL** (the database is built for it and keeps the data volume small), **analysis and plots in pandas**.
+
+---
+
+## 3. Advanced topics
+
+### 3.1 Setting up A/B tests properly
+
+The A/B test is the experiment of the digital economy: split users at random into control (A) and variant (B), compare a metric. **Randomisation** makes it a causal instrument — on average the groups differ *only* by the variant (no confounding). You know the statistics from module 02 (section 3.1); here is the design side:
+
+1. **Fix in advance**: the metric, the minimum detectable effect (MDE), the significance level $\alpha$, the power (usually 80 %).
+2. **Compute the sample size** (power analysis): small effects need *very* many users — roughly, $n$ grows with $1/\text{effect}^2$. Demonstrating an increase in conversion from 2 % to 2.2 % needs tens of thousands of users per group.
+3. **See the run time through**: full weeks (day-of-week effects!), and **no early stopping** at the first significant interim result — constant interim testing massively inflates the false positive rate (the "peeking problem").
+4. **Evaluate**: report the effect size + confidence interval; check the randomisation (A/A test, sample ratio mismatch); treat segments only as a hypothesis generator (multiple testing!).
+
+Typical pitfalls in practice: the novelty effect (new things are over-clicked at first), interference between groups (network effects), and the temptation to search through 20 metrics until one is significant.
+
+### 3.2 Simulation and bootstrap — statistics without a formula collection
+
+Modern data analysis replaces many analytical formulas with **computing power**:
+
+- **Bootstrap**: draw from your sample (n values) many new samples *with replacement* (n values each), compute the statistic every time — the spread of these bootstrap statistics estimates the standard error, their quantiles give a confidence interval. This works for the median, quantiles, ratios ... where classical formulas are missing or ugly.
+- **Permutation test**: under $H_0$ "no group difference" the group labels are exchangeable. Shuffle the labels a thousand times, compute the test statistic each time — the share of shuffled results that exceed the real one *is* the p-value. No distributional model needed, and the logic of the p-value becomes tangible.
+
+You build both procedures yourself in the medium project — they are the best school of intuition for inferential statistics there is.
+
+### 3.3 From the notebook to the pipeline: reproducibility at a larger scale
+
+- **Scripts instead of cell chaos**: as soon as an analysis is settled, it moves into functions/modules with clear inputs and outputs; the notebook remains as the report.
+- **Data versioning light**: raw data immutable ("read-only"), every transformation as code (never edit the CSV by hand!), intermediate states named and dated.
+- **Big data outlook**: when data no longer fit into RAM — columnar formats (Parquet), chunked processing, DuckDB/Polars as fast local engines, Spark and friends on a cluster. The *concepts* (filter early, join sparingly, aggregate close to the data) are the same as with SQL.
+
+---
+
+## 4. Summary / cheat sheet
+
+**Linear regression**
+- OLS minimises $\sum (y - \hat{y})^2$; simple regression: $\hat\beta_1 = r \cdot s_y / s_x$
+- $R^2$ = explained variance; rises automatically with more variables (see adjusted / test data)
+- Residual plot: curvature = non-linear, funnel = heteroscedasticity, watch out for leverage points
+- Multiple regression: a coefficient is the effect *ceteris paribus*; multicollinearity makes coefficients unstable (VIF); the dummy trap: leave out one reference category
+
+**Logistic regression**
+- $P(y=1) = \sigma(\beta^T x)$; $e^\beta$ = odds ratio (odds, not probabilities!)
+
+**Time series**
+- Decomposition $y = T + S + R$ (or multiplicative); read the ACF (a lag-7 peak means a weekly rhythm)
+- Baselines: naive, seasonal naive, moving average, exponential smoothing
+- **Always split temporally** — never at random!
+
+**Feature engineering**
+- log for skew, sin/cos for cycles, one-hot for nominal, lags for time series, standardise for PCA and friends
+- **Leakage**: use nothing that would not exist at prediction time; learn everything learnable on train only
+
+**PCA**
+- Principal components = orthogonal directions of maximum variance (eigenvectors of the covariance matrix)
+- Scree plot for the number, loadings for the interpretation, standardise beforehand, unsupervised!
+
+**SQL**
+- `SELECT ... FROM ... [JOIN ... ON ...] WHERE ... GROUP BY ... HAVING ... ORDER BY ...`
+- WHERE before grouping, HAVING after; LEFT JOIN keeps all left-hand rows
+- SQLite + `pd.read_sql` = a learning environment without a server
+
+**A/B and resampling**
+- In advance: metric, MDE, $\alpha$, power, run time; no peeking; report effect + CI
+- Bootstrap: draw with replacement, giving a CI for (almost) any statistic
+- Permutation test: shuffle labels, giving a p-value without a distributional assumption
+
+---
+
+## 5. Self-test
+
+<details><summary><b>1. Your model has R² = 0.92, but the residual plot shows a clear U shape. What does that mean, and what do you do?</b></summary>
+
+The U shape means: the relationship is **not linear** — the model systematically over- or underestimates depending on the range, despite the high $R^2$. Predictions outside the middle range and all coefficient interpretations are unreliable. Remedy: a transformation ($\log$, a quadratic term) or a non-linear model — and afterwards check the residual plot again.
+</details>
+
+<details><summary><b>2. In the house price model, "number of rooms" suddenly has a negative coefficient as soon as "living space" is in the model. A blunder?</b></summary>
+
+Not necessarily — two readings. (1) **Ceteris paribus** this is plausible: *at the same living space*, more rooms means smaller rooms, which can push the price down. (2) Number of rooms and living space are strongly correlated (**multicollinearity**), in which case the individual coefficients are unstable and their signs are not very reliable (check the VIF). In both cases: the coefficient does not measure "the effect of rooms" as such, but the additional effect with the other variables held fixed.
+</details>
+
+<details><summary><b>3. Logistic regression: β for "subscribed to the newsletter" is 0.69, so e^β is about 2. Formulate the correct interpretation — and a wrong one that is often heard.</b></summary>
+
+Correct: newsletter subscribers have (ceteris paribus) **twice the odds** of buying. Wrong: "twice the probability". At small probabilities, odds and probability are close together (2 % → about 4 %), at large ones they are not: from 50 % ($\text{odds}=1$) a doubling of the odds leads to 66.7 %, not to 100 %.
+</details>
+
+<details><summary><b>4. Why may time series data not be split into training and test at random?</b></summary>
+
+With a random split, training points lie temporally *after* test points — the model learns from the future of the test cases (in autocorrelated series, $y_{t+1}$ contains a lot of information about $y_t$). The measured quality is then systematically too optimistic and collapses in real use, where the future really is unknown. Correct: a temporal split (past → future), possibly rolling validation.
+</details>
+
+<details><summary><b>5. Name three examples of leakage and the common principle behind them.</b></summary>
+
+(1) The column "cancellation date" when predicting cancellations; (2) standardisation with mean/sd computed jointly on train and test; (3) a random split for time series (or duplicates that end up in both train and test). The principle: **information that would not be available at prediction time flows into training** — the test performance then measures not generalisation but the leak.
+</details>
+
+<details><summary><b>6. PCA on raw data with the columns "income (EUR)" and "age (years)" — what goes wrong?</b></summary>
+
+Without standardisation, income (with variance in the tens of thousands) dominates the covariance matrix purely because of its unit — PC1 shows practically only "income" and age disappears. PCA maximises variance in the units present; the variables only become comparable after standardisation ($z$ values). Therefore: scale first, then PCA.
+</details>
+
+<details><summary><b>7. What is the difference between WHERE and HAVING — and why does `WHERE COUNT(*) > 10` give an error?</b></summary>
+
+`WHERE` filters **individual rows before** the grouping — at that moment there are no groups yet, and therefore no `COUNT(*)`. `HAVING` filters **groups after** the aggregation and may therefore use aggregate functions. The logical order: FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY.
+</details>
+
+<details><summary><b>8. Your A/B test has been running for 3 days, the dashboard shows p = 0.04. The product manager wants to roll out immediately. Two objections?</b></summary>
+
+(1) **Peeking**: whoever looks at significance daily and stops at the first p below 0.05 has a real false positive rate far above 5 % — the test has to reach the run time/sample planned in advance. (2) **Three days are not a full week**: day-of-week effects (and the novelty effect) can drive the result. Besides, there is no look at effect size + confidence interval — "significant" alone does not justify a rollout.
+</details>
+
+<details><summary><b>9. Explain in two sentences how a bootstrap confidence interval for the median comes about.</b></summary>
+
+You draw from the sample many (e.g. 10,000) new samples of the same size **with replacement** and compute the median each time. The interval between the 2.5 % and the 97.5 % quantile of these bootstrap medians is a 95 % confidence interval — entirely without a distributional assumption or a formula for the standard error of the median.
+</details>
+
+<details><summary><b>10. A colleague runs PCA and keeps the components that explain 95 % of the variance, in order to predict a target quantity with them. Which fallacy looms?</b></summary>
+
+PCA is **unsupervised** — it does not know the target quantity. Much variance does not mean much predictive power: the relevant information can sit in a low-variance component (and gets thrown away), while high-variance components can bundle pure noise irrelevant to $y$. For predictions, base the choice of components on predictive performance (validation), not on the share of variance.
+</details>
+
+---
+
+## 6. Literature and sources
+
+**Textbooks**
+
+- **James, Witten, Hastie, Tibshirani — "An Introduction to Statistical Learning" (ISLR), 2nd ed.** — chapters 3 (linear regression) and 4.3 (logistic regression) are the best treatment of the material; PCA in chapter 12. **Free**: https://www.statlearning.com *(beginner-friendly to advanced, the reference book for modules 04/05 as well)*
+- **Hyndman & Athanasopoulos — "Forecasting: Principles and Practice", 3rd ed.** — *the* time series book, completely **free**: https://otexts.com/fpp3/ *(beginner-friendly; examples in R, concepts language-independent)*
+- **Kohavi, Tang & Xu — "Trustworthy Online Controlled Experiments"** — the practical standard on A/B tests, from the people who industrialised them at Microsoft/Amazon. *(advanced)*
+
+**Online courses and interactive material (free)**
+
+- **SQLBolt** (https://sqlbolt.com) — interactive SQL learning in the browser, perfect before the basic project *(beginner-friendly)*
+- **Mode SQL Tutorial** (https://mode.com/sql-tutorial/) — SQL from an analyst's perspective *(beginner-friendly)*
+- **Seeing Theory**, the chapters "Regression Analysis" and "Frequentist Inference" (https://seeing-theory.brown.edu) *(beginner-friendly)*
+- **StatQuest** (YouTube, Josh Starmer): the videos on PCA, linear and logistic regression are gold for intuition *(beginner-friendly)*
+
+**Blog posts / going deeper (free)**
+
+- *explained.ai — "How to interpret PCA plots"* and the Distill article *"How to Use t-SNE Effectively"* (distill.pub) — the latter as an outlook on why dimensionality reduction plots have to be read with care
+- Evan Miller: *"How Not To Run an A/B Test"* — the classic text on the peeking problem
+- Tim Hesterberg: *"What Teachers Should Know About the Bootstrap"* (arXiv) *(advanced)*
+
+---
+
+**Next step:** `projects/01-basic/` (SQL on a real database) → `projects/02-medium/` (build bootstrap and permutation test yourself) → `projects/03-final/` (regression and time series forecasting on the bike sharing data).
+
+---
+---
+
+# Modul 03 — Data Science 2 (deutsche Fassung)
 
 **Worum geht es?** Data Science 1 hat dir beigebracht, Daten zu verstehen und zu beschreiben. Data Science 2 macht daraus **Modelle und belastbare Aussagen**: Zusammenhänge quantifizieren (Regression), zeitliche Strukturen analysieren (Zeitreihen), Merkmale konstruieren (Feature Engineering), hochdimensionale Daten bändigen (PCA) und Daten dort holen, wo sie wirklich liegen (SQL). Das Modul ist die Brücke zwischen deskriptiver Analyse und dem maschinellen Lernen der Module 04/05.
 

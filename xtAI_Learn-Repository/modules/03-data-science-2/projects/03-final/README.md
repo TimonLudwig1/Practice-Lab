@@ -1,4 +1,45 @@
-# Projekt 03 (final) — Nachfrage erklären und vorhersagen (Regression & Zeitreihen)
+# Project 03 (final) — Explaining and predicting demand (regression and time series)
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Format:** Jupyter notebook (`regression_forecasting.ipynb`) + download script.
+**Why this format?** Model diagnostics live on plots right next to the code (residuals, forecast vs. reality) — and the project tells one continuous analytical story that should be readable as a report.
+
+**Data: real.** The same bike sharing data (UCI, Capital Bikeshare Washington D.C.) as in the final project of module 02, this time at the **daily level** (`day.csv`, 731 days). The deliberate connection to the familiar scenario is part of the design: "describing" (module 02) becomes "explaining and predicting" (module 03). A bonus of the real data: the test period contains **Hurricane Sandy** — the perfect lesson about the limits of a model.
+
+## Goal
+
+1. **Explain:** simple → quadratic → multiple regression on daily demand; interpret coefficients ceteris paribus; find the non-linearity via the residual plot (comfort temperature about 29 degrees C).
+2. **Predict:** build lag features, split temporally, compete against naive/seasonal baselines (model MAE about 859 vs. 952/1458).
+3. **Leakage demo:** a random split apparently delivers MAE about 625 — and you can explain why that is a lie.
+
+## Prior knowledge
+
+- Sections 1.1–1.2, 2.1, 2.2 of the module script (mandatory)
+- Module 02 in full (especially the bike sharing final project)
+- scikit-learn is used here for the first time; the necessary API (`fit`/`predict`/`score`) is described in the task hints of the notebook (you write the code yourself)
+
+## Tasks
+
+1. Fetch the data: `python datasets/download_data.py` (or copy `day.csv` from module 02).
+2. Work through the notebook: simple regression → residual plot → quadratic term → multiple regression (interpret every coefficient in one sentence!) → lag features + temporal split + baselines → leakage demo → conclusion for management.
+3. Look at the three worst forecast days and explain them (Sandy!).
+
+## What should work in the end
+
+- $R^2$: 0.394 (linear) → 0.453 (quadratic) → 0.794 (multiple); the vertex at 25–31 degrees C.
+- MAE ranking: model (about 859) < naive (about 952) < seasonal naive (about 1458); your self-checks (the value ranges named in the tasks) hold.
+- A random-split MAE of about 625 — with your explanation of why that value does not count.
+- A four- to five-point conclusion in everyday language.
+
+## Solution
+
+Fully executed reference solution: [`solution/solution.ipynb`](solution/solution.ipynb).
+
+---
+---
+
+# Projekt 03 (final) — Nachfrage erklären und vorhersagen (Regression & Zeitreihen) (deutsche Fassung)
 
 **Format:** Jupyter Notebook (`regression_forecasting.ipynb`) + Download-Skript.
 **Warum dieses Format?** Modelldiagnose lebt von Plots direkt am Code (Residuen, Prognose vs. Realität) — und das Projekt erzählt eine durchgehende Analyse-Geschichte, die man als Bericht lesen können soll.
