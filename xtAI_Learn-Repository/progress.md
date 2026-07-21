@@ -52,9 +52,10 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 ## Englisch-Umstellung (laufender Auftrag, Vorrang vor Modul 22)
 
 > ### NEXT ACTION dieses Auftrags
-> **Modul 05 „Machine Learning 2": Modul-README + 3 Projekt-READMEs bilingual, dann die Notebooks auf Englisch.**
-> Modul 04 ist mit `income_prediction` **komplett fertig**. In Modul 05 beginnen die rechenintensiven Notebooks (P01 MLP von Hand, **P02 CNN Fashion-MNIST**, P03 Clustering) — Laufzeit und MacBook-Hitze beachten, torch/MPS im Repo-.venv.
-> Rezept siehe „Arbeitsablauf pro Notebook" weiter unten. Zielzahlen stehen jeweils in den Projekt-READMEs.
+> **Modul 05, Projekt 01-basic: `mlp_from_scratch.ipynb` + `solution/solution.ipynb` auf Englisch.**
+> Die **vier READMEs von Modul 05 sind fertig** (Modul-Skript 653 Zeilen bilingual + 3 Projekt-READMEs). Es fehlen nur noch die 6 Notebooks: P01 (MLP von Hand, numpy, schnell) → P02 (**CNN Fashion-MNIST, torch/MPS, ca. 5-10 min Laufzeit** — Hitze beachten) → P03 (Clustering, CPU, <1 min).
+> Zielzahlen: P01 Gradient-Check < 1e-7 (Referenz ~1e-10), Test-Accuracy >= 0.94 (Referenz 0.95); P02 Parameter-Assert **66 570**, CNN 0.90-0.91 vs MLP 0.86-0.88; P03 GMM-full bester ARI ~0.6, ~2 Hauptsegmente.
+> Rezept siehe „Arbeitsablauf pro Notebook" weiter unten.
 
 **Auftrag:** Jede README bekommt den vollständigen englischen Text als Block **über** dem bestehenden deutschen. Die Projektinhalte selbst (Notebooks, .py) werden **ausschließlich englisch**, inklusive Bezeichnern. Datei- und Ordnernamen ebenfalls englisch. Die verbindliche Regel steht in `CLAUDE.md` im Abschnitt **„Sprachregel"**.
 
@@ -85,7 +86,7 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 02 Data Science 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `0cae09f`, `374a81e`, `6c7e61f`, `80ca895` |
 | 03 Data Science 2 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt (+ 1 Generator) | `598a668`, `b723e1d` |
 | 04 Machine Learning 1 | ✓ | ✓ 3/3 | ✓ 6/6 ausgeführt | `92ab92d`, `d172564`, `028b8a5`, `90817ad` |
-| **05 Machine Learning 2** | **offen — als Nächstes** | offen | offen | — |
+| **05 Machine Learning 2** | ✓ | ✓ 3/3 | **0/6 — als Nächstes P01** | `<neu>` |
 | 06–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)

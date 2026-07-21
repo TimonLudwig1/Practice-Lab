@@ -1,4 +1,59 @@
-# Projekt 02 (medium): CNN-Bildklassifikation mit PyTorch — Ablationsstudie
+# Project 02 (medium): CNN image classification with PyTorch — an ablation study
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+## Goal
+
+Build a convolutional neural network in PyTorch and check three claims of the script **experimentally**, cleanly as an ablation (never change more than one factor at a time):
+
+1. **Architectural bias:** CNN (about 66k parameters) vs. MLP (about 235k parameters) — does structure beat raw capacity?
+2. **Regularization:** dropout + weight decay (AdamW) + data augmentation — what happens to the train/test gap in the short run (3 epochs) versus the long run (10 epochs)?
+3. **Optimizer:** Adam vs. SGD+momentum at an identical budget.
+
+Plus error diagnostics: the confusion matrix and the most confident misclassifications.
+
+**Why this format (Jupyter notebook):** the ablation lives on learning-curve plots right next to the training code; a notebook documents the experiment and the finding in one place.
+
+**Why real data (Fashion-MNIST):** 70,000 real Zalando product images, 10 classes — more demanding than MNIST (shirt/t-shirt/pullover are hard even for humans), but small enough for a CPU or an Apple GPU. `torchvision` downloads it automatically (about 30 MB into `datasets/`, excluded from the repository via `.gitignore`). For the ablation we use 20,000 training images (the constant `SUBSET` — set it to 60,000 for peak performance).
+
+## Prior knowledge
+
+- Project 01 (you know what `loss.backward()` does internally)
+- Script 2.1 (optimizers), 2.3 (regularization), 2.4 (BatchNorm), 2.5 (CNNs)
+
+## Setup
+
+```bash
+source .venv/bin/activate
+jupyter lab modules/05-machine-learning-2/projects/02-medium/image_classification_cnn.ipynb
+```
+
+It runs on an Apple GPU (`mps`), on CUDA or on a CPU — detected automatically. Reference runtime on an M-series Mac: about 5–10 minutes for the whole notebook.
+
+## Tasks (step by step)
+
+1. **Look at the data** (given): the loading pipeline with normalization and a second, augmented loader (RandomCrop + flip).
+2. **TODO 1 — build the CNN:** two `[Conv3×3→BN→ReLU]×2→MaxPool` blocks (32, 64 channels) → global average pooling → dropout → linear. An assert cell checks the parameter count (**expected: 66,570** — work it out by hand beforehand, the formula is in script 2.5).
+3. **TODO 2 — repair `evaluate`:** one decisive line is missing. Without it all test metrics are wrong — find it and explain which two mechanisms are affected.
+4. **TODO 3 — complete the ablation configurations** (Adam / AdamW+wd / SGD+momentum, the augmented loader for configuration C).
+5. **Run the ablation and interpret it** — compare against the expectations stated in the notebook text.
+6. **Error diagnostics:** the confusion matrix; which pairs of classes does the network confuse, and why?
+7. **The long-run experiment:** 10 epochs plain vs. regularized — is the overfitting gap visible?
+
+## What should work in the end
+
+- The parameter-count assert passes (66,570).
+- The CNN clearly beats the MLP (reference after 3 epochs on the 20k subset: CNN about 0.90–0.91, MLP about 0.86–0.88 test accuracy).
+- Using your own curves, you can explain why the regularized variant is not yet ahead after 3 epochs but has the smaller train/test gap after 10.
+
+## Reference solution
+
+[`solution/solution.ipynb`](solution/solution.ipynb) — fully executed, with all curves, tables and interpretation texts.
+
+---
+---
+
+# Projekt 02 (medium): CNN-Bildklassifikation mit PyTorch — Ablationsstudie (deutsche Fassung)
 
 ## Ziel
 
@@ -36,7 +91,7 @@ Läuft auf Apple-GPU (`mps`), CUDA oder CPU — wird automatisch erkannt. Refere
 4. **TODO 3 — Ablations-Konfigurationen** vervollständigen (Adam / AdamW+wd / SGD+Momentum, Augmentierungs-Loader für Konfiguration C).
 5. **Ablation ausführen und interpretieren** — vergleiche mit den Erwartungen im Notebook-Text.
 6. **Fehlerdiagnose:** Confusion Matrix; welche Klassenpaare verwechselt das Netz und warum?
-7. **Langzeit-Experiment:** 10 Epochen pur vs. reguarisiert — sichtbare Overfitting-Schere?
+7. **Langzeit-Experiment:** 10 Epochen pur vs. regularisiert — sichtbare Overfitting-Schere?
 
 ## Was am Ende funktionieren soll
 
