@@ -76,8 +76,8 @@ At the end there is a short **reflection part** (in writing, bullet points).
 
 The folder **`solution/`** holds `search_solution.ipynb` — fully implemented
 and **executed** (with outputs and the bar chart). Only use it once you have
-tried the tasks yourself. The reflection questions are deliberately left
-unanswered — they are yours to work through.
+tried the tasks yourself. The answers to the reflection questions are at the
+end of the solution as well.
 
 > **Tip:** if your A\* does *not* return 418 km, check two things: (a) does
 > `best_first_search` do the goal test at *expansion* time (not at
@@ -163,8 +163,8 @@ Zum Schluss ein kurzer **Reflexionsteil** (schriftlich, Stichpunkte).
 
 Im Ordner **`solution/`** liegt `search_solution.ipynb` — vollständig
 implementiert und **ausgeführt** (mit Ausgaben und Balkendiagramm). Nutze es
-erst, wenn du die Aufgaben selbst versucht hast. Die Reflexionsfragen bleiben
-bewusst unbeantwortet — die sind zum Selbstdurcharbeiten da.
+erst, wenn du die Aufgaben selbst versucht hast. Am Ende der Lösung stehen
+auch die Antworten auf die Reflexionsfragen.
 
 > **Tipp:** Wenn dein A\* *nicht* 418 km liefert, prüfe zwei Dinge: (a) Nutzt
 > `best_first_search` den Zieltest beim *Expandieren* (nicht beim Erzeugen)?
