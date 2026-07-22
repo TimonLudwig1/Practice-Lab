@@ -1,9 +1,9 @@
-"""EuroSAT-Daten für die drei Wege (vorgegeben).
+"""EuroSAT data for the three ways (given).
 
-Stellt zwei Sichten auf dieselben Bilder bereit:
-  - `load_tensors`   : 64x64-Tensoren (nativ) für das From-Scratch-CNN;
-  - `load_pil`       : PIL-Bilder + Labels für Transfer (Vorverarbeitung via Backbone).
-Reproduzierbare Train/Test-Teilmengen über einen festen Seed.
+Provides two views of the same images:
+  - `load_tensors`   : 64x64 tensors (native) for the from-scratch CNN;
+  - `load_pil`       : PIL images + labels for transfer (preprocessing via the backbone).
+Reproducible train/test subsets via a fixed seed.
 """
 import os
 import numpy as np
@@ -20,7 +20,7 @@ def _indices(n_total, n_train, n_test, seed):
 
 
 def load_tensors(n_train=4000, n_test=2000, seed=0):
-    """64x64-Tensoren (C,H,W) in [0,1] + Labels, für das From-Scratch-CNN."""
+    """64x64 tensors (C,H,W) in [0,1] + labels, for the from-scratch CNN."""
     global _CLASSES
     ds = datasets.EuroSAT(root=DATA_DIR, download=True, transform=transforms.ToTensor())
     _CLASSES = ds.classes
@@ -31,7 +31,7 @@ def load_tensors(n_train=4000, n_test=2000, seed=0):
 
 
 def load_pil(n_train=4000, n_test=2000, seed=0):
-    """PIL-Bilder + Labels (für Transfer: das Backbone bringt seine eigene Vorverarbeitung)."""
+    """PIL images + labels (for transfer: the backbone brings its own preprocessing)."""
     ds = datasets.EuroSAT(root=DATA_DIR, download=True)
     tr, te = _indices(len(ds), n_train, n_test, seed)
     train = [(ds[int(i)][0], ds[int(i)][1]) for i in tr]

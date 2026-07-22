@@ -1,7 +1,7 @@
-"""Die beiden Transfer-Wege: Feature-Extraktion (Modus B) und Fine-Tuning (Modus C).
+"""The two transfer ways: feature extraction (mode B) and fine-tuning (mode C).
 
-Backbone: MobileNetV3-Small (ImageNet-vortrainiert). Alles CPU-tauglich; Fine-Tuning wird
-bewusst klein gehalten (nur letzter Block + Kopf, reduzierte Auflösung, wenige Epochen).
+Backbone: MobileNetV3-Small (ImageNet-pretrained). Everything CPU-capable; fine-tuning is
+deliberately kept small (only the last block + head, reduced resolution, few epochs).
 """
 import numpy as np
 import torch
@@ -11,14 +11,14 @@ from torchvision.models import mobilenet_v3_small, MobileNet_V3_Small_Weights
 
 WEIGHTS = MobileNet_V3_Small_Weights.IMAGENET1K_V1
 
-# reduzierte Vorverarbeitung fürs Fine-Tuning (96px statt 224px -> viel billiger)
+# reduced preprocessing for fine-tuning (96px instead of 224px -> much cheaper)
 FT_PREPROCESS = transforms.Compose([
     transforms.Resize(96), transforms.CenterCrop(96), transforms.ToTensor(),
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
 ])
 
 
-# ---- Modus B: Feature-Extraktion (eingefrorenes Backbone) ------------------
+# ---- Mode B: feature extraction (frozen backbone) -------------------------
 def build_feature_extractor():
     model = mobilenet_v3_small(weights=WEIGHTS)
     for p in model.parameters():
@@ -37,10 +37,10 @@ def extract_features(model, preprocess, pil_images, batch_size=128):
     return np.concatenate(feats, axis=0)
 
 
-# ---- Modus C: Fine-Tuning (Kopf + letzter Block, klein) --------------------
+# ---- Mode C: fine-tuning (head + last block, small) -----------------------
 def build_finetune_model(n_classes=10):
-    """Pretrained Backbone mit neuem Kopf; nur der letzte Feature-Block und der Kopf
-    sind trainierbar (alles andere eingefroren -> billig)."""
+    """Pretrained backbone with a new head; only the last feature block and the head are
+    trainable (everything else frozen -> cheap)."""
     model = mobilenet_v3_small(weights=WEIGHTS)
     model.classifier[3] = nn.Linear(model.classifier[3].in_features, n_classes)
     for p in model.parameters():
@@ -53,7 +53,7 @@ def build_finetune_model(n_classes=10):
 
 
 def finetune(model, train_pairs, test_pairs, epochs=5, lr=5e-4, batch_size=32, log=print):
-    """Kurzes Fine-Tuning bei reduzierter Auflösung. train/test: Listen von (PIL, label)."""
+    """Short fine-tuning at reduced resolution. train/test: lists of (PIL, label)."""
     Xtr = torch.stack([FT_PREPROCESS(im) for im, _ in train_pairs])
     ytr = torch.tensor([y for _, y in train_pairs])
     Xte = torch.stack([FT_PREPROCESS(im) for im, _ in test_pairs])
@@ -69,5 +69,5 @@ def finetune(model, train_pairs, test_pairs, epochs=5, lr=5e-4, batch_size=32, l
         model.eval()
         with torch.no_grad():
             acc = (model(Xte).argmax(1) == yte).float().mean().item()
-        log(f"  Fine-Tune Epoche {ep}: Test-Acc {acc:.3f}")
+        log(f"  Fine-tune epoch {ep}: test acc {acc:.3f}")
     return acc
