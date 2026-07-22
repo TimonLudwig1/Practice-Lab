@@ -1,4 +1,119 @@
-# Projekt 02 (medium) — Ein GCN from scratch (und was die Evaluation daraus macht)
+# Project 02 (medium) — a GCN from scratch (and what the evaluation makes of it)
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Format: Python project** (`.py` + tests). **Why?** The normalized adjacency has to be **exactly**
+right — and unit tests are the right tool for that (several test cases recompute it by hand). It
+also separates things cleanly: data ↔ model ↔ experiment.
+
+---
+
+## Goal
+
+You build a **graph convolutional network** (Kipf & Welling 2017) **by hand** in plain PyTorch —
+without `torch_geometric`. In the end it is ~15 lines, and afterwards the library holds no more
+mystery.
+
+Then you let it compete against the heuristics from project 01 on the real AS topology — **under
+two evaluation protocols**. The actual question of this project is not "which model is better?",
+but: **does the answer depend on how I measure?**
+
+## Prior knowledge
+
+Module 16 script, **section 2.3** (message passing, the GCN derivation), **2.4** (over-smoothing),
+**2.5** (link prediction + the three traps). Project 01 (heuristics, degree confound). PyTorch
+(module 05).
+
+## Files
+
+| File | Role |
+|---|---|
+| `graph_data.py` | Load the graph, link split, **both** negative samplers. **Given.** |
+| `gcn.py` | Normalized adjacency + GCN + control group. **This is your work** (4 TODOs). |
+| `run.py` | The experiment: all methods × both protocols + plot. Given. |
+| `test_gcn.py` | Test suite (**14 tests**). |
+
+## Task
+
+Four TODOs in `gcn.py`. **The difficulty is not the code, it is understanding the formula:**
+
+1. **`normalized_adjacency(edges, n)`** — $\hat A=\tilde D^{-1/2}(A+I)\tilde D^{-1/2}$ as a
+   **sparse** COO tensor. The blueprint is in the docstring. Think of: both edge directions,
+   self-loops, and catching `Inf` (isolated nodes!).
+2. **`GCN.forward`** — two layers: `relu(W1(A_hat @ emb))`, then `W2(A_hat @ H)`.
+3. **`MLPWithoutStructure.forward`** — the same thing **without** any `A_hat` multiplication (the
+   control group).
+4. **`edge_score`** — the row-wise dot product of the endpoint embeddings.
+
+The tests recompute $\hat A$ **by hand** (path 0–1–2: $\hat A_{01}=1/\sqrt{2\cdot3}$), check
+symmetry, self-loops, eigenvalues in $[-1,1]$, hub damping, and that after 1 hop message passing
+sees the neighbour but **not yet** the next-but-one node.
+
+## What comes out at the end
+
+`python test_gcn.py` → **14/14 green** (~1 s). `python run.py` → the experiment (~15 s):
+
+**ROC-AUC — the same models, two evaluation protocols:**
+
+| Method | uniform (naive) | **degree-matched (honest)** |
+|---|---|---|
+| Common neighbors | 0.715 | 0.552 |
+| Adamic-Adar | 0.720 | 0.560 |
+| **Pref. attachment** | **0.765** ← the winner | **0.407** ← chance level |
+| MLP (without graph) | 0.660 | 0.473 |
+| **GCN (2 layers)** | 0.754 | **0.642** ← the winner |
+
+### The three insights
+
+1. **The measurement protocol reverses the ranking.** Evaluated naively, **preferential
+   attachment** "wins" (0.765) and the GCN (0.754) looks like expensive nonsense — you would
+   **discard** the GNN. Evaluated honestly, PA is at **0.407** (worse than guessing) and the GCN is
+   clearly ahead with **0.642**. **The same models, the same data, the opposite conclusion.**
+2. **The control group proves that the structure makes the difference.** The MLP has exactly the
+   same parameters and the same embedding table as the GCN — only **no message passing**. It ends
+   up at **0.473** degree-matched (≈ chance), the GCN at **0.642**. So the gain demonstrably comes
+   from $\hat A$, not from the model size.
+3. **A GNN is no free lunch.** 0.642 is better than everything else — but far from "solved". Link
+   prediction on a real, incompletely measured AS topology is **hard**. The naive evaluation only
+   covered that up.
+
+> **The core of it:** it is not only the model that can deceive — the **construction of the test
+> set** already decides what you measure. Uniformly drawn negative examples are the standard in
+> countless link prediction papers.
+
+## Running / setup
+
+```bash
+/.../xtAI_Learn-Repository/.venv/bin/python test_gcn.py   # 14 tests, ~1 s
+/.../xtAI_Learn-Repository/.venv/bin/python run.py        # experiment + plot, ~15 s
+```
+`torch`, `networkx`, `numpy`, `scikit-learn` (+ `matplotlib`). **CPU** — thanks to sparse matmul
+the GCN trains on 10,670 nodes in ~5 s. The graph is downloaded to `datasets/` on the first run
+(69 KB, gitignored).
+
+> **Why sparse is mandatory:** dense, $\hat A$ would be **455 MB** — and 99.96 % of it zeros.
+> `torch.sparse.mm` computes only on the 50,274 non-zero entries.
+
+## Solution
+
+Complete in [`solution/`](solution/). Try it yourself first — the tests tell you very precisely
+which part of $\hat A$ is not right yet (symmetry? self-loops? normalization?).
+
+## Going further
+
+- **Measure over-smoothing** (script 2.4): build 1/2/4/8 layers. From when on does it get worse?
+  Measure the mean pairwise cosine similarity of the embeddings — does it converge to 1?
+- **The GraphSAGE idea**: replace the embedding table with **structural features** (degree,
+  clustering) as $H^{(0)}$. This makes the model **inductive** — test it on nodes that never
+  occurred in training.
+- **GAT**: replace the fixed $\hat A$ weights with learned attention (script 2.3). Is it worth it
+  here?
+- **Base rate** (module 15): compute the **PPV** of the GCN at $\pi\approx3.9\cdot10^{-4}$. How
+  many of the top 100 suggestions would be real?
+
+---
+
+# Projekt 02 (medium) — Ein GCN from scratch (und was die Evaluation daraus macht) (deutsche Fassung)
 
 **Format: Python-Projekt** (`.py` + Tests). **Warum?** Die normalisierte Adjazenz muss
 **exakt** stimmen — dafür sind Unit-Tests das richtige Werkzeug (mehrere Testfälle rechnen sie
@@ -36,12 +151,12 @@ Skript **Modul 16, Abschnitt 2.3** (Message Passing, GCN-Herleitung), **2.4** (O
 In `gcn.py` vier TODOs. **Die Schwierigkeit ist nicht der Code, sondern die Formel zu
 verstehen:**
 
-1. **`normalisierte_adjazenz(kanten, n)`** — $\hat A=\tilde D^{-1/2}(A+I)\tilde D^{-1/2}$ als
+1. **`normalized_adjacency(edges, n)`** — $\hat A=\tilde D^{-1/2}(A+I)\tilde D^{-1/2}$ als
    **sparse** COO-Tensor. Der Bauplan steht im Docstring. Denk an: beide Kantenrichtungen,
    Self-Loops, und `Inf` abfangen (isolierte Knoten!).
 2. **`GCN.forward`** — zwei Schichten: `relu(W1(A_hat @ emb))`, dann `W2(A_hat @ H)`.
-3. **`MLPOhneStruktur.forward`** — dasselbe **ohne** jede `A_hat`-Multiplikation (Kontrollgruppe).
-4. **`kanten_score`** — zeilenweises Skalarprodukt der Endpunkt-Embeddings.
+3. **`MLPWithoutStructure.forward`** — dasselbe **ohne** jede `A_hat`-Multiplikation (Kontrollgruppe).
+4. **`edge_score`** — zeilenweises Skalarprodukt der Endpunkt-Embeddings.
 
 Die Tests rechnen $\hat A$ **von Hand nach** (Pfad 0–1–2: $\hat A_{01}=1/\sqrt{2\cdot3}$),
 prüfen Symmetrie, Self-Loops, Eigenwerte in $[-1,1]$, Hub-Dämpfung, und dass Message Passing
