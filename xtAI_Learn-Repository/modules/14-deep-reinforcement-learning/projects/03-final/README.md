@@ -1,4 +1,139 @@
-# Projekt 03 (final) — RL trifft Optimalsteuerung: Policy Gradient vs. LQR
+# Project 03 (final) — RL meets optimal control: policy gradient vs. LQR
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Format: Python project, _no code given_.** This final project gets **no scaffold** — you build
+everything yourself: the system, the exact reference solution, the model-free learner, the
+evaluation. This is the master's exam performance of the module and the conclusion of the whole
+RL block (13 + 14).
+
+**Why a `.py` project?** Four components (the system, the Riccati reference, the policy-gradient
+agent, the evaluation) interlock cleanly separated and testable — the architecture of real
+control/RL software. A notebook would blur that.
+
+---
+
+## The idea — and why it delivers on the module title
+
+The module is called "Deep RL **for optimal control**". This project makes the bridge concrete:
+
+> There is a **problem class** in which the optimal control is known **exactly and in closed
+> form**: **linear dynamics + quadratic costs** → the **LQR**, solved via the **Riccati
+> equation**. This gives you a **perfect benchmark**. A model-free RL agent that does **not know**
+> $A,B,Q,R$ has to try to reach it from experience alone. **How close does it get — and at what
+> price?**
+
+This is exactly the structure of the module-13 finale (there: value iteration as the exact
+reference for a discrete MDP), only one level up: a **continuous** state *and* a **continuous**
+control input.
+
+## The system (double integrator)
+
+A mass on a frictionless rail — the "hello world" of control engineering, and a realistic model
+for positioning tasks (a robot axis, a camera zoom, vehicle longitudinal control).
+
+- **State** $x=[\text{position},\ \text{velocity}]\in\mathbb R^2$
+- **Control input** $u\in\mathbb R$ (force) — **continuous**! (DQN from project 01 is thereby ruled out.)
+- **Dynamics** $x_{t+1}=Ax_t+Bu_t$ with $A=\begin{pmatrix}1&dt\\0&1\end{pmatrix}$, $B=\begin{pmatrix}dt^2/2\\dt\end{pmatrix}$
+- **Costs** $c(x,u)=x^\top Q x+u^\top R u$, reward $r=-c$
+
+Goal: from a random start state quickly **and** energy-efficiently into the origin. $Q$ weights
+the state error, $R$ the control energy — the classical conflict of objectives.
+
+## Assignment (step by step)
+
+Build (the file names are a suggestion):
+
+1. **`lqr_env.py` — the system.** A gym-like API `reset()`/`step(u) → (x', r, done)` with an
+   episode length `horizon`. $A,B,Q,R$ as attributes — but **only the reference may read them**;
+   the learner sees only $(x,u,r,x')$. Plus a helper that rolls out a linear feedback $u=w^\top x$
+   deterministically.
+2. **`lqr_reference.py` — the exact solution.** Solve the **discrete algebraic Riccati equation**
+   by fixed-point iteration
+   $$P \leftarrow Q + A^\top P A - A^\top P B\,(R+B^\top P B)^{-1}B^\top P A$$
+   and obtain from it $K=(R+B^\top PB)^{-1}B^\top PA$ with $u^*=-Kx$ as well as $J^*(x_0)=x_0^\top P x_0$.
+   *(This is, in content, **value iteration on the quadratic value function** $V(x)=x^\top Px$
+   instead of on a table — the direct continuation of module 13.)*
+   Add a stability check via the eigenvalues of $A-BK$.
+3. **`policy_gradient_continuous.py` — the model-free learner.** A **Gaussian** policy
+   $\pi_\theta(u\mid x)=\mathcal N(w^\top x,\ \sigma^2)$. **Choose the mean function linear** —
+   then the learned weights $w$ are **directly** comparable with $-K$ (parameter against
+   parameter!). Train with REINFORCE.
+4. **`run.py` — the experiment.** Compute the reference, learn model-free, compare: $w$ vs. $-K$,
+   the mean cost vs. the LQR optimum (**optimality gap in %**), plot the learning curve and a
+   trajectory comparison.
+5. **`test_*.py` — tests.** Among others: the Riccati fixed point satisfies the DARE, $P$
+   symmetric positive definite, the closed loop stable ($|\lambda(A-BK)|<1$), $J^*(x_0)=x_0^\top Px_0$
+   agrees with the simulation, **no other linear controller beats $-K$** (the optimality test),
+   the learned controller is better than doing nothing and has negative feedback.
+
+**Parameter suggestion:** $dt=0.1$, $Q=\mathrm{diag}(1,\ 0.1)$, $R=(0.1)$, `horizon`$=50$,
+$x_0\sim\mathcal N(0,I)$, $\gamma=1$.
+
+### Three pitfalls on which this project hangs
+
+Plan for them — without them REINFORCE does **not** converge here:
+
+1. **A batch of episodes per update.** A single-episode gradient is far too noisy.
+2. **A per-time-step baseline.** Returns at $t=0$ are *much* larger in magnitude than at $t=T-1$.
+   If you normalize **globally** over the batch, this **time trend** dominates the learning signal.
+   Center/scale **separately at each $t$** over the batch. (That was for us the difference between
+   "barely learns" and "3 % from the optimum".)
+3. **Clamp $\log\sigma$ from below.** Otherwise the exploration collapses ($\sigma\to0$), the log
+   probabilities explode and the training **diverges** (reproducible for us: the optimality gap
+   jumped to 350–770 %).
+
+## What should come out in the end
+
+- **Riccati** converges in ~110 iterations (milliseconds) to $-K \approx [-2.76,\ -2.51]$, the
+  closed loop stable ($|\lambda|\approx0.87<1$).
+- **Validation of the reference:** the simulated cost of $u=-Kx$ from $x_0=[1,0]$ **= 9.0776** =
+  $x_0^\top Px_0$ **= 9.0776** ✓ (to 4 decimals — that is how you *know* the reference is correct).
+- **Learned model-free:** $w\approx[-2.04,\ -2.23]$, mean cost **12.43** vs. the LQR optimum
+  **12.02** → **optimality gap ≈ 3.4 %**, in ~70 s / ~19,200 episodes.
+
+### The interpretation you should deliver
+
+- **The price of being model-free.** LQR solves the problem **exactly** in ~110 Riccati iterations
+  (milliseconds) — *because it knows $A,B,Q,R$*. The RL agent needs **~19,200 episodes** to get to
+  within ~3 % — *because it knows nothing*. **This is the central message of the module:** if you
+  know your model, use optimal control. RL is the answer for the cases where you do **not** know it
+  (or it is nonlinear/unknown) — then it is unbeatable, but expensive.
+- **Why does a gap remain?** The learned feedback is systematically a bit *less aggressive* than
+  $-K$. Two real reasons: (a) the policy keeps **exploration noise** $\sigma\approx0.22$ — the
+  optimal *stochastic* policy is milder than the optimal *deterministic* controller; (b) a finite
+  horizon ($T=50$) vs. $K$ from the **infinite** horizon. The cost landscape is **flat** around the
+  optimum — which is why the gap in the *costs* (3 %) is much smaller than the distance in the
+  *parameters* ($\|w-(-K)\|\approx0.77$). **The same observation as in the module-13 finale.**
+
+## Reference solution
+
+Complete and tested in [`solution/`](solution/) (the system, the Riccati reference, the Gaussian
+policy gradient, `run.py`, **12 tests**). **Try it yourself first!**
+
+```bash
+/.../xtAI_Learn-Repository/.venv/bin/python solution/test_lqr.py   # 12 tests, ~20 s
+/.../xtAI_Learn-Repository/.venv/bin/python solution/run.py        # experiment + plots, ~70 s
+```
+`numpy` + `torch` (+ `matplotlib`). CPU, a linear system, a tiny policy (2 weights + $\log\sigma$).
+
+## Extensions (for the especially motivated)
+
+- **Process noise** $x_{t+1}=Ax_t+Bu_t+w_t$, $w\sim\mathcal N(0,W)$: LQR stays optimal (*certainty
+  equivalence*!) — confirm that empirically. How does $J^*$ change?
+- **Actor-critic**: replace the batch baseline with a learned **quadratic** critic
+  $\hat V(x)=x^\top \hat P x$ — does it converge to the Riccati $P$?
+- **Nonlinear**: make the system nonlinear (e.g. pendulum swing-up). Now there is **no** exact
+  solution any more — exactly where RL wins. Compare against an LQR **linearized** around the
+  equilibrium: where does it fail?
+- **MPC** (script 4.3): with a known model, plan over a finite horizon, execute only the first
+  step. Compare against LQR and RL.
+- **Estimate the unknown model** (model-based RL, script 4.4): estimate $A,B$ by linear regression
+  from data, compute LQR on it. How much data do you need to beat the 3 %?
+
+---
+
+# Projekt 03 (final) — RL trifft Optimalsteuerung: Policy Gradient vs. LQR (deutsche Fassung)
 
 **Format: Python-Projekt, _ohne Code-Vorgabe_.** Dieses Abschlussprojekt bekommt **kein
 Gerüst** — du baust alles selbst: das System, die exakte Referenzlösung, den modellfreien

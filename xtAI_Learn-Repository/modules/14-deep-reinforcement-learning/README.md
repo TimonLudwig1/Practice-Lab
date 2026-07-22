@@ -1,4 +1,451 @@
-# Modul 14 — Deep Reinforcement Learning for Optimal Control
+# Module 14 — Deep Reinforcement Learning for Optimal Control
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The projects themselves are English only.
+
+> **What is this about?** In module 13 the value function was a **table** $Q(s,a)$ — that
+> works only for small, discrete state spaces. As soon as the state becomes
+> high-dimensional or **continuous** (a camera image, the joint angles of a robot, the
+> attitude of a drone), no table can be stored any more. **Deep RL** replaces the table with
+> a **neural network** that *generalizes* over similar states. This module introduces the
+> core families: **value-based** (DQN and extensions), **policy-based** (REINFORCE,
+> actor-critic, PPO) and **continuous control** (DDPG/TD3/SAC) — and builds the bridge to
+> **classical optimal control** (LQR, Bellman/HJB, Pontryagin), from which the module name
+> comes.
+
+**Helpful prior knowledge:** module 13 (MDP, Bellman, Q-learning, the policy-gradient idea,
+the "deadly triad"), module 05/09 (neural networks & PyTorch, backprop, optimizers), the
+basics of calculus/linear algebra (gradient, eigenvalues, quadratic forms).
+
+**Modules you should have done first:**
+- **Module 13 (RL)** — *mandatory*. We build directly on the Bellman equations, Q-learning,
+  SARSA, ε-greedy, the policy-gradient theorem and the **deadly triad**. Every algorithm here
+  is the "deep" version of a tabular method there.
+- **Module 05 (ML 2)** — MLPs, backpropagation, SGD/Adam, regularization, PyTorch practice.
+
+> **Hardware note.** Real deep RL (Atari from pixels, MuJoCo robots, large PPO) needs GPU
+> hours to days and is **not** sensibly trainable on a laptop. Therefore: we explain the
+> **expensive** methods fully **theoretically** in formal notation, and the projects
+> deliberately use **small** tasks (a self-built CartPole, linear systems), **small networks**
+> and **few episodes**, so that everything runs in minutes on CPU/MPS. The understanding is
+> identical — only the scale is reduced.
+
+---
+
+## Learning objectives
+
+After this module you can …
+
+- explain **why** and **how** a neural network replaces the Q table, and name the **deadly
+  triad** (function approximation + bootstrapping + off-policy) as the central source of
+  instability;
+- derive **DQN** completely — including **experience replay** and the **target network** — and
+  justify how both tricks tame the triad; place **double DQN**, **dueling** and **prioritized
+  replay**;
+- explain the contrast **value-based vs. policy-based** and write down the **policy-gradient
+  theorem**, **REINFORCE**, the **baseline/advantage** and **actor-critic** (A2C, GAE)
+  formally;
+- understand **PPO** and its **clipped surrogate objective** (why "proximal");
+- place **continuous control** (deterministic policy gradient → **DDPG/TD3**, entropy → **SAC**);
+- establish the connection to **classical optimal control**: **Bellman ↔ the HJB equation**,
+  **LQR/Riccati** as an exactly solvable special case, **Pontryagin's maximum principle**,
+  **MPC**;
+- build and stabilize a small deep-RL system yourself in **PyTorch**.
+
+---
+
+## 1 · Basics — from the table to the network
+
+### 1.1 Why function approximation (recap & deepening)
+
+Tabular Q-learning stores a value per $(s,a)$. That fails twice: **memory** (Go has
+$\sim10^{170}$ states) and **experience** (one can never visit every state). Continuous states
+($s\in\mathbb R^n$) even have *uncountably* many entries. Solution: approximate
+$$\hat q(s,a;\mathbf w)\approx q_*(s,a),\qquad \hat v(s;\mathbf w)\approx v_*(s),$$
+with a parametrized function approximator (weights $\mathbf w$). A **neural network** is the
+most expressive choice and learns the **features** itself (instead of hand-designing them).
+The gain is **generalization**: an update in one state improves the estimate in *all similar*
+states. That is why deep RL works in enormous spaces at all — and at the same time the source
+of all instability.
+
+### 1.2 The learning goal as regression — and why it is tricky
+
+In module 13 the **semi-gradient** TD update was
+$$\mathbf w \leftarrow \mathbf w + \alpha\big[\underbrace{R+\gamma \hat q(S',A';\mathbf w)}_{\text{target (bootstrapped)}} - \hat q(S,A;\mathbf w)\big]\nabla_{\mathbf w}\hat q(S,A;\mathbf w).$$
+"Semi", because one pretends the target is **fixed**, although it itself depends on
+$\mathbf w$. Harmless with a tabular representation; with neural approximation three problems
+arise that together form the **deadly triad**:
+
+1. **Function approximation** — an update "leaks" onto other states (can shift wrong ones).
+2. **Bootstrapping** — the target contains one's own (erroneous) estimate → errors can
+   amplify themselves.
+3. **off-policy** — one learns from data of a different distribution than the target policy.
+
+All three together can cause **divergence** (values run off to $\pm\infty$). Two further
+violations of the usual supervised-learning assumptions come on top: the data are **strongly
+correlated** (consecutive transitions resemble each other) and the **target distribution
+moves** (the policy changes during learning → a *non-stationary target*). The deep-RL
+algorithms are at their core **tricks to stay stable nonetheless.**
+
+---
+
+## 2 · Value-based deep RL: DQN
+
+### 2.1 Deep Q-network (DQN)
+
+**DQN** (Mnih et al. 2013/2015, the "Atari paper") is Q-learning with a neural network
+$Q(s,a;\theta)$ (usually: input $s$, one output per action). One minimizes the expected
+squared **TD error**:
+$$L(\theta)=\mathbb E_{(s,a,r,s')\sim \mathcal D}\Big[\big(\underbrace{r+\gamma\max_{a'}Q(s',a';\theta^-)}_{\text{target }y} - Q(s,a;\theta)\big)^2\Big].$$
+
+Two ingredients turn this into a *stably trainable* method:
+
+**(a) Experience replay.** Store transitions $(s,a,r,s')$ in a **buffer** $\mathcal D$ (e.g.
+the last $10^6$) and train on **random minibatches** from it. This (i) **decorrelates** the
+data (breaks the temporal dependence) and (ii) uses each experience **multiple times** (data
+efficiency). — Addresses the triad component "correlated data".
+
+**(b) Target network.** The target $y$ uses a **frozen** network $\theta^-$ that is only pulled
+towards $\theta$ every $C$ steps (or via a Polyak average
+$\theta^-\leftarrow\tau\theta+(1-\tau)\theta^-$). Without it one would "shoot at a moving
+target" — the target $y$ would depend immediately on every weight update and could
+oscillate/diverge. The frozen target makes learning resemble a stable **regression problem**
+again. — Addresses the "non-stationary target".
+
+**Training loop (pseudocode):**
+```
+initialize Q(θ), target Q(θ⁻)=θ, an empty replay buffer D
+for each episode:
+    s = env.reset()
+    repeat:
+        a = ε-greedy(Q(s,·;θ))                 # exploration as in module 13
+        s', r, done = env.step(a);  D.push(s,a,r,s',done)
+        minibatch B ~ D
+        y = r + γ·(1-done)·max_a' Q(s',a';θ⁻)  # target with the target network
+        θ ← θ - lr·∇θ  mean_B (Q(s,a;θ) - y)²   # one SGD/Adam step
+        every C steps:  θ⁻ ← θ                  # pull the target network along
+        s = s'
+    reduce ε
+```
+Project 01 builds exactly this on a self-built CartPole.
+
+### 2.2 DQN extensions (short but complete)
+
+- **Double DQN** — the $\max$ operator in the target systematically **overestimates** (the max
+  over noisy estimators ⇒ a positive bias). Solution: **decouple selection and evaluation** —
+  choose the action with the *online* network, evaluate it with the *target* network:
+  $$y = r + \gamma\,Q\big(s',\,\arg\max_{a'}Q(s',a';\theta);\,\theta^-\big).$$
+- **Dueling DQN** — decompose $Q(s,a)=V(s)+A(s,a)$ into a **state value** and an **advantage**
+  (with $A$ centered on its mean). Useful when the state value dominates and the action choice
+  barely matters.
+- **Prioritized experience replay** — draw transitions with a large TD error **more often**
+  (there is the most to learn there), corrected via importance-sampling weights.
+- **Rainbow** combines these and others (n-step, distributional RL, noisy nets).
+
+**Limit of DQN:** it needs a discrete $\arg\max_a$ → **no continuous** actions (for those see
+section 4). And: purely value-based, it learns a deterministic greedy policy.
+
+---
+
+## 3 · Policy-based deep RL
+
+### 3.1 Why learn the policy directly?
+
+Value-based methods learn $Q$ and derive the policy *indirectly* (greedily). **Policy-gradient**
+methods parametrize the policy **directly**, $\pi_\theta(a\mid s)$, and optimize it by gradient
+ascent. Advantages: (i) **continuous** action spaces naturally (a Gaussian policy), (ii)
+**stochastic** optimal policies possible (important under partial observability/in games), (iii)
+smooth improvement instead of a jumpy $\arg\max$. Disadvantage: higher **variance**, often less
+data-efficient.
+
+### 3.2 The policy-gradient theorem & REINFORCE
+
+The goal is the expected return $J(\theta)=\mathbb E_{\tau\sim\pi_\theta}[G_0]$. The
+**policy-gradient theorem** yields (remarkably: **without** a derivative of the environment
+dynamics):
+$$\nabla_\theta J(\theta)=\mathbb E_{\pi_\theta}\!\Big[\sum_{t} \nabla_\theta\log\pi_\theta(A_t\mid S_t)\,\Psi_t\Big],$$
+where $\Psi_t$ is a **credit signal**. Different choices of $\Psi_t$ give different algorithms:
+
+| $\Psi_t$ | Method |
+|---|---|
+| $G_t$ (the full return) | **REINFORCE** (Monte Carlo) |
+| $G_t - b(S_t)$ (baseline) | REINFORCE **with a baseline** (variance reduction) |
+| $Q^\pi(S_t,A_t)$ | actor-critic (Q form) |
+| $A^\pi(S_t,A_t)=Q^\pi-V^\pi$ | **advantage** actor-critic (A2C) |
+| $\delta_t=R_{t+1}+\gamma V(S_{t+1})-V(S_t)$ | TD actor-critic |
+
+**REINFORCE** update (after a whole episode): $\theta\leftarrow\theta+\alpha\sum_t \nabla_\theta\log\pi_\theta(A_t|S_t)\,G_t$.
+Intuition: **increase** the probability of actions that led to a high return. The $\log$
+derivative is called the **score function** (the "REINFORCE trick").
+
+**Baseline.** One may subtract an **arbitrary state-dependent** function $b(S_t)$ from $\Psi_t$
+without changing the expectation (and thus the unbiasedness) — because
+$\mathbb E_{a\sim\pi}[\nabla_\theta\log\pi_\theta(a|s)]=0$. A good baseline (typically
+$b=\hat V(s)$) lowers the **variance** drastically. $G_t-\hat V(S_t)$ estimates the
+**advantage**: "was this action better than the average in this state?".
+
+### 3.3 Actor-critic & GAE
+
+**Actor-critic** combines both worlds: an **actor** $\pi_\theta$ (chooses actions) and a
+**critic** $\hat V_\phi$ (evaluates states, bootstraps à la TD). The critic provides the
+baseline/the advantage, the actor makes the policy-gradient step. **A2C** is the synchronous,
+**A3C** the asynchronous (parallel workers) variant.
+
+The **advantage** can be estimated over different numbers of steps — a bias/variance trade-off
+like n-step in module 13. **Generalized advantage estimation (GAE)** averages them
+geometrically with a parameter $\lambda$:
+$$\hat A_t^{\text{GAE}(\gamma,\lambda)}=\sum_{l=0}^{\infty}(\gamma\lambda)^l\,\delta_{t+l},\qquad \delta_t=R_{t+1}+\gamma \hat V(S_{t+1})-\hat V(S_t).$$
+$\lambda=0$ → pure TD (low variance, more bias), $\lambda=1$ → the Monte-Carlo advantage.
+
+### 3.4 PPO — proximal policy optimization
+
+Naive policy gradient is **sensitive to the step size**: too large an update can "destroy" the
+policy (it then only visits bad states from which it hardly recovers). **TRPO** solved this with
+a hard KL constraint; **PPO** (Schulman et al. 2017) is the simpler, today most-used variant.
+With the **probability ratio**
+$r_t(\theta)=\dfrac{\pi_\theta(A_t|S_t)}{\pi_{\theta_{\text{old}}}(A_t|S_t)}$ PPO maximizes the
+**clipped** objective
+$$L^{\text{CLIP}}(\theta)=\mathbb E_t\Big[\min\big(r_t(\theta)\hat A_t,\ \operatorname{clip}(r_t(\theta),1-\epsilon,1+\epsilon)\hat A_t\big)\Big].$$
+The **clipping** removes the incentive to drive $r_t$ far beyond $1\pm\epsilon$ — the policy
+stays in the **vicinity** (*proximal*) of the old one, which stabilizes the update and allows
+several epochs per dataset (more data-efficient than vanilla PG). PPO is the de-facto standard
+for many continuous and discrete tasks (robotics, RLHF for LLMs).
+
+---
+
+## 4 · Continuous control & optimal control
+
+### 4.1 Deterministic policy gradient: DDPG, TD3
+
+For **continuous** actions ($a\in\mathbb R^m$), $\max_a Q(s,a)$ is no longer trivial. **DDPG**
+(deep deterministic policy gradient) learns a **deterministic** actor policy $\mu_\theta(s)$ and
+a critic $Q_\phi(s,a)$; the actor is moved towards a higher Q value:
+$\nabla_\theta J\approx\mathbb E[\nabla_a Q_\phi(s,a)|_{a=\mu_\theta(s)}\nabla_\theta\mu_\theta(s)]$
+(the chain rule — "move the action uphill in the Q landscape"). It is at its core **DQN for
+continuous actions** (with replay & target networks). Exploration via additive noise.
+
+**TD3** (twin delayed DDPG) fixes DDPG's overestimation with three tricks: **two** critics (take
+the minimum → less overestimation), **delayed** actor updates, and **target-policy smoothing**
+(noise in the target).
+
+### 4.2 Maximum-entropy RL: SAC
+
+**Soft actor-critic (SAC)** maximizes the return **plus** the entropy of the policy:
+$$J(\pi)=\sum_t\mathbb E\big[R_{t+1}+\alpha\,\mathcal H(\pi(\cdot\mid S_t))\big].$$
+The **entropy bonus** $\alpha\mathcal H$ rewards "as random as possible, as long as the task is
+solved" → better exploration, more robust policies, more stable training. SAC is off-policy,
+sample-efficient and one of the strongest algorithms for continuous control.
+
+### 4.3 The bridge to classical optimal control
+
+The module name is **"for optimal control"** — RL is the **data-/model-free** sister of
+classical **optimal control**. The central connections:
+
+- **Bellman ↔ HJB.** The Bellman optimality equation is the **discrete-time** form of the
+  **Hamilton-Jacobi-Bellman (HJB)** equation of continuous optimal control. Both say: "the
+  optimal value now = the immediate utility + the optimal value afterwards". RL solves them by
+  **learning from samples** when the model is unknown.
+- **LQR — the exactly solvable case.** For a **linear** system $x_{t+1}=Ax_t+Bu_t$ with
+  **quadratic** costs $\sum_t (x_t^\top Q x_t + u_t^\top R u_t)$, the optimal control is a
+  **linear feedback** $u_t=-Kx_t$, where $K$ follows from the **algebraic Riccati equation**.
+  This is "value iteration with a closed-form solution" — and serves (in project 03) as the
+  **exact reference** that a learned RL controller has to measure up to (exactly as value
+  iteration was the reference in module 13).
+- **Pontryagin's maximum principle** — the second major approach of optimal control (necessary
+  conditions via the *adjoint state / costate*), complementary to the HJB/dynamic-programming
+  approach.
+- **MPC (model predictive control)** — if a (learned or known) model is available: optimize at
+  each step over a **finite horizon**, execute only the first step, repeat. Closely related to
+  **model-based RL**.
+
+### 4.4 Model-based RL (outlook)
+
+Instead of only learning values/a policy, one can learn a **model** of the dynamics
+$\hat p(s'|s,a)$ and *plan* in it (Dyna, PILCO, world models, MuZero). Advantage: **data
+efficiency** (planning in the model is cheap). Disadvantage: model errors propagate. Hybrid
+methods (Dyna: combine real + model-generated experience) are an active field.
+
+---
+
+## 5 · Practical pitfalls (deep RL is notoriously fragile)
+
+- **Reproducibility** — results fluctuate strongly over random seeds; always average over
+  several seeds.
+- **Reward shaping** — badly chosen rewards lead to *reward hacking* (the agent optimizes the
+  wrong thing).
+- **Hyperparameters** — learning rates, network size, replay size, target-update frequency,
+  $\gamma$ are sensitive; small changes tip the training over.
+- **Exploration** — in environments with sparse reward, ε-greedy/Gaussian noise is often not
+  enough (→ intrinsic motivation, curiosity).
+- **Sim-to-real** — policies learned in simulation transfer poorly to real hardware (the
+  *reality gap*); a countermeasure: domain randomization.
+- **Debugging** — first verify on a *tiny*, solvable task (exactly our approach), watch learning
+  curves & Q values (do they diverge?).
+
+---
+
+## 6 · Summary / cheat sheet
+
+**Map.**
+```
+                         Deep RL
+        ┌───────────────────┼─────────────────────┐
+   value-based         policy-based          continuous control
+   DQN                 REINFORCE             DDPG  (det. PG)
+   +Double/Dueling     +baseline             TD3   (2 critics)
+   +prioritized replay actor-critic (A2C)    SAC   (max-entropy)
+   (discrete actions)  PPO (clipped)         └── optimal control: LQR/HJB/MPC
+```
+
+**DQN target:** $y=r+\gamma\max_{a'}Q(s',a';\theta^-)$ · loss $=(y-Q(s,a;\theta))^2$ · **replay**
++ **target network** = taming the deadly triad.
+
+**Double-DQN target:** $y=r+\gamma Q(s',\arg\max_{a'}Q(s',a';\theta);\theta^-)$.
+
+**Policy gradient:** $\nabla_\theta J=\mathbb E[\sum_t\nabla_\theta\log\pi_\theta(A_t|S_t)\,\Psi_t]$,
+$\Psi_t\in\{G_t,\ G_t-b(s),\ A^\pi(s,a),\ \delta_t\}$.
+
+**Advantage:** $A(s,a)=Q(s,a)-V(s)$ · **GAE**: $\hat A_t=\sum_l(\gamma\lambda)^l\delta_{t+l}$.
+
+**PPO:** maximize $\mathbb E[\min(r_t\hat A_t,\ \text{clip}(r_t,1{-}\epsilon,1{+}\epsilon)\hat A_t)]$,
+$r_t=\pi_\theta/\pi_{\theta_{old}}$.
+
+**Optimal control:** Bellman ↔ **HJB**; linear+quadratic ⇒ **LQR** $u=-Kx$ (Riccati) = the exact
+reference; **MPC** = plan in the model over a horizon.
+
+---
+
+## 7 · Self-test
+
+<details>
+<summary><b>1.</b> Why does deep RL replace the Q table with a network, and what does one gain/risk?</summary>
+
+Because tables are neither storable nor visitable for large/continuous state spaces. A network
+**generalizes** over similar states (one update helps many). Risk: the **deadly triad** arises
+(function approximation + bootstrapping + off-policy) → possible divergence, plus correlated data
+and a moving target.
+</details>
+
+<details>
+<summary><b>2.</b> What do experience replay and the target network serve in DQN — each exactly one problem?</summary>
+
+**Experience replay**: breaks the **temporal correlation** of the data (and uses experience
+multiple times → data efficiency). **Target network**: freezes the bootstrapping **target** →
+prevents "shooting at a moving target" (the non-stationary target) and makes learning resemble a
+stable regression problem.
+</details>
+
+<details>
+<summary><b>3.</b> What is the overestimation bias in DQN and how does double DQN fix it?</summary>
+
+$\max_{a'}Q(s',a')$ takes the maximum over *noisy* estimators → systematically **too high** (a
+positive bias). **Double DQN** decouples **selection** (the online network $\theta$) and
+**evaluation** (the target network $\theta^-$): $y=r+\gamma Q(s',\arg\max_{a'}Q(s',a';\theta);\theta^-)$.
+</details>
+
+<details>
+<summary><b>4.</b> State the policy-gradient theorem and the use of a baseline.</summary>
+
+$\nabla_\theta J=\mathbb E[\sum_t\nabla_\theta\log\pi_\theta(A_t|S_t)\,\Psi_t]$. A state-dependent
+**baseline** $b(s)$ (typically $\hat V(s)$) may be subtracted from $\Psi_t$ **without** changing
+the expectation (unbiased), but reduces the **variance** strongly; $G_t-\hat V(s)$ estimates the
+**advantage**.
+</details>
+
+<details>
+<summary><b>5.</b> What distinguishes actor-critic from REINFORCE?</summary>
+
+REINFORCE uses the **full Monte-Carlo return** $G_t$ (unbiased, high variance, needs the end of
+the episode). **Actor-critic** additionally has a **critic** $\hat V_\phi$ that **bootstraps**
+(TD) and serves as the baseline/advantage → lower variance, online updates. Actor = the policy,
+critic = the value estimator.
+</details>
+
+<details>
+<summary><b>6.</b> Why "proximal"? What does the clipping in PPO do?</summary>
+
+Too large policy updates can destroy the policy. PPO keeps the new policy **close** (*proximal*)
+to the old one by **clipping** the ratio $r_t=\pi_\theta/\pi_{\theta_{old}}$ to
+$[1-\epsilon,1+\epsilon]$ — this removes the incentive to drive $r_t$ far, and allows several
+update epochs per data batch (stable + data-efficient).
+</details>
+
+<details>
+<summary><b>7.</b> Why can DQN not handle continuous actions, and what does DDPG do about it?</summary>
+
+DQN needs $\arg\max_a Q(s,a)$ — for continuous $a$ not solvable in closed form. **DDPG** learns a
+**deterministic actor** $\mu_\theta(s)$ and moves it **uphill** in the critic $Q_\phi$ via the
+chain rule: $\nabla_\theta J\approx\mathbb E[\nabla_aQ_\phi\,\nabla_\theta\mu_\theta]$. It is "DQN
+for continuous actions".
+</details>
+
+<details>
+<summary><b>8.</b> What is the connection between the Bellman equation and HJB, and what is LQR?</summary>
+
+The Bellman optimality equation is the **discrete-time** form of the **Hamilton-Jacobi-Bellman**
+equation of continuous optimal control. **LQR** is the special case of *linear dynamics +
+quadratic costs*: the optimal control is the linear feedback $u=-Kx$ with $K$ from the **Riccati
+equation** — an exactly solvable reference.
+</details>
+
+<details>
+<summary><b>9.</b> What does the entropy objective in SAC do?</summary>
+
+SAC maximizes the return **+** the policy **entropy** ($\alpha\mathcal H(\pi)$). The bonus rewards
+"as random as possible, as long as the task is solved" → better **exploration**, more robust
+policies, more stable training.
+</details>
+
+<details>
+<summary><b>10.</b> Name three reasons why deep RL is notoriously unstable/hard to reproduce.</summary>
+
+Any three: the deadly triad (divergence), high **seed variance**, sensitive **hyperparameters**,
+**correlated/non-stationary** data, sparse reward/exploration, **reward hacking**, the sim-to-real
+gap. Therefore: first verify on tiny tasks, average over seeds.
+</details>
+
+---
+
+## 8 · Literature & sources
+
+**Books & courses (free):**
+- **Sutton & Barto — *Reinforcement Learning: An Introduction* (2018)**, ch. 9–13 (function
+  approximation, policy gradient). Free as a PDF. *Foundation.*
+- **OpenAI Spinning Up in Deep RL** (spinningup.openai.com) — *the* practical introduction: clean
+  derivations (VPG→TRPO→PPO→DDPG→TD3→SAC) **plus** reference-able code. Free. *Beginner →
+  in-depth, highly recommended.*
+- **UC Berkeley CS285 *Deep Reinforcement Learning* (Sergey Levine)** — videos + slides free.
+  *In-depth, comprehensive.*
+- **DeepMind × UCL RL Lecture Series** — the successor of Silver's course. *Beginner → in-depth.*
+
+**Key papers (in-depth):**
+- Mnih et al. (2015), *Human-level control through deep RL* (**DQN/Nature**).
+- van Hasselt et al. (2016), *Deep RL with Double Q-learning*.
+- Wang et al. (2016), *Dueling Network Architectures*.
+- Schulman et al. (2015), *High-Dimensional Continuous Control Using GAE*.
+- Schulman et al. (2017), *Proximal Policy Optimization* (**PPO**).
+- Lillicrap et al. (2016), *Continuous control with deep RL* (**DDPG**); Fujimoto et al. (2018),
+  **TD3**; Haarnoja et al. (2018), **SAC**.
+
+**Optimal control (the bridge):**
+- **Bertsekas — *Dynamic Programming and Optimal Control*** / *Reinforcement Learning and Optimal
+  Control* (2019) — connects both worlds formally. *In-depth.*
+- **Steven Brunton — *Control Bootcamp* (YouTube)** — LQR, Riccati, HJB illustratively. *Beginner.*
+
+**Practice/tooling:**
+- **Gymnasium** (gymnasium.farama.org) — the standard environment API (CartPole, Pendulum,
+  MuJoCo). We build *without* Gym in the module (didactically), but you should know the API.
+- **Stable-Baselines3** — maintained, tested implementations (DQN/PPO/SAC/TD3) for practice (not
+  for learning the internals).
+
+---
+
+## Next module
+
+With this the RL block (modules 13–14) is complete. **Module 15 — Machine Learning for Networks
+1** follows. The foundation built in this module (value- vs. policy-based, actor-critic, optimal
+control) is the basis for RL applications in robotics (modules 21/22), advanced automation (23)
+and everywhere that **sequential decisions under uncertainty** are made.
+# Modul 14 — Deep Reinforcement Learning for Optimal Control (deutsche Fassung)
 
 > **Worum geht es?** In Modul 13 war die Wertfunktion eine **Tabelle** $Q(s,a)$ — das
 > funktioniert nur bei kleinen, diskreten Zustandsräumen. Sobald der Zustand hochdimensional
