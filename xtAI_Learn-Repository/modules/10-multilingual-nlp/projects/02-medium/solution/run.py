@@ -1,10 +1,10 @@
-"""Volle Pipeline: Embeddings → Anker → Procrustes-Alignment → Wörterbuch übersetzen.
+"""Full pipeline: embeddings -> anchors -> Procrustes alignment -> translate a dictionary.
 
-    python run.py            # nutzt Cache in datasets/ (erster Lauf ~30 s zum Bauen)
-    python run.py --rebuild  # Embeddings/Anker neu bauen
+    python run.py            # uses the cache in datasets/ (first run ~30 s to build)
+    python run.py --rebuild  # rebuild embeddings/anchors
 
-Vergleicht **Nearest-Neighbour** vs. **CSLS**-Retrieval per Precision@1 auf dem
-handkuratierten Test-Lexikon und zeigt Beispielübersetzungen.
+Compares **nearest neighbour** vs. **CSLS** retrieval by precision@1 on the hand-curated
+test lexicon and shows example translations.
 """
 import argparse
 import numpy as np
@@ -20,24 +20,24 @@ def main():
     args = ap.parse_args()
 
     pairs = load_pairs()
-    print(f"{len(pairs):,} Satzpaare geladen.")
+    print(f"{len(pairs):,} sentence pairs loaded.")
     E_en, voc_en, E_de, voc_de, anchors = get_embeddings_and_anchors(pairs, rebuild=args.rebuild)
     stoi_en = {w: i for i, w in enumerate(voc_en)}
     stoi_de = {w: i for i, w in enumerate(voc_de)}
-    print(f"Embeddings: EN {E_en.shape}, DE {E_de.shape}. Anker-Lexikon: {len(anchors)} Paare.")
-    print("Beispiel-Anker:", anchors[:6])
+    print(f"Embeddings: EN {E_en.shape}, DE {E_de.shape}. Anchor lexicon: {len(anchors)} pairs.")
+    print("Example anchors:", anchors[:6])
 
-    # Anker-Matrizen und Procrustes-Alignment (EN -> DE)
+    # Anchor matrices and Procrustes alignment (EN -> DE)
     X = np.stack([E_en[stoi_en[a]] for a, b in anchors])
     Y = np.stack([E_de[stoi_de[b]] for a, b in anchors])
     W = orthogonal_procrustes(X, Y)
     print(f"\nW orthogonal? {np.allclose(W @ W.T, np.eye(W.shape[0]), atol=1e-5)}")
 
-    # Test-Lexikon (nur Paare, deren beide Wörter im Vokabular sind)
+    # Test lexicon (only pairs whose two words are both in the vocabulary)
     test = [(a, b) for a, b in TEST_LEXICON if a in stoi_en and b in stoi_de]
     q_idx = [stoi_en[a] for a, b in test]
     gold = [b for a, b in test]
-    proj_all = E_en @ W                          # ganzer Quellraum projiziert
+    proj_all = E_en @ W                          # the whole source space, projected
     q_vecs = proj_all[q_idx]
 
     nn_pred = nearest_neighbor(q_vecs, E_de)
@@ -45,11 +45,11 @@ def main():
     p1_nn = precision_at_1(nn_pred, gold, voc_de)
     p1_csls = precision_at_1(csls_pred, gold, voc_de)
 
-    print(f"\nTest-Lexikon: {len(test)} Paare")
-    print(f"Precision@1  Nearest-Neighbour: {p1_nn:.3f}")
+    print(f"\nTest lexicon: {len(test)} pairs")
+    print(f"Precision@1  nearest neighbour: {p1_nn:.3f}")
     print(f"Precision@1  CSLS             : {p1_csls:.3f}")
 
-    print("\nBeispielübersetzungen (EN -> DE):  [NN | CSLS | gold]")
+    print("\nExample translations (EN -> DE):  [NN | CSLS | gold]")
     for (a, b), inn, ic in list(zip(test, nn_pred, csls_pred))[:15]:
         mark = "OK " if voc_de[ic] == b else "  x"
         print(f"  {mark} {a:12} -> {voc_de[inn]:14} | {voc_de[ic]:14} | {b}")

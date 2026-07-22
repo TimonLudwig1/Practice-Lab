@@ -1,61 +1,61 @@
-"""Cross-linguales Embedding-Alignment — der Kern des Projekts.
+"""Cross-lingual embedding alignment — the core of the project.
 
-Enthält die geschlossene **orthogonale Procrustes**-Lösung und die Retrieval-Maße
-**Nearest-Neighbour** und **CSLS** (gegen *Hubness*). Siehe Skript-Abschnitt 3.
+Contains the closed-form **orthogonal Procrustes** solution and the retrieval measures
+**nearest neighbour** and **CSLS** (against *hubness*). See script section 3.
 """
 import numpy as np
 
 
 def orthogonal_procrustes(X, Y):
-    r"""Löse min_W ||X W - Y||_F  unter  W^T W = I.
+    r"""Solve min_W ||X W - Y||_F  subject to  W^T W = I.
 
-    X, Y: (n, d) — gestapelte Quell-/Ziel-Embeddings der Anker-Paare (Zeilen = Wörter).
-    Geschlossene Lösung: M = X^T Y = U Σ V^T  ⟹  W = U V^T   (bildet Quelle → Ziel ab).
-    Rückgabe: W (d, d) orthogonal.
+    X, Y: (n, d) — stacked source/target embeddings of the anchor pairs (rows = words).
+    Closed-form solution: M = X^T Y = U S V^T  =>  W = U V^T   (maps source -> target).
+    Returns: W (d, d) orthogonal.
     """
-    M = X.T @ Y                       # (d, d) = Quelle^T · Ziel
+    M = X.T @ Y                       # (d, d) = source^T . target
     U, _, Vt = np.linalg.svd(M)
     return U @ Vt
 
 
 def _topk_mean(sims, k):
-    """Mittel der k größten Werte je Zeile (für die CSLS-Nachbarschaftsdichte)."""
+    """Mean of the k largest values per row (for the CSLS neighbourhood density)."""
     k = min(k, sims.shape[1])
     part = np.partition(sims, -k, axis=1)[:, -k:]
     return part.mean(axis=1)
 
 
 def nearest_neighbor(query_vecs, tgt_emb):
-    """Für jede (bereits projizierte, normierte) Query den ähnlichsten Ziel-Index.
+    """For each (already projected, normalized) query the most similar target index.
 
-    query_vecs: (q, d), tgt_emb: (Vt, d) — beide längen-normiert ⇒ Skalarprodukt = Kosinus.
-    Rückgabe: (q,) Indizes der nächsten Ziel-Wörter.
+    query_vecs: (q, d), tgt_emb: (Vt, d) — both length-normalized => dot product = cosine.
+    Returns: (q,) indices of the nearest target words.
     """
     sims = query_vecs @ tgt_emb.T          # (q, Vt)
     return np.argmax(sims, axis=1)
 
 
 def csls(query_vecs, tgt_emb, src_pool, k=10):
-    r"""CSLS-Retrieval gegen Hubness (Conneau et al. 2018).
+    r"""CSLS retrieval against hubness (Conneau et al. 2018).
 
-    CSLS(z, y) = 2 cos(z, y) − r_T(z) − r_S(y), mit
-      r_T(z) = mittlere Kosinus-Ähnlichkeit von z zu seinen k nächsten Ziel-Nachbarn,
-      r_S(y) = mittlere Kosinus-Ähnlichkeit von y zu seinen k nächsten (projizierten)
-               Quell-Nachbarn aus dem Pool.
+    CSLS(z, y) = 2 cos(z, y) - r_T(z) - r_S(y), with
+      r_T(z) = mean cosine similarity of z to its k nearest target neighbours,
+      r_S(y) = mean cosine similarity of y to its k nearest (projected) source
+               neighbours from the pool.
 
-    query_vecs: (q, d) projizierte Queries;  tgt_emb: (Vt, d);
-    src_pool:   (Ns, d) projizierte Quell-Embeddings (für r_S).
-    Rückgabe: (q,) Indizes der besten Ziel-Wörter nach CSLS.
+    query_vecs: (q, d) projected queries;  tgt_emb: (Vt, d);
+    src_pool:   (Ns, d) projected source embeddings (for r_S).
+    Returns: (q,) indices of the best target words by CSLS.
     """
     sim_qt = query_vecs @ tgt_emb.T        # (q, Vt) cos(query, target)
-    r_T = _topk_mean(sim_qt, k)            # (q,)  Dichte um jede Query im Zielraum
-    sim_ts = tgt_emb @ src_pool.T          # (Vt, Ns) cos(target, source-pool)
-    r_S = _topk_mean(sim_ts, k)            # (Vt,) Dichte um jedes Ziel im Quellraum
+    r_T = _topk_mean(sim_qt, k)            # (q,)  density around each query in target space
+    sim_ts = tgt_emb @ src_pool.T          # (Vt, Ns) cos(target, source pool)
+    r_S = _topk_mean(sim_ts, k)            # (Vt,) density around each target in source space
     scores = 2 * sim_qt - r_T[:, None] - r_S[None, :]
     return np.argmax(scores, axis=1)
 
 
 def precision_at_1(pred_indices, gold_words, tgt_vocab):
-    """Anteil der Queries, deren top-1-Vorhersage exakt das Gold-Wort ist."""
+    """Share of queries whose top-1 prediction is exactly the gold word."""
     ok = sum(tgt_vocab[p] == g for p, g in zip(pred_indices, gold_words))
     return ok / len(gold_words)

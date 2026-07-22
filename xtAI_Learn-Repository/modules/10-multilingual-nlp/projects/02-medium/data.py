@@ -1,7 +1,7 @@
-"""Daten laden & Test-Lexikon (vorgegeben).
+"""Load data & test lexicon (given).
 
-Tatoeba Deutsch-Englisch-Satzpaare + eine kleine, handkuratierte Wörterbuch-Testliste,
-auf der die Übersetzungsqualität (Precision@1) gemessen wird.
+Tatoeba German-English sentence pairs + a small, hand-curated dictionary test list on
+which the translation quality (precision@1) is measured.
 """
 import os
 import io
@@ -18,7 +18,7 @@ def download():
     os.makedirs(DATA_DIR, exist_ok=True)
     if os.path.exists(RAW):
         return
-    print("Lade Tatoeba DE-EN ...")
+    print("Downloading Tatoeba DE-EN ...")
     hdr = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -31,7 +31,7 @@ def download():
 
 
 def load_pairs():
-    """Liste von (englisch, deutsch)-Sätzen."""
+    """List of (english, german) sentences."""
     download()
     lines = open(RAW, encoding="utf-8").read().strip().split("\n")
     return [tuple(ln.split("\t")[:2]) for ln in lines]
@@ -41,9 +41,9 @@ def tokenize(s):
     return re.findall(r"[a-zäöüßA-ZÄÖÜ]+", s.lower())
 
 
-# Handkuratiertes Test-Lexikon EN->DE (nur zur Evaluation, nicht fürs Alignment).
-# Die Alignment-Anker werden automatisch aus den Parallel-Daten geschürft (embeddings.py),
-# damit Trainings- und Testwörter sauber getrennt sind.
+# Hand-curated test lexicon EN->DE (only for evaluation, not for the alignment).
+# The alignment anchors are mined automatically from the parallel data (embeddings.py),
+# so that training and test words are cleanly separated.
 TEST_LEXICON = [
     ("water", "wasser"), ("house", "haus"), ("man", "mann"), ("woman", "frau"),
     ("child", "kind"), ("dog", "hund"), ("book", "buch"), ("car", "auto"),

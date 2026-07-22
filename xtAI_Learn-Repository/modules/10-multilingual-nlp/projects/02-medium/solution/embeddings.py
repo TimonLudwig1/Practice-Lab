@@ -1,15 +1,15 @@
-"""Monolinguale Embeddings + automatisches Schürfen eines Anker-Lexikons (vorgegeben).
+"""Monolingual embeddings + automatic mining of an anchor lexicon (given).
 
-Das ist die *Infrastruktur* rund um das eigentliche Lernziel (Alignment in align.py):
+This is the *infrastructure* around the actual learning goal (alignment in align.py):
 
-  build_embeddings : PPMI-Kookkurrenz + truncated SVD  ->  Wort-Embeddings pro Sprache
-                     (LSA-Stil; auf Tatoeba ergeben sich brauchbare Vektoren:
+  build_embeddings : PPMI co-occurrence + truncated SVD  ->  word embeddings per language
+                     (LSA style; on Tatoeba usable vectors emerge:
                       king~queen, water~boils, dog~cat ...).
-  mine_anchors     : aus den *parallelen* Sätzen ein zweisprachiges Anker-Lexikon
-                     über Kookkurrenz + Mutual-Nearest-Neighbour extrahieren
-                     (~2800 Paare) — dient als Seed fürs Procrustes-Alignment.
+  mine_anchors     : extract a bilingual anchor lexicon from the *parallel* sentences
+                     via co-occurrence + mutual nearest neighbour
+                     (~2800 pairs) — serves as the seed for the Procrustes alignment.
 
-Alles wird in datasets/ als .npz gecached (Neuaufbau dauert ~30 s).
+Everything is cached in datasets/ as .npz (rebuilding takes ~30 s).
 """
 import os
 import numpy as np
@@ -23,7 +23,7 @@ CACHE = os.path.join(os.path.dirname(__file__), "datasets")
 
 
 def build_embeddings(sentences, vocab_size=6000, dim=100, window=4):
-    """PPMI + truncated SVD. Rückgabe: (emb [V,dim] längen-normiert, vocab, stoi)."""
+    """PPMI + truncated SVD. Returns: (emb [V,dim] length-normalized, vocab, stoi)."""
     freq = Counter(w for s in sentences for w in tokenize(s))
     vocab = [w for w, _ in freq.most_common(vocab_size)]
     stoi = {w: i for i, w in enumerate(vocab)}
@@ -51,7 +51,7 @@ def build_embeddings(sentences, vocab_size=6000, dim=100, window=4):
 
 
 def mine_anchors(pairs, stoi_en, stoi_de, min_count=8, min_score=0.10):
-    """Zweisprachiges Anker-Lexikon aus parallelen Sätzen (Mutual-NN über Kookkurrenz)."""
+    """Bilingual anchor lexicon from parallel sentences (mutual NN over co-occurrence)."""
     co = defaultdict(float)
     en_c = defaultdict(float)
     de_c = defaultdict(float)
@@ -67,7 +67,7 @@ def mine_anchors(pairs, stoi_en, stoi_de, min_count=8, min_score=0.10):
     score = defaultdict(dict)
     for (a, b), v in co.items():
         if v >= min_count:
-            score[a][b] = v * v / (en_c[a] * de_c[b])   # Dice-artige Assoziation
+            score[a][b] = v * v / (en_c[a] * de_c[b])   # Dice-like association
     best_de = {a: max(dd, key=dd.get) for a, dd in score.items()}
     rev = defaultdict(dict)
     for a, dd in score.items():
@@ -80,7 +80,7 @@ def mine_anchors(pairs, stoi_en, stoi_de, min_count=8, min_score=0.10):
 
 
 def get_embeddings_and_anchors(pairs, rebuild=False):
-    """Cached Pipeline: EN/DE-Embeddings + Anker-Lexikon."""
+    """Cached pipeline: EN/DE embeddings + anchor lexicon."""
     path = os.path.join(CACHE, "emb_cache.npz")
     meta = os.path.join(CACHE, "emb_meta.npz")
     if not rebuild and os.path.exists(path) and os.path.exists(meta):
@@ -88,7 +88,7 @@ def get_embeddings_and_anchors(pairs, rebuild=False):
         m = np.load(meta, allow_pickle=True)
         return (d["E_en"], list(m["voc_en"]), d["E_de"], list(m["voc_de"]),
                 [tuple(a) for a in m["anchors"]])
-    print("Baue Embeddings (~30 s) ...")
+    print("Building embeddings (~30 s) ...")
     E_en, voc_en, stoi_en = build_embeddings([e for e, d in pairs])
     E_de, voc_de, stoi_de = build_embeddings([d for e, d in pairs])
     anchors = mine_anchors(pairs, stoi_en, stoi_de)
