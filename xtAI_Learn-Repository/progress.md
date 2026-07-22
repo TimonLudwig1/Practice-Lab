@@ -107,7 +107,7 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 12 Image Processing | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `a9674a7`, `2930d64`, `a263eb7`, `2df5438` |
 | 13 RL & Decision-Making | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `1428f59`, `bce30a7`, `adeb98c`, `bce1116` |
 | 14 Deep RL for Optimal Control | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `b3b22e9`, `8785ebf`, `86ba087`, `1482d83` |
-| 15 ML for Networks 1 | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `e711a41`, `6f3ae0d`, `7dcf2c0`, `d1b16e1` |
+| 15 ML for Networks 1 | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `e711a41`, `6f3ae0d`, `7dcf2c0`, `63d95c7` |
 | **16 ML for Networks 2** | **offen — als Nächstes** | offen | offen | — |
 | 17–21 | offen | offen | offen | — |
 
