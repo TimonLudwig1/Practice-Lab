@@ -1,4 +1,82 @@
-# Projekt 01 (basic) — Mehrsprachige Subword-Tokenisierung mit SentencePiece
+# Project 01 (basic) — Multilingual subword tokenization with SentencePiece
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Module 10 — Multilingual NLP** · Format: **Jupyter notebook** (`tokenization.ipynb`)
+
+## Why this format?
+
+You understand tokenization by *trying and measuring*: seeing a sentence split, computing
+fertility, comparing vocabularies. A notebook connects training, splitting and metrics with
+visible intermediate results — ideal for this guided start.
+
+## Goal
+
+Using **SentencePiece** you train a **shared** subword vocabulary on real German–English
+data (Tatoeba) and check the core claims from script section 2 empirically:
+
+- **BPE splitting** and the `▁` space symbol; why there is **never OOV**.
+- **fertility** (avg. subword tokens per word) for German vs. English.
+- **Vocabulary sharing**: what share of the tokens do the two languages share?
+- **Vocabulary bias**: an English-dominated vocabulary **doubles** the German fertility —
+  the cost/fairness disadvantage of low-resource languages in large LLMs.
+- **Subword vs. word**: word vocabulary size and OOV rate as an argument for subwords.
+
+## Prior knowledge
+
+- **Script** section 2 (BPE, WordPiece, unigram LM/SentencePiece, fertility, shared
+  vocabulary).
+- Python basics (`Counter`, sets, `str.split`).
+
+## Setup
+
+Requires `sentencepiece` (in the repo `requirements.txt`). The first cell downloads the
+Tatoeba dataset (~12 MB) automatically into `datasets/` (a browser header is needed, it is
+in the code) and caches it; not checked in.
+
+```bash
+source ../../../../.venv/bin/activate
+jupyter lab      # or open tokenization.ipynb in VS Code, kernel = repo .venv
+```
+
+Runs in **under a minute** (SentencePiece is in C++).
+
+## Dataset
+
+**Tatoeba** German–English sentence pairs (~331k, open, CC-BY) via manythings.org/anki.
+Real, short everyday sentences — small, clean, ideal for making tokenization visible and for
+reusing later (projects 02/03) for embeddings and translation.
+
+## Assignment (step by step)
+
+**Part A** (download, parsing, writing the corpus) is given. Then three tasks (marked with
+`# TODO`):
+
+1. **Train BPE & encode**: the shared model is given via a call — split two example
+   sentences and read the subword structure.
+2. Implement **fertility**: subword tokens per word, separately for EN and DE.
+3. Measure the **vocabulary sharing** (given) and show the **vocabulary bias**: train an
+   EN-only vocabulary and compare the German fertility with it.
+
+At the end a short written **reflection part** (4 questions).
+
+## What should work in the end
+
+- Splits for EN & DE with visible subword structure (`▁`, word pieces).
+- fertility EN ≈ 1.5, DE ≈ 1.4 (shared vocabulary).
+- **Bias result**: EN-only vocabulary → German fertility ≈ 2.9 (factor ~2.0).
+- Word vocabulary ~20k types with ~11 % OOV, while BPE never has OOV.
+
+## Reference solution
+
+A fully filled-in, **executed** notebook is in
+[`solution/tokenization_solution.ipynb`](solution/tokenization_solution.ipynb). Try it
+yourself first — the stub cells raise `NotImplementedError` until you fill them. The
+reference answers to the reflection questions are at the end of that solution notebook.
+
+---
+
+# Projekt 01 (basic) — Mehrsprachige Subword-Tokenisierung mit SentencePiece (deutsche Fassung)
 
 **Modul 10 — Multilingual NLP** · Format: **Jupyter Notebook** (`tokenization.ipynb`)
 

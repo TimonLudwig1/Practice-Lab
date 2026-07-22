@@ -1,4 +1,509 @@
-# Modul 10 — Multilingual NLP
+# Module 10 — Multilingual NLP
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The projects themselves are English only.
+
+> **What is this about?** So far (modules 08 & 09) *one* language was implicitly
+> assumed — mostly English. This module asks: how do you build language technology
+> that works across **many languages**, and how do you **transfer** knowledge from
+> resource-rich to resource-poor languages? Core topics: language-agnostic
+> **subword tokenization**, **cross-lingual representations**, **neural machine
+> translation (NMT)** and **massively multilingual** models (mBERT, XLM-R, mT5)
+> together with **zero-shot transfer**.
+
+**Helpful prior knowledge:** probability & linear algebra (matrix decompositions,
+orthogonality), PyTorch (modules 05/09), the basics of neural networks.
+
+**Modules you should have done first:**
+- **Module 08 (NLP 1)** — tokenization, n-grams, TF-IDF, word representations, evaluation.
+- **Module 09 (NLP 2)** — embeddings, RNN/LSTM, **self-attention & the transformer**,
+  pretraining (BERT vs. GPT), BPE. This module completes the **encoder-decoder
+  transformer** that module 09 split into its halves (encoder for BERT, decoder for GPT).
+
+---
+
+## Learning objectives
+
+After this module you can …
+
+- explain **why** multilingual NLP is its own thing (diversity of scripts, morphology,
+  word order; the resource inequality between languages);
+- describe **subword tokenization** (BPE, WordPiece, unigram LM/SentencePiece) formally
+  and justify why a **shared** vocabulary across languages makes sense;
+- build **cross-lingual word embeddings** by **aligning** monolingual spaces —
+  including the closed-form **orthogonal Procrustes solution** via the SVD;
+- derive the **NMT architecture**: seq2seq → attention (Bahdanau/Luong) → the
+  **encoder-decoder transformer** with **cross-attention**; training (teacher forcing,
+  label smoothing) and decoding (greedy, **beam search**);
+- place **massively multilingual** models (mBERT, XLM-R, mT5, multilingual NMT) and
+  explain **zero-shot transfer** — including the *curse of multilinguality*;
+- **evaluate** translation quality correctly (**BLEU**, chrF, COMET) and know the pitfalls.
+
+---
+
+## 1 · Basics — why is multilinguality its own problem?
+
+### 1.1 The starting point
+
+There are ~7000 living languages; NLP resources are extremely **unequally**
+distributed. A handful of *high-resource* languages (English, Chinese, German, …)
+have huge corpora, tools and models; the vast majority are *low-resource* — little or
+no annotated data. The central promise of multilingual NLP:
+
+> **Build *one* model that covers many languages, and transfer knowledge from
+> languages with much data to languages with little** (*cross-lingual transfer*).
+
+### 1.2 Why is it hard? Typological diversity
+
+Languages differ systematically, which breaks naive "one model per language, same
+pipeline" approaches:
+
+- **Writing systems (scripts):** Latin, Cyrillic, Devanagari, Han, Arabic … — disjoint
+  character sets. A word-based vocabulary shares *nothing* between languages.
+- **Morphology:** *isolating* (Chinese, barely any inflection) vs. *fusional* (German,
+  Russian) vs. *agglutinative* (Turkish, Finnish — one "word" ≈ a whole sentence). A
+  Turkish word can have dozens of forms → vocabulary explosion, many *out-of-vocabulary*
+  (OOV) words.
+- **Word order:** SVO (English), SOV (Japanese, Turkish), VSO (Arabic); German with its
+  verb bracket. Models have to align different orders.
+- **Segmentation:** Chinese/Japanese/Thai write **without spaces** — even "where is a
+  word?" is non-trivial.
+
+This diversity motivates two basic ideas of the module: **(a)** a tokenization that
+works *below* the word level and *language-agnostically* (section 2), and **(b)**
+representations that are *aligned* across languages (section 3).
+
+---
+
+## 2 · Subword tokenization across languages
+
+### 2.1 Why not words?
+
+A word vocabulary has three deadly sins in the multilingual setting:
+1. **Size:** the union of the vocabularies of many languages is huge.
+2. **OOV:** every unseen word (inflection, compound, proper name) becomes `<unk>` —
+   dramatically so for morphologically rich languages.
+3. **No sharing:** "nation"/"national"/"nationality" are three unrelated symbols; across
+   languages even more so (e.g. German *Information* vs. English *information*).
+
+Character level (as in module 09, project 3) solves OOV, but makes sequences very long
+and forces the model to learn word structure from scratch. **Subwords** are the
+compromise: frequent words stay a single token, rare ones break into meaning-carrying
+pieces (*un-believ-able*), and pieces are **shared between words and languages**.
+
+### 2.2 Byte-pair encoding (BPE) — recap & precision
+
+BPE (Sennrich et al. 2016, for NMT) learns a vocabulary *bottom-up*:
+
+1. Initialize the vocabulary with all **single characters** (or **bytes** → *byte-level
+   BPE*, then every Unicode character is representable, never OOV).
+2. Count all **adjacent symbol pairs** in the corpus. Merge the **most frequent pair**
+   $(a,b)$ into a new symbol $ab$ and add it to the vocabulary.
+3. Repeat until the desired vocabulary size $V$ is reached.
+
+The list of merges is deterministic; **tokenization** applies the merges in the learned
+order to a new word. Result: a fixed compromise between characters (many merges needed)
+and words (few but coarse units), controllable via $V$.
+
+### 2.3 WordPiece and unigram LM
+
+- **WordPiece** (BERT): like BPE, but instead of "most frequent pair" it merges the pair
+  that most increases the **likelihood** of a unigram language model over the corpus —
+  i.e. $\arg\max_{(a,b)} \frac{\text{count}(ab)}{\text{count}(a)\,\text{count}(b)}$
+  (pointwise-mutual-information-like) rather than raw frequency.
+- **Unigram LM** (Kudo 2018, the core of **SentencePiece**): *top-down*. Start with a
+  large candidate vocabulary and a unigram model $p(\text{token})$. The probability of a
+  segmentation $\mathbf{x}=(x_1,\dots,x_k)$ of a text is
+  $$P(\mathbf{x})=\prod_{i=1}^{k} p(x_i),$$
+  and the best segmentation is found via **Viterbi** (dynamic programming — the link to
+  modules 07/08!). Train $p$ via **EM** (module 05: expectations over all segmentations),
+  then iteratively **prune** the tokens whose removal lowers the total likelihood the
+  least, until $|V|$ is reached. Advantage: a probabilistic model allows **subword
+  regularization** (sampling different segmentations as data augmentation).
+
+### 2.4 SentencePiece: raw text in, language-agnostic
+
+**SentencePiece** is not a new method but an *implementation* (BPE or unigram) with an
+important trick: it treats **the space as a normal character** (encoded as `▁`, U+2581)
+and works directly on **raw, untokenized text**. This makes exactly the same pipeline
+work for German (spaces) *and* Chinese (no spaces) — and detokenization is losslessly
+reversible. That makes it the standard for multilingual models.
+
+### 2.5 Shared vocabulary & *fertility*
+
+If you train **one** subword vocabulary on the **concatenation** of several languages,
+you get a *shared vocabulary*: common word stems, digits, punctuation and proper names
+share tokens. A measure of how well a vocabulary fits a language is the **fertility** —
+the average number of subword tokens per word. If a vocabulary is English-dominated,
+German/Turkish has a higher fertility (more fragmentation) — a fairness/efficiency
+problem of large LLMs. (Project 01 measures exactly this.)
+
+---
+
+## 3 · Cross-lingual word embeddings through alignment
+
+Before end-to-end models dominated, the most elegant idea of cross-lingual NLP was:
+**train word embeddings per language separately and align the spaces afterwards.**
+
+### 3.1 The observation
+
+Monolingual embedding spaces (Word2Vec/GloVe, module 08) have a **similar geometric
+structure** across languages — the neighbourhoods of *(king, queen, man, woman)* look
+alike in English and in German. Mikolov et al. (2013) concluded: there should be a
+**linear mapping** $W$ that rotates the source into the target space.
+
+### 3.2 Supervised alignment: the Procrustes problem
+
+Given a **seed lexicon** of $n$ translation pairs, stack the source embeddings as rows
+of $X\in\mathbb{R}^{n\times d}$ and the corresponding target embeddings as
+$Y\in\mathbb{R}^{n\times d}$. Look for $W$ with $XW \approx Y$:
+$$W^\star=\arg\min_{W}\;\lVert XW - Y\rVert_F^2 .$$
+
+Without a constraint this is *linear regression*. What matters, though, is the
+**orthogonality constraint** $W^\top W = I$ (Xing et al. 2015): $W$ should be a
+**rotation/reflection**, not a distortion — that preserves distances and dot products
+(and thus cosine neighbourhoods). This is the **orthogonal Procrustes problem** with a
+*closed-form* solution via the **singular value decomposition**:
+$$X^\top Y = U\,\Sigma\,V^\top \quad\Longrightarrow\quad W^\star = U V^\top .$$
+
+> **Why $UV^\top$?** From $\lVert XW-Y\rVert_F^2 = \lVert XW\rVert_F^2 - 2\operatorname{tr}(W^\top X^\top Y) + \lVert Y\rVert_F^2$
+> and $\lVert XW\rVert_F=\lVert X\rVert_F$ (orthogonal $W$) it remains to **maximize**
+> $\operatorname{tr}(W^\top X^\top Y)=\operatorname{tr}(W^\top U\Sigma V^\top)$.
+> With $Z=V^\top W^\top U$ (orthogonal) this becomes $\operatorname{tr}(Z\Sigma)=\sum_i \sigma_i Z_{ii}\le\sum_i\sigma_i$,
+> maximal when $Z=I$, so $W^\top=VU^\top \Rightarrow W=UV^\top$. (All $\sigma_i\ge0$.)
+> **Rule of thumb for the direction:** the matrix in the SVD is
+> $(\text{source})^\top(\text{target})$, then $W$ maps the source onto the target
+> ($XW\approx Y$).
+
+Beforehand one usually normalizes the embeddings (length normalization, possibly mean
+centering) so that cosine similarity is the relevant metric.
+
+### 3.3 Retrieval, hubness and CSLS
+
+Translating then means: map a source word ($\mathbf{x}W$) and take the nearest neighbour
+in the target space (cosine). The problem is **hubness**: in high-dimensional spaces some
+target vectors are "hubs" that are the nearest neighbour of *many* source words. **CSLS**
+(*cross-domain similarity local scaling*, Conneau et al. 2018) corrects this by
+penalizing the similarity with the average neighbourhood density:
+$$\text{CSLS}(\mathbf{x},\mathbf{y}) = 2\cos(\mathbf{x},\mathbf{y}) - r_T(\mathbf{x}) - r_S(\mathbf{y}),$$
+where $r_T(\mathbf{x})$ is the mean cosine similarity of $\mathbf{x}$ to its $k$ nearest
+target neighbours (analogously $r_S$). It is scored via **precision@1** on a test lexicon.
+
+### 3.4 Unsupervised alignment (outlook)
+
+Without a seed lexicon (Conneau et al. 2018, *MUSE*): an **adversarial** network learns
+$W$ so that a discriminator cannot distinguish projected source vectors from real target
+vectors; then **iterative Procrustes** refines it on automatically extracted,
+high-confidence pairs. Remarkably, this works *entirely without* parallel data.
+
+---
+
+## 4 · Neural machine translation (NMT)
+
+The core problem: map a source sequence $\mathbf{x}=(x_1,\dots,x_S)$ onto a target
+sequence $\mathbf{y}=(y_1,\dots,y_T)$ and model
+$$P(\mathbf{y}\mid\mathbf{x})=\prod_{t=1}^{T} P(y_t\mid y_{<t},\mathbf{x}).$$
+
+### 4.1 seq2seq with RNNs and the bottleneck
+
+Sutskever et al. (2014): an **encoder** RNN reads $\mathbf{x}$ into a context vector
+$\mathbf{c}$ (the last state), a **decoder** RNN generates $\mathbf{y}$ from it
+autoregressively. Problem: the **entire** source sentence has to pass through *one*
+vector $\mathbf{c}$ — a bottleneck that breaks for long sentences (exactly the limit we
+saw with the LSTM in project 09-01).
+
+### 4.2 Attention (Bahdanau & Luong)
+
+The solution (Bahdanau et al. 2015): the decoder may look at **all** encoder states
+$\mathbf{h}_1,\dots,\mathbf{h}_S$ at **every** step $t$ and form a *dynamic* context:
+$$e_{ti}=\text{score}(\mathbf{s}_{t-1},\mathbf{h}_i),\quad
+\alpha_{ti}=\frac{\exp e_{ti}}{\sum_j \exp e_{tj}},\quad
+\mathbf{c}_t=\sum_{i=1}^{S}\alpha_{ti}\,\mathbf{h}_i.$$
+The $\alpha_{ti}$ form a soft **alignment** between target and source words. *Bahdanau*
+uses an additive score ($\mathbf{v}^\top\tanh(W[\mathbf{s};\mathbf{h}])$), *Luong* the
+simpler multiplicative one ($\mathbf{s}^\top W\mathbf{h}$) — the latter is the direct
+predecessor of transformer attention.
+
+### 4.3 The encoder-decoder transformer
+
+The transformer (Vaswani et al. 2017) replaces recurrence completely with attention. In
+module 09 you built the **encoder** (bidirectional self-attention, for BERT) and the
+**decoder** (causal self-attention, for GPT) separately. The full NMT architecture
+**connects** both and has **three** attention types:
+
+1. **Encoder self-attention** — *bidirectional* over the source. Every source token sees
+   all others. Output: contextualized source representations
+   $\mathbf{H}=(\mathbf{h}_1,\dots,\mathbf{h}_S)$.
+2. **Decoder masked self-attention** — *causal* over the target sequence generated so far
+   (no look into the future, as in GPT).
+3. **Cross-attention** — the new heart: the **query** comes from the decoder, the **key**
+   and **value** from the encoder output $\mathbf{H}$:
+   $$\text{CrossAttn}(Q_{\text{dec}}, K_{\text{enc}}, V_{\text{enc}})
+     =\operatorname{softmax}\!\Big(\tfrac{Q_{\text{dec}}K_{\text{enc}}^\top}{\sqrt{d_k}}\Big)V_{\text{enc}}.$$
+   This way every decoder step looks selectively at the relevant source tokens — the
+   transformer generalization of the Bahdanau attention from 4.2.
+
+A decoder layer is therefore: *masked self-attn → cross-attn → FFN*, each with residual +
+LayerNorm. The rest (positional encoding, multi-head, FFN) is as in module 09.
+
+### 4.4 Training and decoding
+
+- **Teacher forcing:** in training one feeds the decoder the **true** previous target
+  tokens $y_{<t}$ (not its own predictions), masks causally and computes the loss over all
+  positions in parallel. Loss: cross entropy, often with **label smoothing** (target
+  distribution $=(1-\varepsilon)$ on the true token, $\varepsilon$ uniform) — this dampens
+  overconfidence and improves BLEU.
+- **Decoding (inference):** autoregressive, token by token.
+  - **Greedy:** take the most probable token at each step. Fast, but short-sighted.
+  - **Beam search:** keep the $k$ best *partial* hypotheses in parallel and expand them;
+    at the end pick the sequence with the highest (length-normalized) log probability.
+    Almost always better than greedy.
+  - **Special tokens:** `<bos>`/`<eos>` mark the start/end; generation stops at `<eos>`.
+
+---
+
+## 5 · Massively multilingual models & zero-shot transfer
+
+### 5.1 One model for many language pairs
+
+Johnson et al. (2017, *Google's Multilingual NMT*): train **one** encoder-decoder model
+on **many** language pairs at once, with a **shared** subword vocabulary. A simple trick
+controls the target language: you prepend a **language token** to the source, e.g. `<2de>`
+for "translate into German". The astonishing result: the model can translate **zero-shot**
+— language pairs it has *never* seen (e.g. Ja→Ko, although only Ja↔En and Ko↔En were
+trained), because it learns a shared, language-neutral intermediate representation
+(*interlingua* hypothesis).
+
+### 5.2 Multilingual pretrained encoders
+
+- **mBERT:** BERT (masked LM), but on the Wikipedias of 104 languages with a shared
+  WordPiece vocabulary — *without* any cross-lingual supervision. Yet surprisingly
+  well-aligned representations emerge.
+- **XLM** (Lample & Conneau 2019): adds a *translation language modeling* (TLM) objective
+  — masked LM on **concatenated translation pairs**, so the model can look *across the
+  language boundary* to fill a gap.
+- **XLM-R** (Conneau et al. 2020): the XLM approach, but scaled RoBERTa-style to **2.5 TB**
+  of CommonCrawl in 100 languages — long the standard for cross-lingual understanding.
+- **mT5 / mBART:** multilingual **encoder-decoders** (text-to-text resp. denoising) — for
+  generation/translation.
+
+### 5.3 Zero-shot cross-lingual transfer
+
+The killer application: **fine-tune** a multilingual encoder (e.g. XLM-R) on a task **with
+English labels only** (because those exist), and **evaluate directly on
+German/Swahili/…** — *without* a single target-language label. Because the representations
+are aligned across languages, the task-specific head transfers. This brings NLP to
+languages without training data (standard benchmark: **XTREME**, **XNLI**).
+
+### 5.4 The price: *curse of multilinguality*
+
+For a fixed model size, quality per language first rises with more languages (positive
+transfer, shared structure), but **falls** again beyond a point because the **capacity**
+is diluted over too many languages (*capacity dilution*) and languages compete for
+parameters (*interference*). Remedies: larger models, language-specific adapters, clever
+data sampling (upsampling low-resource languages with a temperature $\tau$).
+
+---
+
+## 6 · Evaluation of translation
+
+How do you measure translation quality automatically (human evaluation is expensive)?
+
+### 6.1 BLEU
+
+**BLEU** (Papineni et al. 2002) compares the candidate translation with one or more
+**references** via **n-gram precision**. For $n=1,\dots,N$ (usually $N=4$):
+$$p_n=\frac{\sum_{\text{n-grams}} \min(\text{count}_{\text{cand}},\,\text{count}_{\text{ref}})}
+{\sum_{\text{n-grams}} \text{count}_{\text{cand}}}$$
+(*clipped precision*: an n-gram counts at most as often as it appears in the reference —
+this penalizes repetitions). Because pure precision rewards **too short** translations, a
+**brevity penalty** is added:
+$$\text{BP}=\begin{cases}1 & c>r\\ e^{1-r/c} & c\le r\end{cases},\qquad
+\text{BLEU}=\text{BP}\cdot\exp\!\Big(\sum_{n=1}^{N} w_n \log p_n\Big),$$
+with candidate length $c$, reference length $r$ and weights $w_n=1/N$. BLEU is a
+**corpus** measure (the numerators/denominators are aggregated over the whole test set),
+lies in $[0,1]$ (often $\times 100$) and correlates roughly with human judgement.
+
+**Weaknesses:** superficial (word overlap, no synonyms/meaning), reference-dependent, not
+comparable between languages/tokenizations (→ **sacreBLEU** standardizes the tokenization).
+
+### 6.2 Alternatives
+
+- **chrF:** F-score over **character** n-grams — more robust for morphologically rich
+  languages (partial word matches count).
+- **METEOR:** accounts for stemming/synonyms, recall-weighted.
+- **COMET / BERTScore:** **learned**, embedding-based metrics — correlate markedly better
+  with humans, but need a (multilingual) model.
+
+---
+
+## 7 · Summary / cheat sheet
+
+| Term | Core in one sentence |
+|---|---|
+| **Low-/high-resource** | languages with little/much annotated data; goal: transfer between them. |
+| **Subword** | tokens *below* the word level; frequent words whole, rare ones split; shared across words/languages. |
+| **BPE** | bottom-up: iteratively merge the most frequent symbol pair until $\lvert V\rvert$. |
+| **WordPiece** | like BPE, but merges by **likelihood gain** (PMI-like). |
+| **Unigram LM / SentencePiece** | top-down probabilistic: best segmentation via Viterbi, $p$ via EM, prune the vocabulary; raw text, `▁`=space. |
+| **fertility** | avg. subword tokens per word — fit vocabulary↔language. |
+| **Procrustes** | orthogonal $W$ with $XW\approx Y$; solution $W=UV^\top$ from SVD$(X^\top Y)$. |
+| **CSLS** | retrieval measure against *hubness*: $2\cos - r_T - r_S$. |
+| **seq2seq** | encoder→context→decoder; the RNN variant has a bottleneck. |
+| **Attention $\alpha_{ti}$** | soft alignment: $\mathbf{c}_t=\sum_i\alpha_{ti}\mathbf{h}_i$. |
+| **Cross-attention** | decoder query ↔ encoder key/value — connects the transformer halves. |
+| **Teacher forcing** | training with true $y_{<t}$; label smoothing against overconfidence. |
+| **Beam search** | keep the $k$ best partial hypotheses; better than greedy. |
+| **Language token `<2de>`** | controls the target language in multilingual NMT → **zero-shot**. |
+| **mBERT/XLM-R/mT5** | multilingually pretrained; XLM-R = scaling; mT5 = enc-dec. |
+| **Zero-shot transfer** | fine-tune on EN, test on DE — without DE labels. |
+| **curse of multilinguality** | too many languages per capacity → quality falls. |
+| **BLEU** | clipped n-gram precision × brevity penalty; corpus measure. |
+| **chrF/COMET** | character-n-gram F / learned metric — often better than BLEU. |
+
+**Formulas to remember:**
+- Procrustes: $W=UV^\top$ with $U\Sigma V^\top=\mathrm{SVD}(X^\top Y)$.
+- Attention context: $\mathbf{c}_t=\sum_i \alpha_{ti}\mathbf{h}_i,\ \alpha_{ti}=\mathrm{softmax}_i(e_{ti})$.
+- BLEU: $\text{BP}\cdot\exp(\sum_n w_n\log p_n)$, $\text{BP}=\min(1,e^{1-r/c})$.
+
+---
+
+## 8 · Self-test
+
+<details><summary><b>1.</b> Why does a word-based vocabulary fail on *three* fronts in the multilingual setting?</summary>
+
+Size (the union of many language vocabularies is huge), OOV (every unseen
+inflection/compound becomes `<unk>`, especially in morphologically rich languages), and
+*no sharing* (related words and cross-lingual cognates are independent symbols). Subwords
+address all three.
+</details>
+
+<details><summary><b>2.</b> How do BPE, WordPiece and unigram LM differ in the *criterion* by which they build the vocabulary?</summary>
+
+BPE merges the **most frequent** symbol pair (pure frequency, bottom-up). WordPiece merges
+the pair with the largest **likelihood gain** of a unigram LM (PMI-like, bottom-up).
+Unigram LM starts **top-down** with a large vocabulary and **prunes** the tokens whose
+removal lowers the corpus likelihood the least (probabilistic, with Viterbi segmentation
+and EM).
+</details>
+
+<details><summary><b>3.</b> Why does embedding alignment require $W^\top W=I$ instead of an arbitrary $W$, and what is the solution?</summary>
+
+Orthogonality enforces a pure **rotation/reflection** that **preserves** lengths and dot
+products (i.e. cosine neighbourhoods) — otherwise a free linear mapping would distort the
+geometry and destroy the semantic structure. The closed-form solution of the orthogonal
+Procrustes problem is $W=UV^\top$ with $U\Sigma V^\top=\mathrm{SVD}(X^\top Y)$.
+</details>
+
+<details><summary><b>4.</b> What is *hubness* and how does CSLS mitigate it?</summary>
+
+In high-dimensional spaces some target vectors ("hubs") become the nearest neighbour of
+*many* source words, which distorts nearest-neighbour retrieval. CSLS penalizes the cosine
+similarity by the local neighbourhood density of both sides ($2\cos - r_T - r_S$), so that
+hubs are relatively downweighted.
+</details>
+
+<details><summary><b>5.</b> Name the three attention types in the encoder-decoder transformer and where Q, K, V come from in each.</summary>
+
+(1) **Encoder self-attention** — Q,K,V all from the source, bidirectional. (2) **Decoder
+masked self-attention** — Q,K,V from the target sequence so far, causally masked. (3)
+**Cross-attention** — **Q from the decoder**, **K and V from the encoder output**;
+connects the target with the source representation.
+</details>
+
+<details><summary><b>6.</b> What is teacher forcing and why does *one* forward pass suffice for the whole target sentence in training?</summary>
+
+Teacher forcing feeds the decoder the **true** previous tokens $y_{<t}$ instead of its own
+predictions. With a **causal mask** one can compute all positions in parallel: position
+$t$ sees only $y_{<t}$, so a single forward pass yields the logits for *all* $t$ at once
+(and thus the loss over the whole sentence).
+</details>
+
+<details><summary><b>7.</b> How does a language token `<2de>` enable *zero-shot* translation?</summary>
+
+A single multilingual model with a shared vocabulary learns a language-neutral
+intermediate representation. The prepended target-language token only controls the output
+language. Because source encoding and target control are decoupled, the model can produce
+combinations it never saw as a pair (e.g. Ja→Ko from Ja↔En and Ko↔En training).
+</details>
+
+<details><summary><b>8.</b> Why does pure n-gram precision reward too-short translations, and how does BLEU fix that?</summary>
+
+A very short output containing only a few safe words has high precision (almost all of its
+n-grams are in the reference), even though it is incomplete. BLEU therefore multiplies by
+the **brevity penalty** $\min(1, e^{1-r/c})$, which exponentially penalizes candidates
+shorter than the reference ($c<r$).
+</details>
+
+<details><summary><b>9.</b> What does the *curse of multilinguality* state and what are the remedies?</summary>
+
+For a fixed capacity, adding languages improves quality only up to a point; afterwards it
+falls because the parameters are spread over too many languages (*capacity dilution*,
+*interference*). Remedies: more model capacity, language-specific adapters,
+temperature-based upsampling of low-resource languages.
+</details>
+
+<details><summary><b>10.</b> Why is BLEU between two systems from different papers often not directly comparable — and what helps?</summary>
+
+BLEU depends strongly on **tokenization**, casing and reference preparation; different
+implementations produce different numbers for the same translation. **sacreBLEU**
+standardizes tokenization and computation and reports a signature string, so that results
+become reproducible and comparable.
+</details>
+
+---
+
+## 9 · Literature & sources
+
+*Legend: (free) = freely available, (beginner) = beginner-friendly, (in-depth) = advanced.*
+
+**Textbooks / overviews**
+- Jurafsky & Martin, *Speech and Language Processing* (3rd ed. draft) — chapters on MT &
+  seq2seq. (beginner, free) online.
+- Koehn, *Neural Machine Translation* (2020, Cambridge). (in-depth) — the standard work on NMT.
+- Philipp Koehn, *Statistical Machine Translation* (2010) — background before the neural era.
+
+**Key papers (all free on arXiv/ACL Anthology)**
+- Sennrich, Haddow & Birch (2016): *Neural MT of Rare Words with Subword Units* — **BPE**.
+- Kudo (2018): *Subword Regularization* & Kudo/Richardson (2018): *SentencePiece*.
+- Mikolov et al. (2013): *Exploiting Similarities among Languages for MT* — linear mapping.
+- Xing et al. (2015): *Normalized Word Embedding …* — the orthogonality constraint.
+- Conneau et al. (2018): *Word Translation Without Parallel Data* (**MUSE**, CSLS).
+- Bahdanau, Cho & Bengio (2015): *NMT by Jointly Learning to Align and Translate* — **attention**.
+- Vaswani et al. (2017): *Attention Is All You Need* — the **transformer**.
+- Johnson et al. (2017): *Google's Multilingual NMT* — **zero-shot**, language token.
+- Devlin et al. (2019): *BERT* (**mBERT**); Conneau et al. (2020): *XLM-R*; Xue et al. (2021): *mT5*.
+- Papineni et al. (2002): *BLEU*; Post (2018): *A Call for Clarity in Reporting BLEU* (**sacreBLEU**).
+
+**Courses / interactive (free)**
+- Stanford **CS224N** (NLP with Deep Learning) — lectures on MT, attention, transformers.
+- Hugging Face **NLP Course**, chapters on tokenizers & translation. (beginner)
+- Jay Alammar, *The Illustrated Transformer* / *Visualizing seq2seq with Attention* — blog. (beginner)
+- **MUSE** (github.com/facebookresearch/MUSE) & **SentencePiece** (github.com/google/sentencepiece) — reference implementations.
+
+---
+
+## The three projects
+
+The projects span the arc from tokenization via cross-lingual representations to full
+translation — on real **German–English** data (Tatoeba), small and CPU/MPS-capable:
+
+- **01 – basic** (`projects/01-basic/`): **Multilingual subword tokenization with
+  SentencePiece.** Guided notebook: train a shared BPE/unigram vocabulary on DE+EN,
+  analyse the tokenization, measure **fertility** and vocabulary sharing between the
+  languages, compare with word/character tokenization. Plenty of instruction.
+- **02 – medium** (`projects/02-medium/`): **Align cross-lingual embeddings (Procrustes +
+  CSLS).** Python project with a test suite: monolingual embeddings per language, derive
+  the orthogonal alignment via the SVD yourself, "translate" a dictionary via
+  **precision@1** and **CSLS**. Little instruction.
+- **03 – final** (`projects/03-final/`): **An NMT transformer from scratch (DE→EN).** No
+  code given: a full encoder-decoder with **cross-attention**, teacher forcing,
+  greedy/beam decoding and **BLEU** evaluation on Tatoeba. The master's-level capstone that
+  brings modules 09 and 10 together.
+
+Details, setup and reference solutions are in the `README.md` of each project folder.
+
+---
+# Modul 10 — Multilingual NLP (deutsche Fassung)
 
 > **Worum geht es?** Bisher (Module 08 & 09) war *eine* Sprache implizit gesetzt —
 > meist Englisch. Dieses Modul fragt: Wie baut man Sprachtechnologie, die über **viele
