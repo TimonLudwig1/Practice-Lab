@@ -53,8 +53,8 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 
 > ### NEXT ACTION dieses Auftrags
 > **Modul 09 „NLP 2" ist KOMPLETT auf Englisch/bilingual (READMEs `35e7123`, P01-Notebook `83af0b6`, P02 `.py` `f006195`, P03 `gpt.py` `303b7b8`). Verifiziert: P01 LSTM 0.788/Train 0.993/BoW 0.860; P02 8/8 Tests grün, Transformer 1.000 vs BoW 0.503; P03 Smoke-Test 200 Iter läuft (Start-Loss 3.96 ~ ln 65, 818k Params).**
-> **Modul 11 „Computer Vision" ist KOMPLETT auf Englisch/bilingual** (READMEs `61e7ff7`, P01-Notebook `14d9294`, P02 `.py` `0605e8b`, P03 `.py` `b3d51ac`). Verifiziert: P01 Faltung+Sobel+gelernte conv1-Filter, Feature-Map (1,64,112,112); P02 5/5 Tests, Rohpixel 0.411 vs Pretrained-Features 0.939 (EuroSAT); P03 5/5 Tests, 3-Wege-Vergleich (a) from scratch 0.761, (b) Feature-Extraktion 0.944, (c) Fine-Tuning 0.743.
-> **Als Nächstes: Modul 12 „Image Processing & Comp. Photography" — Modul-README + 3 Projekt-READMEs bilingual, P01-Notebook englisch, P02/P03 `.py` englisch. Format wie 08–11: Notebook nur P01, P02+P03 sind .py. Vorher IMMER: `grep -rnE '"daten"|cd loesung|loesung/' modules/12-image-processing/` UND Notebook-Code per Python-decode auf `\"daten\"` prüfen (Falle 8, JSON-escaped). nbconvert-Rezept s.o. (PATH-Prepend + `python -m nbconvert`).****
+> **Modul 12 „Image Processing" ist KOMPLETT auf Englisch/bilingual** (READMEs `a9674a7`, P01-Notebook `2930d64`, P02 `.py` `a263eb7`, P03 `.py` `2df5438`). Verifiziert: P01 Punktops+Gamma+Histogrammausgleich via CDF (90-192→0-255); P02 7/7 Tests, Faltungssatz-Diff 1.71e-13, Salz&Pfeffer Median 29.6 vs Gauss 22.9 dB; P03 6/6 Tests, Seam Carving 512→362 px.
+> **Als Nächstes: Modul 13 „Reinforcement Learning" — Modul-README + 3 Projekt-READMEs bilingual, P01-Notebook englisch, P02/P03 `.py` englisch. Format wie 08–12: Notebook nur P01, P02+P03 sind .py. Vorher IMMER: `grep -rnE '"daten"|cd loesung|loesung/' modules/13-reinforcement-learning/` UND Notebook-Code per Python-decode auf `\"daten\"` prüfen (Falle 8, JSON-escaped). nbconvert-Rezept s.o. (PATH-Prepend + `python -m nbconvert`).****
 > **WICHTIG nbconvert-Ausführung (Falle beim venv-Umzug): Konsolen-Skripte haben kaputte Shebangs → `jupyter nbconvert` scheitert. Rezept: `cd <solution>; export PATH="$VBIN:$PATH"; "$VBIN/python" -m nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=python3 <nb>` (VBIN=.venv/bin; PATH-Prepend nötig, damit der python3-Kernel — argv[0]=bare `python` — die venv-Pakete wie sentencepiece findet).**
 > **Falle 8 erweitert: `DATA_DIR = "daten"` steckt in NOTEBOOK-CODE als JSON-escaptes `\"daten\"` → der Prosa-grep findet es NICHT. Immer auch per Python-decode prüfen.**
 > **Modul 08 ist komplett.** Modul 09 hat wieder das 06/07/08-Format: **Notebook nur P01**, P02+P03 sind .py-Projekte (LSTM-Sentiment, SDPA/MHA/Encoder von Hand, Char-GPT from scratch).
@@ -100,8 +100,9 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 09 NLP 2 | ✓ | ✓ 3/3 (+2 datasets) | ✓ Notebook + alle .py | `35e7123`, `83af0b6`, `f006195`, `303b7b8` |
 | 10 Multilingual NLP | ✓ | ✓ 3/3 (+3 datasets, gitignored) | ✓ Notebook + alle .py | `e2c7487`, `f65563d`, `f6ade36`, `e508547` |
 | 11 Computer Vision | ✓ | ✓ 3/3 (+2 datasets, gitignored) | ✓ Notebook + alle .py | `61e7ff7`, `14d9294`, `0605e8b`, `b3d51ac` |
-| **12 Image Processing** | **offen — als Nächstes** | offen | offen | — |
-| 13–21 | offen | offen | offen | — |
+| 12 Image Processing | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `a9674a7`, `2930d64`, `a263eb7`, `2df5438` |
+| **13 RL & Decision-Making** | **offen — als Nächstes** | offen | offen | — |
+| 14–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)
 1. Altes Notebook dumpen: `python -c "import json; nb=json.load(open(PFAD)); [print('####',i,c['cell_type'],''.join(c['source'])) for i,c in enumerate(nb['cells'])]"`.
