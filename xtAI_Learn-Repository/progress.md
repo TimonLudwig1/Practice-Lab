@@ -53,7 +53,8 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 
 > ### NEXT ACTION dieses Auftrags
 > **Modul 09 „NLP 2" ist KOMPLETT auf Englisch/bilingual (READMEs `35e7123`, P01-Notebook `83af0b6`, P02 `.py` `f006195`, P03 `gpt.py` `303b7b8`). Verifiziert: P01 LSTM 0.788/Train 0.993/BoW 0.860; P02 8/8 Tests grün, Transformer 1.000 vs BoW 0.503; P03 Smoke-Test 200 Iter läuft (Start-Loss 3.96 ~ ln 65, 818k Params).**
-> **Modul 10 „Multilingual NLP": READMEs FERTIG (`e2c7487`), P01-Notebook FERTIG+ausgeführt (`f65563d`, fertility EN 1.500/DE 1.433, EN-only DE 2.869 Faktor 2.00, Wort-Vokab 20591/OOV 11.3%). Als Nächstes: P02 `.py` (align/embeddings/data/run/test_align + solution) und P03 `.py` (bleu/data/ibm_model1/run_ibm/run_transformer/test_mt/toy_task/transformer) englisch. Danach Testsuiten laufen lassen (`python test_align.py`, `python test_mt.py`).**
+> **Modul 10 „Multilingual NLP" ist KOMPLETT auf Englisch/bilingual** (READMEs `e2c7487`, P01-Notebook `f65563d`, P02 `.py` `f6ade36`, P03 `.py` `e508547`). Verifiziert: P01 fertility EN 1.500/DE 1.433, EN-only DE 2.869 (Faktor 2.00), Wort-Vokab 20591/OOV 11.3%; P02 8/8 Tests, P@1 NN 0.975/CSLS 0.950, 2824 Anker; P03 10/10 Tests, IBM1 EM monoton, BLEU 17.61, Toy-Umkehr Exact-Match 0.870 anti-diagonale Cross-Attn.
+> **Als Nächstes: Modul 11 „Computer Vision" — Modul-README + 3 Projekt-READMEs bilingual, P01-Notebook englisch, P02/P03 `.py` englisch. Format wie 08/09/10: Notebook nur P01, P02+P03 sind .py. Vorher IMMER: `grep -rnE '"daten"|cd loesung|loesung/' modules/11-computer-vision/` UND Notebook-Code per Python-decode auf `\"daten\"` prüfen (Falle 8, JSON-escaped). nbconvert-Rezept s.o.****
 > **WICHTIG nbconvert-Ausführung (Falle beim venv-Umzug): Konsolen-Skripte haben kaputte Shebangs → `jupyter nbconvert` scheitert. Rezept: `cd <solution>; export PATH="$VBIN:$PATH"; "$VBIN/python" -m nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=python3 <nb>` (VBIN=.venv/bin; PATH-Prepend nötig, damit der python3-Kernel — argv[0]=bare `python` — die venv-Pakete wie sentencepiece findet).**
 > **Falle 8 erweitert: `DATA_DIR = "daten"` steckt in NOTEBOOK-CODE als JSON-escaptes `\"daten\"` → der Prosa-grep findet es NICHT. Immer auch per Python-decode prüfen.**
 > **Modul 08 ist komplett.** Modul 09 hat wieder das 06/07/08-Format: **Notebook nur P01**, P02+P03 sind .py-Projekte (LSTM-Sentiment, SDPA/MHA/Encoder von Hand, Char-GPT from scratch).
@@ -97,8 +98,9 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 07 Theorie der KI 2 | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `d2bb460`, `a1b92c6` |
 | 08 NLP 1 | ✓ | ✓ 3/3 (+2 datasets) | ✓ Notebook + alle .py | `678c6c1`, `50b79a5` |
 | 09 NLP 2 | ✓ | ✓ 3/3 (+2 datasets) | ✓ Notebook + alle .py | `35e7123`, `83af0b6`, `f006195`, `303b7b8` |
-| **10 Multilingual NLP** | **offen — als Nächstes** | offen | offen | — |
-| 11–21 | offen | offen | offen | — |
+| 10 Multilingual NLP | ✓ | ✓ 3/3 (+3 datasets, gitignored) | ✓ Notebook + alle .py | `e2c7487`, `f65563d`, `f6ade36`, `e508547` |
+| **11 Computer Vision** | **offen — als Nächstes** | offen | offen | — |
+| 12–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)
 1. Altes Notebook dumpen: `python -c "import json; nb=json.load(open(PFAD)); [print('####',i,c['cell_type'],''.join(c['source'])) for i,c in enumerate(nb['cells'])]"`.
