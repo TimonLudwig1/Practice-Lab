@@ -1,14 +1,14 @@
-"""Policy-Gradient-Methoden: REINFORCE (mit/ohne Baseline) und Actor-Critic (A2C).
+"""Policy-gradient methods: REINFORCE (with/without a baseline) and actor-critic (A2C).
 
-Der Gegensatz zu Projekt 01 (DQN, wertbasiert): hier wird die **Policy direkt** parametrisiert,
-pi_theta(a|s), und per Gradientenaufstieg auf die erwartete Rendite optimiert.
+The contrast to project 01 (DQN, value-based): here the **policy is parametrized directly**,
+pi_theta(a|s), and optimized by gradient ascent on the expected return.
 
-Policy-Gradient-Theorem (Modul 14, Abschnitt 3.2):
+The policy-gradient theorem (module 14, section 3.2):
     grad J = E[ sum_t  grad log pi_theta(a_t|s_t) * Psi_t ]
-mit dem Kredit-Signal Psi_t:
-    REINFORCE:            Psi_t = G_t                       (voller Return-to-go)
-    REINFORCE + Baseline: Psi_t = G_t normalisiert          (Varianzreduktion)
-    Actor-Critic:         Psi_t = A_t = G_t - V(s_t)        (Advantage; Critic schaetzt V)
+with the credit signal Psi_t:
+    REINFORCE:            Psi_t = G_t                       (the full return-to-go)
+    REINFORCE + baseline: Psi_t = G_t normalized            (variance reduction)
+    actor-critic:         Psi_t = A_t = G_t - V(s_t)        (advantage; the critic estimates V)
 """
 from __future__ import annotations
 import numpy as np
@@ -18,8 +18,8 @@ from torch.distributions import Categorical
 
 
 def compute_returns(rewards, gamma):
-    """Diskontierte Return-to-go: G_t = r_t + gamma*r_{t+1} + ... , rueckwaerts berechnet.
-    Rueckgabe: Liste gleicher Laenge wie rewards."""
+    """Discounted return-to-go: G_t = r_t + gamma*r_{t+1} + ... , computed backwards.
+    Returns: a list of the same length as rewards."""
     out = []
     G = 0.0
     for r in reversed(rewards):
@@ -37,7 +37,7 @@ class PolicyNet(nn.Module):
             nn.Linear(hidden, n_actions),
         )
     def forward(self, s):
-        return self.net(s)          # Logits (unnormierte log-Wahrscheinlichkeiten)
+        return self.net(s)          # logits (unnormalized log probabilities)
 
 
 class ValueNet(nn.Module):
@@ -66,7 +66,7 @@ class REINFORCE:
 
     def update(self, log_probs, rewards):
         G = torch.tensor(compute_returns(rewards, self.gamma), dtype=torch.float32)
-        if self.normalize:                       # Baseline: zentrieren + skalieren
+        if self.normalize:                       # baseline: center + scale
             G = (G - G.mean()) / (G.std() + 1e-8)
         loss = -(torch.stack(log_probs) * G).sum()
         self.opt.zero_grad(); loss.backward(); self.opt.step()
@@ -91,7 +91,7 @@ class ActorCritic:
     def update(self, log_probs, values, rewards):
         G = torch.tensor(compute_returns(rewards, self.gamma), dtype=torch.float32)
         V = torch.stack(values)
-        advantage = (G - V).detach()             # Critic liefert die Baseline
+        advantage = (G - V).detach()             # the critic provides the baseline
         advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
         actor_loss = -(torch.stack(log_probs) * advantage).sum()
         critic_loss = nn.functional.smooth_l1_loss(V, G)

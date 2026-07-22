@@ -1,7 +1,7 @@
-"""CartPole-Umgebung von Hand (identisch zu Projekt 01) — Infrastruktur, vollstaendig gegeben.
+"""CartPole environment by hand (identical to project 01) — infrastructure, fully given.
 
-Zustand s = [x, x_dot, theta, theta_dot], Aktionen 0=Schub links / 1=Schub rechts,
-Belohnung +1 je Schritt, Ende bei |x|>2.4, |theta|>12 Grad oder 500 Schritten.
+State s = [x, x_dot, theta, theta_dot], actions 0=push left / 1=push right, reward +1 per step,
+end at |x|>2.4, |theta|>12 degrees or 500 steps.
 """
 from __future__ import annotations
 import math

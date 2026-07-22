@@ -1,9 +1,9 @@
-"""Vergleich dreier Policy-Gradient-Varianten auf CartPole:
-  - REINFORCE OHNE Baseline  (hohe Varianz -> langsam/unruhig)
-  - REINFORCE MIT Baseline   (Return normalisiert -> deutlich stabiler)
-  - Actor-Critic (A2C)       (Critic als gelernte Baseline -> Advantage)
+"""Comparison of three policy-gradient variants on CartPole:
+  - REINFORCE WITHOUT a baseline  (high variance -> slow/jittery)
+  - REINFORCE WITH a baseline     (return normalized -> markedly more stable)
+  - actor-critic (A2C)            (the critic as a learned baseline -> advantage)
 
-Aufruf:  python run.py
+Call:  python run.py
 """
 from __future__ import annotations
 import time
@@ -58,15 +58,15 @@ SEEDS = (0, 1, 2, 3, 4)
 
 
 def main():
-    # Deep RL schwankt STARK ueber Seeds -> ein einzelner Lauf sagt fast nichts aus.
-    # Deshalb mitteln wir ueber mehrere Seeds (Skript 5: "Reproduzierbarkeit").
+    # Deep RL fluctuates STRONGLY over seeds -> a single run says almost nothing.
+    # That is why we average over several seeds (script 5: "reproducibility").
     methods = {
-        "REINFORCE (ohne Baseline)": lambda sd: run_reinforce(False, seed=sd),
-        "REINFORCE (mit Baseline)":  lambda sd: run_reinforce(True, seed=sd),
-        "Actor-Critic (A2C)":        lambda sd: run_actor_critic(seed=sd),
+        "REINFORCE (no baseline)": lambda sd: run_reinforce(False, seed=sd),
+        "REINFORCE (with baseline)": lambda sd: run_reinforce(True, seed=sd),
+        "actor-critic (A2C)":       lambda sd: run_actor_critic(seed=sd),
     }
-    print(f"Mittelung ueber {len(SEEDS)} Seeds {SEEDS}\n")
-    print(f"{'Verfahren':28s} {'Episoden bis geloest (Mittel±Std)':>34s} {'Zeit':>7s}")
+    print(f"Averaging over {len(SEEDS)} seeds {SEEDS}\n")
+    print(f"{'method':28s} {'episodes until solved (mean±std)':>34s} {'time':>7s}")
     runs = {}
     for label, fn in methods.items():
         eps_to_solve, curves, t_total = [], [], 0.0
@@ -86,19 +86,19 @@ def main():
         os.makedirs("results", exist_ok=True)
         plt.figure(figsize=(8, 4.6))
         for label, curves in runs.items():
-            # Kurven auf gleiche Laenge bringen (letzten Wert fortschreiben), dann mitteln
+            # bring the curves to the same length (repeat the last value), then average
             L = max(len(c) for c in curves)
             padded = np.array([np.pad(c, (0, L - len(c)), mode="edge") for c in curves])
             mean_curve = padded.mean(axis=0)
             plt.plot(range(19, L), moving_average(mean_curve, 20), lw=1.6, label=label)
         plt.axhline(500, ls="--", color="gray", lw=1)
-        plt.xlabel("Episode"); plt.ylabel(f"Return (Mittel ueber {len(SEEDS)} Seeds, gleitend 20)")
-        plt.title("Policy Gradient auf CartPole: Varianzreduktion durch Baseline/Critic")
+        plt.xlabel("episode"); plt.ylabel(f"return (mean over {len(SEEDS)} seeds, moving 20)")
+        plt.title("Policy gradient on CartPole: variance reduction via baseline/critic")
         plt.legend(); plt.grid(alpha=0.3); plt.tight_layout()
         plt.savefig("results/policy_gradient.png", dpi=110)
-        print("\nPlot gespeichert: results/policy_gradient.png")
+        print("\nPlot saved: results/policy_gradient.png")
     except Exception as e:
-        print("(kein Plot:", e, ")")
+        print("(no plot:", e, ")")
 
 
 if __name__ == "__main__":

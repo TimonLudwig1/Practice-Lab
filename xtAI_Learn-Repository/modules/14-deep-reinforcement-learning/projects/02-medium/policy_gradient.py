@@ -1,25 +1,25 @@
-"""Policy-Gradient-Methoden: REINFORCE (mit/ohne Baseline) und Actor-Critic (A2C).
+"""Policy-gradient methods: REINFORCE (with/without a baseline) and actor-critic (A2C).
 
->>> DEINE AUFGABE <<<  Hier steckt die ganze Arbeit dieses Projekts. Vorgegeben sind nur die
-zwei Netz-Klassen (Standard-MLPs) und die Konstruktoren. Zu implementieren:
+>>> YOUR TASK <<<  This is where the whole work of this project sits. Given are only the two
+network classes (standard MLPs) and the constructors. To implement:
    1) compute_returns
    2) REINFORCE.select_action  /  REINFORCE.update
    3) ActorCritic.select_action /  ActorCritic.update
 
-Der Gegensatz zu Projekt 01 (DQN, wertbasiert): hier wird die **Policy direkt**
-parametrisiert, pi_theta(a|s), und per Gradientenaufstieg auf die erwartete Rendite optimiert.
+The contrast to project 01 (DQN, value-based): here the **policy is parametrized directly**,
+pi_theta(a|s), and optimized by gradient ascent on the expected return.
 
-Policy-Gradient-Theorem (Modul 14, Abschnitt 3.2):
+The policy-gradient theorem (module 14, section 3.2):
     grad J = E[ sum_t  grad log pi_theta(a_t|s_t) * Psi_t ]
-mit dem Kredit-Signal Psi_t:
-    REINFORCE:            Psi_t = G_t                       (voller Return-to-go)
-    REINFORCE + Baseline: Psi_t = G_t normalisiert          (Varianzreduktion)
-    Actor-Critic:         Psi_t = A_t = G_t - V(s_t)        (Advantage; Critic schaetzt V)
+with the credit signal Psi_t:
+    REINFORCE:            Psi_t = G_t                       (the full return-to-go)
+    REINFORCE + baseline: Psi_t = G_t normalized            (variance reduction)
+    actor-critic:         Psi_t = A_t = G_t - V(s_t)        (advantage; the critic estimates V)
 
-WICHTIG (Vorzeichen): Optimierer *minimieren*. Der Policy-Gradient will J *maximieren*.
-Der Verlust ist deshalb das NEGATIVE des Ziels:  loss = -(log_prob * Psi).sum()
+IMPORTANT (sign): optimizers *minimize*. The policy gradient wants to *maximize* J.
+The loss is therefore the NEGATIVE of the objective:  loss = -(log_prob * Psi).sum()
 
-Musterloesung: solution/policy_gradient.py — erst selbst versuchen!
+The reference solution: solution/policy_gradient.py — try it yourself first!
 """
 from __future__ import annotations
 import numpy as np
@@ -29,17 +29,17 @@ from torch.distributions import Categorical
 
 
 def compute_returns(rewards, gamma):
-    """Diskontierte Return-to-go: G_t = r_t + gamma*r_{t+1} + gamma^2*r_{t+2} + ...
+    """Discounted return-to-go: G_t = r_t + gamma*r_{t+1} + gamma^2*r_{t+2} + ...
 
-    Rueckgabe: Liste gleicher Laenge wie `rewards`.
-    Tipp: rueckwaerts durch die Belohnungen laufen und G = r + gamma*G fortschreiben
-          (dieselbe Rekursion wie bei Monte Carlo in Modul 13) — das ist O(T) statt O(T^2).
+    Returns: a list of the same length as `rewards`.
+    Tip: walk backwards through the rewards and carry G = r + gamma*G (the same recursion as
+         with Monte Carlo in module 13) — that is O(T) instead of O(T^2).
     """
     # TODO
     raise NotImplementedError
 
 
-# ---- Netze: vorgegeben (Standard-MLPs, hier steckt nicht der Lernstoff) ----
+# ---- networks: given (standard MLPs, the learning content is not here) ----
 class PolicyNet(nn.Module):
     def __init__(self, n_states=4, n_actions=2, hidden=128):
         super().__init__()
@@ -48,7 +48,7 @@ class PolicyNet(nn.Module):
             nn.Linear(hidden, n_actions),
         )
     def forward(self, s):
-        return self.net(s)          # Logits (unnormierte log-Wahrscheinlichkeiten)
+        return self.net(s)          # logits (unnormalized log probabilities)
 
 
 class ValueNet(nn.Module):
@@ -70,28 +70,28 @@ class REINFORCE:
         self.opt = torch.optim.Adam(self.pi.parameters(), lr=lr)
 
     def select_action(self, state):
-        """Ziehe eine Aktion aus pi(.|s). Rueckgabe: (action:int, log_prob:Tensor).
+        """Draw an action from pi(.|s). Returns: (action:int, log_prob:Tensor).
 
-        Kleine Inspiration (Standard-Muster in PyTorch):
+        A small inspiration (the standard pattern in PyTorch):
             logits = self.pi(torch.as_tensor(state, dtype=torch.float32))
             dist   = Categorical(logits=logits)
             a      = dist.sample()
             return int(a), dist.log_prob(a)
-        Wichtig: den log_prob als TENSOR zurueckgeben (er muss den Graphen behalten,
-        damit spaeter backward() funktioniert) — nicht mit .item()/float() abschneiden!
+        Important: return the log_prob as a TENSOR (it has to keep the graph, so that backward()
+        works later) — do not truncate it with .item()/float()!
         """
         # TODO
         raise NotImplementedError
 
     def update(self, log_probs, rewards):
-        """Ein REINFORCE-Update aus einer vollstaendigen Episode.
+        """One REINFORCE update from a complete episode.
 
-        Schritte:
-          1. G = compute_returns(rewards, self.gamma)  -> torch-Tensor (float32)
-          2. falls self.normalize: G = (G - G.mean()) / (G.std() + 1e-8)   # Baseline
+        Steps:
+          1. G = compute_returns(rewards, self.gamma)  -> a torch tensor (float32)
+          2. if self.normalize: G = (G - G.mean()) / (G.std() + 1e-8)   # baseline
           3. loss = -(torch.stack(log_probs) * G).sum()
           4. zero_grad -> backward -> step
-        Rueckgabe: float(loss.detach())
+        Returns: float(loss.detach())
         """
         # TODO
         raise NotImplementedError
@@ -107,24 +107,24 @@ class ActorCritic:
             list(self.actor.parameters()) + list(self.critic.parameters()), lr=lr)
 
     def select_action(self, state):
-        """Wie oben, aber zusaetzlich den Critic-Wert V(s) zurueckgeben.
-        Rueckgabe: (action:int, log_prob:Tensor, value:Tensor)
+        """As above, but additionally return the critic value V(s).
+        Returns: (action:int, log_prob:Tensor, value:Tensor)
         """
         # TODO
         raise NotImplementedError
 
     def update(self, log_probs, values, rewards):
-        """Ein Actor-Critic-Update aus einer vollstaendigen Episode.
+        """One actor-critic update from a complete episode.
 
-        Schritte:
+        Steps:
           1. G = compute_returns(...) -> Tensor;  V = torch.stack(values)
-          2. advantage = (G - V).detach()      # WARUM .detach()? Der Advantage ist fuer den
-             advantage = normalisieren        #   Actor nur ein *Gewicht* — durch ihn soll
-                                              #   KEIN Gradient in den Critic zurueckfliessen.
+          2. advantage = (G - V).detach()      # WHY .detach()? The advantage is only a *weight*
+             advantage = normalize             #   for the actor — NO gradient should flow
+                                               #   through it back into the critic.
           3. actor_loss  = -(torch.stack(log_probs) * advantage).sum()
-             critic_loss = nn.functional.smooth_l1_loss(V, G)   # Critic regressiert auf G
+             critic_loss = nn.functional.smooth_l1_loss(V, G)   # the critic regresses onto G
           4. loss = actor_loss + self.value_coef * critic_loss; zero_grad/backward/step
-        Rueckgabe: (float(actor_loss.detach()), float(critic_loss.detach()))
+        Returns: (float(actor_loss.detach()), float(critic_loss.detach()))
         """
         # TODO
         raise NotImplementedError
