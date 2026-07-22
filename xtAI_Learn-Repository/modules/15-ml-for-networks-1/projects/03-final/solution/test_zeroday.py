@@ -1,115 +1,115 @@
-"""Tests fuer das Zero-Day-Szenario und die Detektoren.
+"""Tests for the zero-day scenario and the detectors.
 
-Aufruf:  python test_zeroday.py      (~1-2 min: trainiert mehrere Detektoren)
+Call:  python test_zeroday.py      (~1-2 min: several detectors are trained)
 """
 import numpy as np
 import pandas as pd
 
-from flow_data import ZeroDaySzenario, lade_flows, baue_features, FEATURES
-from detektoren import (SupervisedDetektor, IsolationForestDetektor,
-                        MahalanobisDetektor, OneClassSVMDetektor, LOFDetektor)
+from flow_data import ZeroDayScenario, load_flows, build_features, FEATURES
+from detectors import (SupervisedDetector, IsolationForestDetector,
+                       MahalanobisDetector, OneClassSVMDetector, LOFDetector)
 
-# einmal laden und teilen - das ist teuer, also fuer alle Tests wiederverwenden
-SZEN = ZeroDaySzenario(bekannte_angriffe=("smurf",), random_state=0)
+# load and split once - that is expensive, so reuse it for all tests
+SCEN = ZeroDayScenario(known_attacks=("smurf",), random_state=0)
 
 
-# --------------------------- Daten / Szenario ---------------------------
-def test_bytes_werden_korrekt_dekodiert():
-    df = lade_flows()
-    # die strip("b'")-Falle wuerde aus 'back' ein 'ack' und aus 'bgp' ein 'gp' machen
+# --------------------------- data / scenario ---------------------------
+def test_bytes_are_decoded_correctly():
+    df = load_flows()
+    # the strip("b'") trap would turn 'back' into 'ack' and 'bgp' into 'gp'
     assert "back" in set(df["labels"])
     assert not any(l.startswith("b'") for l in df["labels"].unique())
 
 
-def test_features_sind_endlich_und_numerisch():
-    X = baue_features(lade_flows())
+def test_features_are_finite_and_numeric():
+    X = build_features(load_flows())
     assert list(X.columns) == FEATURES
     assert np.all(np.isfinite(X.values))
     assert X.dtypes.map(lambda d: d.kind == "f").all()
 
 
-def test_zeroday_angriffe_sind_NICHT_im_training():
-    # Der Kern des Szenarios: kein Zero-Day-Typ darf in den Trainingsdaten stecken.
-    assert "smurf" not in SZEN.zeroday
-    assert "neptune" in SZEN.zeroday, "neptune muss ein Zero-Day sein"
-    X_train, y = SZEN.supervised_trainingsdaten()
-    # Trainingsmenge = Normal + bekannte Angriffe, sonst nichts
-    assert len(X_train) == len(SZEN.normal_train) + len(SZEN.bekannt_train)
+def test_zeroday_attacks_are_NOT_in_training():
+    # The core of the scenario: no zero-day type may be in the training data.
+    assert "smurf" not in SCEN.zeroday
+    assert "neptune" in SCEN.zeroday, "neptune has to be a zero-day"
+    X_train, y = SCEN.supervised_training_data()
+    # training set = normal + known attacks, nothing else
+    assert len(X_train) == len(SCEN.normal_train) + len(SCEN.known_train)
     assert set(np.unique(y)) == {0.0, 1.0}
-    assert y.sum() == len(SZEN.bekannt_train)
+    assert y.sum() == len(SCEN.known_train)
 
 
-def test_normal_train_und_test_sind_disjunkt():
-    # Auf Werteebene ist Disjunktheit unmoeglich (der Datensatz enthaelt 13 % exakte
-    # Duplikate, Skript 3.6) - pruefbar ist die Disjunktheit der INDIZES.
-    assert not set(SZEN.normal_train.index) & set(SZEN.normal_test.index)
+def test_normal_train_and_test_are_disjoint():
+    # At the value level disjointness is impossible (the dataset contains 13 % exact
+    # duplicates, script 3.6) - what is testable is the disjointness of the INDICES.
+    assert not set(SCEN.normal_train.index) & set(SCEN.normal_test.index)
 
 
-def test_anomaliedetektor_sieht_nur_normalverkehr():
-    # fit() nimmt genau EIN Argument (Normalverkehr) - kein y, keine Angriffe
-    det = MahalanobisDetektor().fit(SZEN.normal_train)
-    assert hasattr(det, "schwelle_")
+def test_anomaly_detector_only_sees_normal_traffic():
+    # fit() takes exactly ONE argument (normal traffic) - no y, no attacks
+    det = MahalanobisDetector().fit(SCEN.normal_train)
+    assert hasattr(det, "threshold_")
 
 
-# --------------------------- Kalibrierung ---------------------------
-def test_fpr_budget_wird_eingehalten():
-    # Jeder Anomaliedetektor soll per Konstruktion ~1 % Fehlalarme haben.
-    for D in (IsolationForestDetektor(), MahalanobisDetektor(),
-              OneClassSVMDetektor(), LOFDetektor()):
-        det = D.fit(SZEN.normal_train)
-        fpr = det.predict(SZEN.normal_test).mean()
-        assert 0.002 < fpr < 0.03, f"{det.name}: FPR {fpr:.4f} verfehlt das 1%-Budget"
+# --------------------------- calibration ---------------------------
+def test_fpr_budget_is_respected():
+    # By construction every anomaly detector should have ~1 % false alarms.
+    for D in (IsolationForestDetector(), MahalanobisDetector(),
+              OneClassSVMDetector(), LOFDetector()):
+        det = D.fit(SCEN.normal_train)
+        fpr = det.predict(SCEN.normal_test).mean()
+        assert 0.002 < fpr < 0.03, f"{det.name}: FPR {fpr:.4f} misses the 1 % budget"
 
 
-def test_lof_braucht_deduplizierung():
-    # Der dokumentierte Fallstrick: mit Duplikaten explodieren die LOF-Scores
-    # (bis ~1.5e9) und die Perzentil-Schwelle -> nichts wird je erkannt.
-    det_ok = LOFDetektor().fit(SZEN.normal_train)          # dedupliziert = True
-    assert det_ok.dedupliziere is True
-    assert det_ok.predict(SZEN.bekannt_test).mean() > 0.9, "LOF sollte smurf finden"
+def test_lof_needs_deduplication():
+    # The documented pitfall: with duplicates the LOF scores explode
+    # (up to ~1.5e9) and so does the percentile threshold -> nothing is ever detected.
+    det_ok = LOFDetector().fit(SCEN.normal_train)          # deduplicate = True
+    assert det_ok.deduplicate is True
+    assert det_ok.predict(SCEN.known_test).mean() > 0.9, "LOF should find smurf"
 
-    det_kaputt = LOFDetektor()
-    det_kaputt.dedupliziere = False                        # absichtlich sabotiert
-    det_kaputt.fit(SZEN.normal_train)
-    assert det_kaputt.schwelle_ > 100 * det_ok.schwelle_, \
-        "ohne Deduplizierung muesste die Schwelle entgleisen"
-
-
-# --------------------------- Die Kernaussage ---------------------------
-def test_supervised_erkennt_bekannten_angriff():
-    X, y = SZEN.supervised_trainingsdaten()
-    det = SupervisedDetektor().fit(X, y)
-    assert det.predict(SZEN.bekannt_test).mean() > 0.95      # smurf: quasi perfekt
-    assert det.predict(SZEN.normal_test).mean() < 0.01       # kaum Fehlalarme
+    det_broken = LOFDetector()
+    det_broken.deduplicate = False                         # deliberately sabotaged
+    det_broken.fit(SCEN.normal_train)
+    assert det_broken.threshold_ > 100 * det_ok.threshold_, \
+        "without deduplication the threshold should derail"
 
 
-def test_supervised_ist_blind_fuer_zeroday():
-    # DIE Kernaussage des Projekts: was er nie gesehen hat, sieht er nicht.
-    X, y = SZEN.supervised_trainingsdaten()
-    det = SupervisedDetektor().fit(X, y)
-    recall_neptune = det.predict(SZEN.zeroday["neptune"]).mean()
-    assert recall_neptune < 0.05, f"unerwartet gut: {recall_neptune}"
+# --------------------------- the core statement ---------------------------
+def test_supervised_detects_the_known_attack():
+    X, y = SCEN.supervised_training_data()
+    det = SupervisedDetector().fit(X, y)
+    assert det.predict(SCEN.known_test).mean() > 0.95       # smurf: practically perfect
+    assert det.predict(SCEN.normal_test).mean() < 0.01      # hardly any false alarms
 
 
-def test_anomaliedetektor_findet_zeroday_ohne_je_angriffe_gesehen_zu_haben():
-    det = IsolationForestDetektor().fit(SZEN.normal_train)   # nur Normalverkehr!
-    assert det.predict(SZEN.zeroday["neptune"]).mean() > 0.8
+def test_supervised_is_blind_to_zeroday():
+    # THE core statement of the project: what it has never seen, it does not see.
+    X, y = SCEN.supervised_training_data()
+    det = SupervisedDetector().fit(X, y)
+    recall_neptune = det.predict(SCEN.zeroday["neptune"]).mean()
+    assert recall_neptune < 0.05, f"unexpectedly good: {recall_neptune}"
 
 
-def test_anomalie_schlaegt_supervised_auf_zeroday():
-    X, y = SZEN.supervised_trainingsdaten()
-    sup = SupervisedDetektor().fit(X, y)
-    ano = IsolationForestDetektor().fit(SZEN.normal_train)
-    zd = [a for a, Xa in SZEN.zeroday.items() if len(Xa) >= 10]
-    r_sup = np.mean([sup.predict(SZEN.zeroday[a]).mean() for a in zd])
-    r_ano = np.mean([ano.predict(SZEN.zeroday[a]).mean() for a in zd])
+def test_anomaly_detector_finds_zeroday_without_ever_having_seen_attacks():
+    det = IsolationForestDetector().fit(SCEN.normal_train)   # only normal traffic!
+    assert det.predict(SCEN.zeroday["neptune"]).mean() > 0.8
+
+
+def test_anomaly_beats_supervised_on_zeroday():
+    X, y = SCEN.supervised_training_data()
+    sup = SupervisedDetector().fit(X, y)
+    ano = IsolationForestDetector().fit(SCEN.normal_train)
+    zd = [a for a, Xa in SCEN.zeroday.items() if len(Xa) >= 10]
+    r_sup = np.mean([sup.predict(SCEN.zeroday[a]).mean() for a in zd])
+    r_ano = np.mean([ano.predict(SCEN.zeroday[a]).mean() for a in zd])
     assert r_ano > r_sup, (r_ano, r_sup)
 
 
 if __name__ == "__main__":
     tests = [(k, v) for k, v in sorted(globals().items())
              if k.startswith("test_") and callable(v)]
-    print(f"Starte {len(tests)} Tests ...")
+    print(f"Running {len(tests)} tests ...")
     for name, t in tests:
         t(); print(f"  {name} ... OK")
-    print("Alle Tests bestanden.")
+    print("All tests passed.")

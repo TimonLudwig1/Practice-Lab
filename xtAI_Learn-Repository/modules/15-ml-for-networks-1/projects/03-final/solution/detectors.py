@@ -1,23 +1,23 @@
-"""Detektoren: ueberwacht (Misuse) vs. semi-ueberwacht (Anomalie).
+"""Detectors: supervised (misuse) vs. semi-supervised (anomaly).
 
-Der entscheidende Unterschied ist NICHT der Algorithmus, sondern WAS SIE ZU SEHEN BEKOMMEN:
-  - SupervisedDetektor : Normalverkehr + BEKANNTE Angriffe (mit Labels)  -> modelliert das Boese
-  - *AnomalieDetektor  : NUR Normalverkehr, voellig ohne Angriffslabels  -> modelliert das Normale
+The decisive difference is NOT the algorithm, it is WHAT THEY GET TO SEE:
+  - SupervisedDetector : normal traffic + KNOWN attacks (with labels) -> models the bad
+  - *AnomalyDetector   : ONLY normal traffic, no attack labels at all -> models the normal
 
-Alle bieten dieselbe Schnittstelle:  fit(...) / score(X) / predict(X) -> 1 = Alarm, 0 = harmlos.
+All of them offer the same interface:  fit(...) / score(X) / predict(X) -> 1 = alarm, 0 = harmless.
 
-WICHTIGE DESIGN-ENTSCHEIDUNG - alle Anomaliedetektoren teilen sich EIN FPR-Budget:
-Statt jedem Verfahren seine eigene, unvergleichbare Schwellenlogik zu lassen (`contamination`,
-`nu`, `offset_` ...), berechnen wir fuer jeden Detektor einen Anomalie-Score (hoeher = anomaler)
-und setzen die Schwelle auf das (100 - ziel_fpr)-Perzentil der Scores AUF DEM TRAININGS-
-NORMALVERKEHR. Damit hat jeder Detektor per Konstruktion ~ziel_fpr Prozent Fehlalarme, und der
-Zero-Day-Recall wird zur einzigen freien Groesse -> ein FAIRER Vergleich bei gleichem Preis.
+IMPORTANT DESIGN DECISION - all anomaly detectors share ONE FPR budget:
+Instead of leaving every method its own, incomparable threshold logic (`contamination`,
+`nu`, `offset_` ...), we compute an anomaly score for every detector (higher = more anomalous)
+and set the threshold to the (100 - target_fpr) percentile of the scores ON THE TRAINING NORMAL
+TRAFFIC. This way every detector has ~target_fpr percent false alarms by construction, and the
+zero-day recall becomes the only free quantity -> a FAIR comparison at the same price.
 
-(Nebenbei umgeht das zwei echte Fallstricke, ueber die ich beim Bauen gestolpert bin:
- - LocalOutlierFactor.predict() ist hier unbrauchbar: sein `offset_` entgleist auf diesen Daten
-   auf ~-1.3e6, sodass NIE Alarm ausgeloest wird - obwohl die Scores sauber trennen.
- - SGDOneClassSVM ist LINEAR und trennt hier gar nichts (Score normal 3.946 vs. smurf 3.959).
-   Erst mit einer Kernel-Approximation (Nystroem) funktioniert es.)
+(As a side effect this avoids two real pitfalls I stumbled over while building:
+ - LocalOutlierFactor.predict() is unusable here: on this data its `offset_` derails to
+   ~-1.3e6, so an alarm is NEVER raised - even though the scores separate cleanly.
+ - SGDOneClassSVM is LINEAR and separates nothing here (score normal 3.946 vs. smurf 3.959).
+   Only with a kernel approximation (Nystroem) does it work.)
 """
 from __future__ import annotations
 import numpy as np
@@ -29,138 +29,138 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.covariance import EmpiricalCovariance
 
-ZIEL_FPR_PROZENT = 1.0      # gemeinsames Fehlalarm-Budget aller Anomaliedetektoren
+TARGET_FPR_PERCENT = 1.0    # shared false alarm budget of all anomaly detectors
 
 
-class SupervisedDetektor:
-    """Klassischer Misuse-Detektor: lernt, die BEKANNTEN Angriffe zu erkennen."""
-    name = "Supervised RF (kennt bekannte Angriffe)"
+class SupervisedDetector:
+    """The classic misuse detector: learns to recognize the KNOWN attacks."""
+    name = "Supervised RF (knows the known attacks)"
 
     def __init__(self, random_state=0):
-        self.modell = RandomForestClassifier(n_estimators=100, n_jobs=-1,
-                                             random_state=random_state)
+        self.model = RandomForestClassifier(n_estimators=100, n_jobs=-1,
+                                            random_state=random_state)
 
     def fit(self, X, y):
-        self.modell.fit(X, y)
+        self.model.fit(X, y)
         return self
 
     def score(self, X):
-        return self.modell.predict_proba(X)[:, 1]
+        return self.model.predict_proba(X)[:, 1]
 
     def predict(self, X):
-        return self.modell.predict(X).astype(int)
+        return self.model.predict(X).astype(int)
 
 
-class _AnomalieBasis:
-    """Geruest: skalieren, NUR auf Normalverkehr fitten, Schwelle aufs FPR-Budget kalibrieren."""
-    name = "Anomalie"
-    dedupliziere = False        # von LOF ueberschrieben - siehe LOFDetektor
+class _AnomalyBase:
+    """Scaffold: scale, fit on normal traffic ONLY, calibrate the threshold to the FPR budget."""
+    name = "Anomaly"
+    deduplicate = False         # overridden by LOF - see LOFDetector
 
-    def __init__(self, ziel_fpr_prozent=ZIEL_FPR_PROZENT):
-        self.ziel_fpr_prozent = ziel_fpr_prozent
+    def __init__(self, target_fpr_percent=TARGET_FPR_PERCENT):
+        self.target_fpr_percent = target_fpr_percent
 
     def fit(self, X_normal):
-        if self.dedupliziere:
+        if self.deduplicate:
             X_normal = X_normal.drop_duplicates()
         self.scaler = StandardScaler().fit(X_normal)
         Xs = self.scaler.transform(X_normal)
-        self._fit_kern(Xs)
-        # Schwelle so, dass auf dem Trainings-Normalverkehr ~ziel_fpr_prozent Alarme entstehen
-        train_scores = self._roh_score(Xs)
-        self.schwelle_ = float(np.percentile(train_scores, 100.0 - self.ziel_fpr_prozent))
+        self._fit_core(Xs)
+        # threshold such that ~target_fpr_percent alarms arise on the training normal traffic
+        train_scores = self._raw_score(Xs)
+        self.threshold_ = float(np.percentile(train_scores, 100.0 - self.target_fpr_percent))
         return self
 
     def score(self, X):
-        return self._roh_score(self.scaler.transform(X))
+        return self._raw_score(self.scaler.transform(X))
 
     def predict(self, X):
-        return (self.score(X) > self.schwelle_).astype(int)
+        return (self.score(X) > self.threshold_).astype(int)
 
 
-class IsolationForestDetektor(_AnomalieBasis):
-    """Isoliert Punkte durch zufaellige Splits: Anomalien brauchen weniger Splits."""
-    name = "Isolation Forest"
+class IsolationForestDetector(_AnomalyBase):
+    """Isolates points through random splits: anomalies need fewer splits."""
+    name = "Isolation forest"
 
     def __init__(self, random_state=0, **kw):
         super().__init__(**kw)
         self.random_state = random_state
 
-    def _fit_kern(self, Xs):
-        self.modell = IsolationForest(n_estimators=200, random_state=self.random_state).fit(Xs)
+    def _fit_core(self, Xs):
+        self.model = IsolationForest(n_estimators=200, random_state=self.random_state).fit(Xs)
 
-    def _roh_score(self, Xs):
-        return -self.modell.score_samples(Xs)      # hoeher = anomaler
+    def _raw_score(self, Xs):
+        return -self.model.score_samples(Xs)       # higher = more anomalous
 
 
-class MahalanobisDetektor(_AnomalieBasis):
-    """Gaussmodell des Normalverkehrs: Alarm bei grosser Mahalanobis-Distanz.
+class MahalanobisDetector(_AnomalyBase):
+    """Gaussian model of the normal traffic: alarm at a large Mahalanobis distance.
 
-    Das simpelste denkbare Verfahren - und eine faire Messlatte: schlaegt ein komplexer
-    Detektor das hier nicht, ist er seinen Aufwand nicht wert.
+    The simplest method imaginable - and a fair yardstick: if a complex detector does not beat
+    this one, it is not worth its effort.
     """
-    name = "Mahalanobis-Gauss"
+    name = "Mahalanobis Gaussian"
 
-    def _fit_kern(self, Xs):
-        # winziges Rauschen gegen singulaere Kovarianz (konstante/duplizierte Spalten)
+    def _fit_core(self, Xs):
+        # tiny noise against a singular covariance (constant/duplicated columns)
         Xs = Xs + 1e-9 * np.random.default_rng(0).standard_normal(Xs.shape)
         self.cov = EmpiricalCovariance().fit(Xs)
 
-    def _roh_score(self, Xs):
+    def _raw_score(self, Xs):
         return self.cov.mahalanobis(Xs)
 
 
-class OneClassSVMDetektor(_AnomalieBasis):
-    """One-Class SVM mit Nystroem-Kernel-Approximation.
+class OneClassSVMDetector(_AnomalyBase):
+    """One-class SVM with a Nystroem kernel approximation.
 
-    Die exakte OneClassSVM ist bei ~70k Punkten zu langsam (O(n^2)); die reine SGD-Variante
-    ist linear und trennt hier NICHTS. Nystroem approximiert den RBF-Kernel und macht die
-    schnelle SGD-Variante brauchbar.
+    The exact OneClassSVM is too slow at ~70k points (O(n^2)); the pure SGD variant is linear
+    and separates NOTHING here. Nystroem approximates the RBF kernel and makes the fast SGD
+    variant usable.
     """
-    name = "One-Class SVM (Nystroem)"
+    name = "One-class SVM (Nystroem)"
 
     def __init__(self, nu=0.01, gamma=0.1, n_components=200, random_state=0, **kw):
         super().__init__(**kw)
         self.nu, self.gamma = nu, gamma
         self.n_components, self.random_state = n_components, random_state
 
-    def _fit_kern(self, Xs):
-        self.modell = make_pipeline(
+    def _fit_core(self, Xs):
+        self.model = make_pipeline(
             Nystroem(gamma=self.gamma, n_components=self.n_components,
                      random_state=self.random_state),
             SGDOneClassSVM(nu=self.nu, random_state=self.random_state),
         ).fit(Xs)
 
-    def _roh_score(self, Xs):
-        return -self.modell.decision_function(Xs)
+    def _raw_score(self, Xs):
+        return -self.model.decision_function(Xs)
 
 
-class LOFDetektor(_AnomalieBasis):
-    """Local Outlier Factor: vergleicht die lokale Dichte eines Punktes mit der seiner Nachbarn.
+class LOFDetector(_AnomalyBase):
+    """Local outlier factor: compares the local density of a point with that of its neighbours.
 
-    ZWEI Fallstricke, die diesen Detektor hier zuerst voellig unbrauchbar gemacht haben:
+    TWO pitfalls that made this detector completely unusable here at first:
 
-    1. **predict() nicht benutzen.** Sein `offset_` entgleist auf diesen Daten auf ~-1.3e6,
-       sodass NIE Alarm ausgeloest wird. Wir nutzen score_samples() + eigene Schwelle.
+    1. **Do not use predict().** On this data its `offset_` derails to ~-1.3e6, so an alarm is
+       NEVER raised. We use score_samples() plus our own threshold.
 
-    2. **Duplikate zerstoeren LOF** (deshalb `dedupliziere = True`). KDD99 ist massiv redundant
-       (Skript 3.6): 13.4 % des Normalverkehrs sind EXAKTE Duplikate. Fuer LOF ist das fatal -
-       sind die k Nachbarn eines Punktes mit ihm identisch, ist deren Abstand 0, die lokale
-       Dichte geht gegen unendlich und der LOF-Quotient explodiert. Gemessen:
-           mit Duplikaten : Trainings-Scores bis 1.55e9  -> 99%-Schwelle 1.09e6 -> Recall 0.000
-           dedupliziert   : Trainings-Scores bis 393     -> 99%-Schwelle 1.98   -> Recall 1.000
-       Die Redundanz des Datensatzes blaeht also nicht nur Metriken auf, sie legt ganze
-       Verfahrensklassen lahm.
+    2. **Duplicates destroy LOF** (hence `deduplicate = True`). KDD99 is massively redundant
+       (script 3.6): 13.4 % of the normal traffic are EXACT duplicates. For LOF that is fatal -
+       if the k neighbours of a point are identical to it, their distance is 0, the local
+       density goes to infinity and the LOF ratio explodes. Measured:
+           with duplicates : training scores up to 1.55e9 -> 99 % threshold 1.09e6 -> recall 0.000
+           deduplicated    : training scores up to 393    -> 99 % threshold 1.98   -> recall 1.000
+       So the redundancy of the dataset does not merely inflate metrics, it paralyses entire
+       classes of methods.
     """
-    name = "Local Outlier Factor"
-    dedupliziere = True
+    name = "Local outlier factor"
+    deduplicate = True
 
     def __init__(self, n_neighbors=20, **kw):
         super().__init__(**kw)
         self.n_neighbors = n_neighbors
 
-    def _fit_kern(self, Xs):
-        self.modell = LocalOutlierFactor(n_neighbors=self.n_neighbors, novelty=True,
-                                         n_jobs=-1).fit(Xs)
+    def _fit_core(self, Xs):
+        self.model = LocalOutlierFactor(n_neighbors=self.n_neighbors, novelty=True,
+                                        n_jobs=-1).fit(Xs)
 
-    def _roh_score(self, Xs):
-        return -self.modell.score_samples(Xs)
+    def _raw_score(self, Xs):
+        return -self.model.score_samples(Xs)
