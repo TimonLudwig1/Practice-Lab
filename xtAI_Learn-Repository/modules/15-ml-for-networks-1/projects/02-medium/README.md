@@ -1,4 +1,124 @@
-# Projekt 02 (medium) — Der Base-Rate-Fallacy: warum „99 % Erkennung" nichts wert ist
+# Project 02 (medium) — the base-rate fallacy: why "99 % detection" is worth nothing
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Format: Python project** (`.py` + tests). **Why?** The core is a **formula** that has to be
+exactly right — and unit tests are the right tool for that (a notebook could not be secured this
+way). It also separates things cleanly: loading data ↔ computational core ↔ analysis.
+
+---
+
+## Goal
+
+Project 01 ended with a random forest at **99.99 %** and the suspicion that this is too good to be
+true. Here comes the reckoning. You show — **empirically and analytically** — why a detector that
+looks excellent on paper drowns in false alarms in **production**.
+
+This is **the** core topic of intrusion detection (Axelsson 2000) and the reason why so many IDS
+papers are practically worthless.
+
+## Prior knowledge
+
+Module 15 script, **section 3.1** (base-rate fallacy) and **3.2** (ROC vs. PR). Conditional
+probability / **Bayes' theorem**. Module 04 (metrics, cost-based threshold).
+
+## Files
+
+| File | Role |
+|---|---|
+| `flow_data.py` | Loading/preprocessing the data, base-rate subsampling. **Given.** |
+| `base_rate.py` | The computational core. **This is your work** (5 TODOs). |
+| `run.py` | The four-part analysis plus plots. Given. |
+| `test_base_rate.py` | Test suite (**14 tests**). |
+
+## Task
+
+Five short functions in `base_rate.py`. **The difficulty is not the code, it is really
+understanding the formulas:**
+
+1. **`ppv_at_base_rate(tpr, fpr, pi)`** — Bayes:
+   $$P(I\mid A)=\frac{\text{TPR}\cdot\pi}{\text{TPR}\cdot\pi+\text{FPR}\cdot(1-\pi)}$$
+   (must also handle arrays for `pi`).
+2. **`required_fpr(tpr, pi, target_ppv)`** — **rearrange** the formula for FPR (pen and paper).
+3. **`alarms_per_day(...)`** — absolute numbers instead of percentages.
+4. **`expected_cost(...)`** — false alarm × analyst time + missed attack × damage.
+5. **`best_operating_point(...)`** — the cost-minimal threshold taken from the ROC curve
+   (the bridge to the cost-based threshold from module 04).
+
+**Sanity check:** TPR = 0.99, FPR = 0.001, π = 10⁻⁴ ⇒ **PPV ≈ 9 %**.
+
+## What comes out at the end
+
+`python test_base_rate.py` → **14/14 green** (<1 s). `python run.py` → the analysis (~2 s):
+
+**The detector** (logistic regression on volume/timing features):
+ROC-AUC **0.9940**, PR-AUC **0.9817** — looks excellent. Operating point "I want to see 99 % of
+the attacks": TPR = 0.9911, **FPR = 6.55 %**.
+
+**1) ROC lies, PR does not** (lower the base rate by thinning out the attacks, detector unchanged):
+
+| π | ROC-AUC | PR-AUC |
+|---|---|---|
+| 1 % | 0.9956 | 0.9605 |
+| 0.1 % | 0.9956 | 0.8305 |
+| 0.01 % | **0.9999** | **0.4333** |
+
+The **ROC-AUC even rises to 0.9999**, while the PR-AUC collapses to 0.43. The ROC is **blind to
+the base rate** — which is why it lies here.
+
+**2) The fallacy in numbers** (fixed operating point):
+
+| Base rate π | PPV = P(attack \| alarm) | Share of false alarms |
+|---|---|---|
+| 3.36 % (test set) | 34.5 % | 65.5 % |
+| 0.1 % | 1.49 % | 98.5 % |
+| **0.01 % (realistic)** | **0.15 %** | **99.85 %** |
+
+At 10 million flows/day and π = 10⁻⁴: **991 real** and **654,745 false** alarms — per day.
+
+**3) Theory meets measurement** (the nicest part): the Bayes prediction and the empirically
+measured precision on the thinned data agree — **13.26 % vs. 13.29 %** and **1.49 % vs. 1.49 %**.
+The effect is **not a quirk of the dataset**, it is pure probability theory. *(That is real
+science: make a prediction and measure it.)*
+
+**4) What would be needed:** for PPV = 50 % at π = 10⁻⁴ you would need **FPR ≤ 9.9·10⁻⁵** —
+**661× better** than now. **The bottleneck is the FPR, not the detection rate.** The cost-optimal
+threshold lowers the expected cost from **3.7 million** to **0.89 million EUR/day** — by
+*sacrificing recall* (TPR 0.986) for far fewer false alarms.
+
+> **Why a deliberately "weak" detector?** With **all** KDD features a random forest reaches
+> **FPR = 0.0** — and then there would be nothing to show. But that is an **artifact of the overly
+> easy dataset** (script 3.6), not reality. We therefore use only **volume/timing features**. This
+> is justified twice over: it avoids the leaky KDD artifacts **and** matches exactly the reality of
+> **encrypted** traffic, where only metadata are available (script 2.1).
+
+## Running / setup
+
+```bash
+/.../xtAI_Learn-Repository/.venv/bin/python test_base_rate.py   # 14 tests, <1 s
+/.../xtAI_Learn-Repository/.venv/bin/python run.py              # analysis + plot, ~2 s
+```
+`scikit-learn`, `pandas`, `numpy` (+ `matplotlib`). `pytest` optional (`__main__` runner).
+
+## Solution
+
+Complete in [`solution/`](solution/). Try it yourself first — the tests tell you exactly which
+formula is still off (among them Axelsson's numerical example, the inverse check, and the
+coin-flip detector, for which PPV = π **must** come out).
+
+## Going further
+
+- **Precision@k**: a SOC works through the 100 most urgent alarms. How many of them are real?
+  (A more realistic metric than any AUC.)
+- At which **base rate** is the detector just about usable (PPV > 50 %)?
+- What happens at **π = 0** (no attack in the network)? What does the formula say — and what does
+  that mean?
+- **Alert budget:** your team can handle 100 alarms/day. Which FPR can you afford, and what recall
+  do you still get for it?
+
+---
+
+# Projekt 02 (medium) — Der Base-Rate-Fallacy: warum „99 % Erkennung" nichts wert ist (deutsche Fassung)
 
 **Format: Python-Projekt** (`.py` + Tests). **Warum?** Der Kern ist eine **Formel**, die exakt
 stimmen muss — dafür sind Unit-Tests das richtige Werkzeug (ein Notebook könnte man nicht
@@ -34,13 +154,13 @@ Wahrscheinlichkeit / **Satz von Bayes**. Modul 04 (Metriken, Kosten-Schwelle).
 In `base_rate.py` fünf kurze Funktionen. **Die Schwierigkeit ist nicht der Code, sondern die
 Formeln wirklich zu verstehen:**
 
-1. **`ppv_bei_basisrate(tpr, fpr, pi)`** — Bayes:
+1. **`ppv_at_base_rate(tpr, fpr, pi)`** — Bayes:
    $$P(I\mid A)=\frac{\text{TPR}\cdot\pi}{\text{TPR}\cdot\pi+\text{FPR}\cdot(1-\pi)}$$
    (muss auch Arrays für `pi` können).
-2. **`benoetigte_fpr(tpr, pi, ziel_ppv)`** — die Formel **nach FPR umstellen** (Papier & Bleistift).
-3. **`alarme_pro_tag(...)`** — absolute Zahlen statt Prozente.
-4. **`erwartete_kosten(...)`** — Fehlalarm × Analystenzeit + verpasster Angriff × Schaden.
-5. **`bester_betriebspunkt(...)`** — kostenminimale Schwelle aus der ROC-Kurve
+2. **`required_fpr(tpr, pi, target_ppv)`** — die Formel **nach FPR umstellen** (Papier & Bleistift).
+3. **`alarms_per_day(...)`** — absolute Zahlen statt Prozente.
+4. **`expected_cost(...)`** — Fehlalarm × Analystenzeit + verpasster Angriff × Schaden.
+5. **`best_operating_point(...)`** — kostenminimale Schwelle aus der ROC-Kurve
    (die Brücke zur Kosten-Schwelle aus Modul 04).
 
 **Kontrollrechnung:** TPR = 0,99, FPR = 0,001, π = 10⁻⁴ ⇒ **PPV ≈ 9 %**.

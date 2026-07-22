@@ -1,4 +1,110 @@
-# Projekt 01 (basic) — Netzwerkverkehr klassifizieren: von Flows zu Features
+# Project 01 (basic) — classifying network traffic: from flows to features
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Format: Jupyter notebook** (`flow_classification.ipynb`). **Why?** This is about
+**understanding data**: looking at real, dirty network data, building features, plotting
+distributions, comparing models. Exactly the exploratory workflow a notebook is made for (as in
+modules 02–04).
+
+---
+
+## Goal
+
+You work with **real flow data** for the first time (KDD Cup 99, via `scikit-learn`) and:
+
+1. understand the **feature structure** of a flow record (volume, time, protocol, context),
+2. build a clean **preprocessing** step (decode bytes, cast types, one-hot encode categorical
+   features, **log-transform** heavy tails),
+3. classify **normal vs. attack** as well as the **attack types**,
+4. walk right into the **accuracy trap** — and understand why 99.99 % means almost nothing.
+
+## Prior knowledge
+
+Module 15 script, **section 1** (flows, features, heavy tails) and **3.1 stage 1** (accuracy
+trap). Module 04 (classification, pipelines, metrics), pandas basics.
+
+## Task
+
+Most of it is given (this is the basic project!). You fill in **two** `# TODO` blocks:
+
+1. **EDA:** histogram of `src_bytes` raw vs. **log-transformed** — make the heavy tail visible.
+2. **Features:** build the target `y` (attack yes/no) and the matrix `X` — log transform of the
+   byte counters plus one-hot for `protocol_type`/`service`/`flag`.
+
+After that: compare models and **interpret** the result table.
+
+## What comes out at the end
+
+| Model | Accuracy | Precision | Recall | F1 |
+|---|---|---|---|---|
+| **Dummy** ("always normal") | **0.96645** | 0.000 | 0.000 | 0.000 |
+| Logistic regression | 0.99957 | 0.995 | 0.992 | 0.994 |
+| Random forest | **0.99987** | 1.000 | 0.996 | 0.998 |
+
+**The lesson:** the dummy finds **not a single attack** and still has **96.6 % accuracy**. The
+random forest is only ~3 points better in accuracy — the metric **hides** the entire relevant
+difference, because it is dominated by the majority class. Precision/recall show the truth
+(0.0 vs. ~1.0).
+
+Plus two more doses of reality:
+- **Ultra-rare classes:** `pod`, `multihop`, `warezmaster` have **exactly one** example → a
+  stratified split is impossible (`ValueError`). We remove them **in a documented way** — and
+  discuss that this is precisely one popular way of prettifying results.
+- **Tiny supports:** `teardrop` has 3 test examples → recall 0.67. A single misclassification
+  costs 33 points. Percentages like these are **noise**.
+
+Runtime: **~8 s** (the RF trains in 0.3 s). On the first run the dataset downloads ~2 MB and is
+cached in `~/scikit_learn_data`.
+
+> ### ⚠️ Two honest warnings
+>
+> **1. The 99.99 % are too good to be true.** (a) KDD99 is **redundant and too easy** — artifacts
+> such as `src_bytes` separate the classes almost perfectly; (b) we split **randomly** → **data
+> leakage** (script 3.5); (c) the base rate of 3.36 % attacks is **absurdly high** for a real
+> network. Why all of this collapses in production is computed in **project 02**.
+>
+> **2. The dataset** (script 3.6): KDD99 is **outdated (1999), synthetic, redundant**. We use it
+> because it delivers real flow features with a realistic imbalance and no download hurdle — ideal
+> for learning **methodology**. It permits **no** statement about real IDS quality. For real work:
+> **UNSW-NB15** or **CIC-IDS2017**.
+
+## A trap that is demonstrated explicitly in the notebook
+
+The values arrive as bytes (`b'normal.'`). The tempting "fix" is **wrong**:
+
+```python
+s.astype(str).str.strip("b'")   # WRONG
+```
+
+`str.strip` removes **all** characters from the set `{b, '}` at both ends — not the prefix `b'`.
+So `b'back.'` becomes **`ack`**, and the service `b'bgp'` becomes **`gp`**. You silently destroy
+data and never notice. The correct way is a real `decode()`; an `assert` in the notebook secures
+this. *(I fell into exactly this trap while building — which is why it is in here.)*
+
+## Running / setup
+
+Repo `venv`. Open the notebook:
+`/.../xtAI_Learn-Repository/.venv/bin/python -m jupyter lab` (or the `.venv` kernel in VS Code).
+Only `scikit-learn`, `pandas`, `numpy`, `matplotlib` — all available. Internet is needed only for
+the **first** load.
+
+## Solution
+
+Fully solved and **executed** in
+[`solution/flow_classification_solution.ipynb`](solution/flow_classification_solution.ipynb).
+Try it yourself first! It contains four extension tasks (drop the log, protocol features only,
+remove `src_bytes` → what does that say about the dataset?, read the confusion matrix).
+
+## Transfer
+
+Flow features, one-hot encoding, the log transform and the accuracy trap are the basis for
+**project 02** (base-rate fallacy: why a "perfect" detector drowns in false alarms in production)
+and **project 03** (zero-day detection without attack labels).
+
+---
+
+# Projekt 01 (basic) — Netzwerkverkehr klassifizieren: von Flows zu Features (deutsche Fassung)
 
 **Format: Jupyter Notebook** (`flow_classification.ipynb`). **Warum?** Hier geht es um
 **Datenverständnis**: echte, schmutzige Netzwerkdaten anschauen, Features bauen, Verteilungen

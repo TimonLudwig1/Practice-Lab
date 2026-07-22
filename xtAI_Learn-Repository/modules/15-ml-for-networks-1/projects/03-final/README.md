@@ -1,4 +1,153 @@
-# Projekt 03 (final) — Zero-Day-Erkennung: Wer findet den Angriff, den niemand kennt?
+# Project 03 (final) — zero-day detection: who finds the attack nobody knows?
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Format: Python project, _without any given code_.** This final project gets **no scaffold** —
+you build everything yourself: the scenario setup, the detectors, the evaluation, the tests. It is
+the master-level examination piece of the module and consolidates **everything**: flow features
+(P01), the base-rate calculation (P02), unsupervised methods (module 05) and sound evaluation
+without leakage.
+
+**Why a `.py` project?** Four components (scenario, detectors, evaluation, tests) interlock in a
+testable way — and the central claim ("the zero-day was **never** in training") *has* to be secured
+by a test, otherwise nobody will believe it.
+
+---
+
+## The scenario (and why it is the only honest one)
+
+A real IDS faces a fundamental problem: **the next attack has not been invented yet.** Signatures
+and supervised models only know what has already happened. The standard evaluation ("random split,
+99 % accuracy") obscures this completely — it only tests whether the model *recognizes what it
+already knows*.
+
+This project therefore builds a **zero-day scenario**:
+
+> In training, **only the attack `smurf` is known**. All other attack types (`neptune`, `satan`,
+> `teardrop`, `portsweep`, `back`, `ipsweep`) do **not exist at all** in training — they only show
+> up in production. A random split would be **self-deception** here (script 3.5: data leakage).
+
+And then two philosophies compete against each other (script 2.2):
+- **Misuse/supervised** — models *the bad*. Knows attacks (but only the known ones).
+- **Anomaly/semi-supervised** — models *the normal*. **Never** sees an attack, only normal
+  traffic.
+
+## Learning objectives
+
+- Design a **methodologically honest** experiment that measures what it claims to measure (hold
+  back attack types entirely instead of splitting randomly).
+- Implement **semi-supervised anomaly detection** (train on normal traffic only).
+- Compare methods **fairly** — at the **same false alarm budget**, not at arbitrary default
+  parameters.
+- Translate the results into operational relevance with the **base-rate reality check** (P02).
+
+## Assignment (step by step)
+
+Build (file names are a suggestion):
+
+1. **`flow_data.py` — the scenario.** Load/clean KDD99, build flow features (without the leaky
+   artifacts such as `serror_rate`), and a `ZeroDayScenario` that separates cleanly:
+   `normal_train` / `normal_test` / `known_train` / `known_test` / `zeroday` (a dict per type).
+2. **`detectors.py` — the contenders.** One supervised detector (e.g. random forest) and **at
+   least three** anomaly detectors that see **only** `normal_train` — e.g. **isolation forest**,
+   **one-class SVM**, **LOF**, **Mahalanobis Gaussian**. Common interface `fit` / `score` /
+   `predict`.
+3. **`run.py` — the experiment.** Recall **per attack type** (known vs. zero-day) plus FPR on
+   normal traffic, then the base-rate reality check (PPV, false alarms per day).
+4. **`test_*.py` — tests.** In particular: **prove** that no zero-day type is in the training data.
+   Also: bytes decoded correctly, FPR budget respected, core statements secured.
+
+### The most important design trick: a shared FPR budget
+
+If you compare detectors with their default parameters (`contamination`, `nu`, …), you compare
+**apples with oranges** — each of them raises alarms at a different rate. Better: every detector
+produces an **anomaly score**, and the **threshold** is set to the (100−1)-**percentile of the
+scores on the training normal traffic**. Then *every* detector has **~1 % false alarms** by
+construction, and the **zero-day recall is the only free quantity** — a fair comparison at the same
+price.
+
+## What should come out at the end
+
+At the same **1 % FPR budget** (only `smurf` was known in training):
+
+| Detector | FPR | smurf *(known)* | neptune | satan | teardrop | **avg. zero-day** |
+|---|---|---|---|---|---|---|
+| **Supervised RF** | 0.000 | 0.999 | **0.000** | 0.000 | 0.000 | **0.000** |
+| Mahalanobis Gaussian | 0.009 | 1.000 | 0.982 | 0.867 | 0.182 | 0.350 |
+| Isolation forest | 0.009 | 1.000 | 0.989 | 0.933 | 0.545 | 0.459 |
+| One-class SVM (Nystroem) | 0.010 | 1.000 | 0.988 | 0.867 | 1.000 | 0.690 |
+| **Local outlier factor** | 0.010 | 1.000 | 1.000 | 1.000 | 1.000 | **0.952** |
+
+### The interpretation you should deliver
+
+- **The supervised detector is perfect — and completely blind.** It detects `smurf` at 99.9 % with
+  **zero** false alarms. And it misses **`neptune` 100 % of the time** — a SYN flood with 928
+  flows that is *not subtle*. It just never saw it. **This is exactly what the standard evaluation
+  never measures.**
+- **The anomaly detectors have never seen an attack** — and still find up to **95 %** of the
+  zero-days. That is the entire point of anomaly detection.
+- **The price is in the FPR column:** 1 % instead of 0 %. Sounds like nothing — and is the reason
+  why anomaly IDSs die in practice: at 10 million flows/day that is **~100,000 false alarms per
+  day**, and the PPV drops (P02) to **< 1 %**. **The trade-off is not "which algorithm", it is
+  "blindness towards the new" vs. "drowning in false alarms".** In practice you combine both:
+  signatures for the known (cheap, precise) plus anomaly detection as a second line (expensive, but
+  able to see).
+- **Anomaly ≠ attack — stay honest:** `back` and `ipsweep` are **not found at all** by most
+  detectors. `back` is an attack that looks like normal HTTP traffic — it *is* not statistically
+  anomalous. Anomaly detection is not magic: it finds the *unusual*, not the *malicious*.
+
+## Two pitfalls I stumbled over while building this
+
+They are documented here because they are real lessons — and because they explain why results
+sometimes look absurd **without** any error message appearing:
+
+1. **`LocalOutlierFactor.predict()` is unusable on this data** — its `offset_` derails to
+   ~−1.3·10⁶, so an alarm is **never** raised. Use `score_samples()` with your own threshold.
+2. **Duplicates destroy LOF.** KDD99 is massively redundant (script 3.6): **13.4 %** of the normal
+   traffic are **exact duplicates**. For LOF this is fatal — if the *k* neighbours of a point are
+   identical to it, their distance is 0, the local density goes to ∞ and the LOF ratio explodes:
+
+   | | max. training score | 99 % threshold | recall (smurf) |
+   |---|---|---|---|
+   | with duplicates | **1.55·10⁹** | 1.09·10⁶ | **0.000** |
+   | deduplicated | 393 | 1.98 | **1.000** |
+
+   So the redundancy of the dataset does not merely inflate metrics — it **paralyses entire classes
+   of methods**. (Likewise: `SGDOneClassSVM` is **linear** and separates nothing here — score
+   normal 3.946 vs. smurf 3.959; only a **Nystroem** kernel approximation makes it usable.)
+
+## Reference solution
+
+Complete and tested in [`solution/`](solution/) (scenario, 5 detectors, `run.py`, **11 tests**).
+**Try it yourself first!**
+
+```bash
+/.../xtAI_Learn-Repository/.venv/bin/python solution/test_zeroday.py   # 11 tests, ~26 s
+/.../xtAI_Learn-Repository/.venv/bin/python solution/run.py            # experiment + plot, ~10 s
+```
+Only `scikit-learn`/`pandas`/`numpy` (+ `matplotlib`). CPU.
+
+> **Classifying the dataset** (script 3.6): KDD99 is **outdated, synthetic and too easy**. The
+> *methodology* of this project transfers fully, the *absolute numbers* do **not**. For
+> trustworthy statements: **UNSW-NB15** or **CIC-IDS2017**.
+
+## Extensions (for the especially motivated)
+
+- **A different zero-day set:** make `neptune` known and `smurf` the zero-day. Does the picture
+  hold? How strongly does the result depend on the held-back type? (A result that hangs on *one*
+  split is not a result.)
+- **Ensemble:** combine supervised + anomaly (alarm if either fires). What does that do to recall
+  and FPR — and to the PPV?
+- **Autoencoder** (module 05/09) as an anomaly detector: reconstruction error as the score. Does it
+  beat the simple Mahalanobis? (If not — what does that tell you?)
+- **Vary the FPR budget** (0.1 % / 1 % / 5 %): plot zero-day recall over FPR — the actual decision
+  curve for operations.
+- **Concept drift** (script 3.3): train on the first half, test on the second.
+- **Precision@100:** your team can handle 100 alarms/day. How many real zero-days are among them?
+
+---
+
+# Projekt 03 (final) — Zero-Day-Erkennung: Wer findet den Angriff, den niemand kennt? (deutsche Fassung)
 
 **Format: Python-Projekt, _ohne Code-Vorgabe_.** Dieses Abschlussprojekt bekommt **kein
 Gerüst** — du baust alles selbst: Szenario-Aufbau, Detektoren, Auswertung, Tests. Es ist die
@@ -44,8 +193,8 @@ Und dann treten zwei Philosophien gegeneinander an (Skript 2.2):
 Baue (Dateinamen als Vorschlag):
 
 1. **`flow_data.py` — Szenario.** KDD99 laden/säubern, Flow-Features bauen (ohne die leaky
-   Artefakte wie `serror_rate`), und ein `ZeroDaySzenario`, das sauber trennt:
-   `normal_train` / `normal_test` / `bekannt_train` / `bekannt_test` / `zeroday` (dict je Typ).
+   Artefakte wie `serror_rate`), und ein `ZeroDayScenario`, das sauber trennt:
+   `normal_train` / `normal_test` / `known_train` / `known_test` / `zeroday` (dict je Typ).
 2. **`detectors.py` — die Kontrahenten.** Ein überwachter Detektor (z. B. Random Forest) und
    **mindestens drei** Anomaliedetektoren, die **nur** `normal_train` sehen — z. B.
    **Isolation Forest**, **One-Class SVM**, **LOF**, **Mahalanobis-Gauß**. Gemeinsame

@@ -1,4 +1,480 @@
-# Modul 15 — Machine Learning for Networks 1
+# Module 15 — Machine Learning for Networks 1
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The projects themselves are English only.
+
+> **What is this about?** A communication network is one of the largest data sources in computer
+> science: every second produces millions of packets, flows and measurements. This module applies
+> **machine learning to communication networks** — **classifying** traffic, **detecting** attacks,
+> **predicting quality of service/experience (QoS/QoE)**, **forecasting** load. The appeal does not
+> lie in exotic models (they are mostly the same ones as in modules 04/05), but in the **brutal
+> peculiarities of the domain**: extreme class imbalance, non-stationary traffic, encryption,
+> line-rate requirements — and one statistical trap that renders entire security products useless
+> in practice: the **base-rate fallacy**.
+
+**Helpful prior knowledge:** classification/regression, pipelines, cross-validation, metrics
+(modules 04/05); basic networking concepts (IP, TCP/UDP, ports) are useful but are introduced
+here.
+
+**Modules you should have done first:**
+- **Module 04 (ML 1)** — classification, pipelines, CV, GridSearch, **threshold selection & costs**
+  (the Adult project with its cost-based threshold is the direct blueprint here);
+- **Module 05 (ML 2)** — ensembles/networks, clustering & **unsupervised** methods (for the
+  anomaly detection in the final project);
+- **Modules 02/03 (data science)** — EDA, data cleaning, dealing with real, dirty data.
+  *(RL from modules 13/14 is **not** needed here.)*
+
+> **Note on how the content was scoped.** No official module description was available for this
+> module. I scoped it along the Würzburg affiliation (Chair of **Communication Networks**) and the
+> international standard literature: "networks" here means **communication networks**, *not*
+> neural networks and *not* primarily graph learning. Module 16 (ML for Networks 2) later goes
+> deeper into graph-based methods (GNN), network time series and self-learning networks.
+
+---
+
+## Learning objectives
+
+After this module you can …
+
+- classify **network data**: packet vs. **flow** level, NetFlow/IPFIX, active vs. passive
+  measurement, **sampling**, and the **features** derivable from them;
+- explain the evolution of **traffic classification**: port-based → **DPI** → statistical ML →
+  **encrypted** traffic;
+- formulate **intrusion/anomaly detection** as an ML problem — supervised, unsupervised,
+  **semi-supervised** (normal traffic only) — and state the difference between *misuse* and
+  *anomaly* detection;
+- handle **extreme class imbalance** correctly and justify why **accuracy** and often even the
+  **ROC curve** are misleading here (→ **PR curve**);
+- derive the **base-rate fallacy** (Axelsson) **quantitatively** and compute why a detector that
+  is "99.9 % accurate" drowns in false alarms in production;
+- explain **concept drift**/non-stationarity, **deployment** constraints (line rate, latency),
+  **adversarial** evasion and **privacy** as practical problems;
+- assess network datasets **critically** (why KDD Cup 99 is notorious).
+
+---
+
+## 1 · Basics — network data
+
+### 1.1 Why use ML in the network at all?
+
+Classical network operations tools are **rule-based**: fixed port numbers, signatures,
+thresholds. That breaks for three reasons:
+
+1. **Encryption.** More than 90 % of web traffic is TLS today. There is nothing readable left in
+   the payload → signature-based **deep packet inspection (DPI)** runs into the void. What remains
+   are the **metadata** (packet sizes, timing, directions) — and evaluating those is a
+   **statistical** problem, i.e. ML.
+2. **Scale & dynamics.** Applications change ports, tunnel over 443, change weekly. Hand-maintained
+   rules become stale faster than you can write them.
+3. **Unknown attacks.** Signatures only recognize what is already known. **Zero-days** require
+   modelling *normality* and reporting deviations.
+
+### 1.2 Packets, flows, and what can be measured
+
+Network data exists at several levels of granularity:
+
+- **Packet level** (`pcap` via tcpdump/Wireshark): every single packet with header plus, possibly,
+  payload. Maximum information content, but **huge** (10 Gbit/s ⇒ ~GB/s) and privacy-critical.
+- **Flow level** (**NetFlow**/**IPFIX**, sFlow): packets are aggregated into **flows**. Classically
+  a flow is the **5-tuple**
+  $$(\text{source IP},\ \text{destination IP},\ \text{source port},\ \text{destination port},\ \text{protocol})$$
+  plus a time window. Per flow you store aggregates: duration, packet count, bytes, flags, …
+  **This is the sweet spot for ML**: compact enough for line rate, informative enough to learn
+  from, and much more privacy-friendly without the payload. *All three projects work at exactly
+  this level.*
+- **Aggregated time series** (SNMP counters, link utilization per 5 min): for forecasting/capacity
+  planning.
+
+**Measurement** is either **passive** (listening in, e.g. at a router mirror port) or **active**
+(sending packets yourself: `ping`, `traceroute`, speed tests — which changes the network you are
+measuring).
+
+**Sampling.** At high rates you cannot capture every packet; you take, say, every 1000th one
+(1:1000). A consequence for ML that is often overlooked: **small flows disappear** almost entirely
+(a 3-packet port scan is never seen with probability ≈ 99.7 % at 1:1000), while elephant flows
+survive. Sampling **biases** the distribution systematically — and precisely against the rare,
+security-relevant events.
+
+### 1.3 Typical flow features
+
+From a flow record you can derive:
+
+| Group | Examples |
+|---|---|
+| **Volume** | total bytes, total packets, mean packet size, bytes per direction |
+| **Time** | duration, inter-arrival times (mean/std/min/max), bytes per second |
+| **Direction/symmetry** | upstream/downstream ratio, number of direction changes |
+| **Protocol/header** | protocol, TCP flags (SYN/FIN/RST), TTL, window size |
+| **Context/host** | number of connections from the same source in the time window, number of distinct destination ports |
+
+The **context features** are often the most valuable ones: a single SYN is harmless, but "200 SYNs
+to 200 different ports of the same host within 2 seconds" is a port scan. **Attacks are frequently
+visible only in the aggregate, not in the individual event.**
+
+### 1.4 The distributions are *not* benign
+
+Network traffic violates almost every convenient assumption:
+
+- **Heavy tails.** Flow sizes are extremely skewed: a few **elephant flows** carry the bulk of the
+  bytes, millions of **mice flows** the bulk of the flows. Means are almost meaningless here →
+  a **log transform** of byte/packet counters is practically mandatory.
+- **Non-stationary.** Day/night, weekday/weekend, new apps → the distribution drifts permanently
+  (**concept drift**, section 3.3).
+- **Not i.i.d.** Packets of one flow and flows of one host are strongly correlated. Naively
+  splitting at random into train/test therefore **leaks** massively (section 3.5).
+
+---
+
+## 2 · Building up — the four core tasks
+
+### 2.1 Traffic classification
+
+**Question:** which application/service class produces this flow (video, VoIP, web, gaming, file
+sharing)? **What for:** QoS prioritization, capacity planning, billing, policy enforcement.
+
+The historical development is itself the lesson:
+
+1. **Port-based** (until ~2000): port 80 = HTTP. **Dead** — everything runs over 443 today, P2P
+   uses dynamic ports.
+2. **DPI/signatures** (~2000–2010): look into the payload. **Killed by encryption** (and legally
+   and privacy-wise delicate).
+3. **Statistical ML on flow features** (today): classify based on *sizes and timing*, not content.
+   Works **even with TLS**, because encryption hides the content but barely changes the **pattern**
+   (packet size sequence, burstiness).
+4. **Deep learning on raw byte/packet sequences** (current): CNNs/transformers learn the features
+   themselves.
+
+> **The central aha moment:** encryption protects the **content**, not the **metadata**. A video
+> stream still looks like a video stream when encrypted (periodic, large bursts while the buffer
+> refills). This is exactly what both the useful QoS classification and the worrying **website
+> fingerprinting** live on — the same technique with two different signs.
+
+### 2.2 Intrusion / anomaly detection
+
+**Question:** is this traffic malicious? Two fundamentally different philosophies:
+
+| | **Misuse/signature detection** | **Anomaly detection** |
+|---|---|---|
+| Models | the **bad** (known attacks) | the **normal** |
+| Detects zero-days? | **no** | **yes** (in principle) |
+| False alarms | few | **many** |
+| ML type | supervised classification | unsupervised / **semi-supervised** |
+
+**Semi-supervised** is the practically relevant case and the topic of the **final project**: you
+train **exclusively on normal traffic** (of which you have plenty, unlabelled) and report
+deviations. Typical methods: **isolation forest**, **one-class SVM**, **local outlier factor**,
+**autoencoders** (high reconstruction error = anomalous), Gaussian models.
+
+The hard reality: **anomaly ≠ attack.** A backup at 3 a.m. is highly anomalous and completely
+harmless. That is the reason for section 3.1.
+
+### 2.3 QoS and QoE prediction
+
+- **QoS (quality of service)** = the *technical* quantities: throughput, **latency**, **jitter**,
+  packet loss. Objectively measurable.
+- **QoE (quality of experience)** = the *subjectively perceived* quality, classically collected as
+  a **MOS** (mean opinion score, 1–5) via user surveys.
+
+The ML task: map **QoS → QoE** (regression), because you cannot keep asking the user in
+production. The relationship is **non-linear**: the **IQX hypothesis** model describes it as
+exponential,
+$$\text{QoE} = \alpha\,e^{-\beta\cdot \text{QoS impairment}}+\gamma,$$
+and the **Weber-Fechner law** explains why: perception reacts to *relative*, not absolute changes.
+In practice this means: going from 100 ms to 200 ms of latency is a drama, going from 2 s to 2.1 s
+is unnoticeable. In video streaming, **stalling** (rebuffering) and quality switches dominate the
+MOS far more strongly than the pure resolution. *(Both — IQX and Weber-Fechner — are core Würzburg
+research.)*
+
+### 2.4 Traffic forecasting
+
+**Question:** how much load will be on this link in 15 min / tomorrow? **What for:** capacity
+planning, energy saving, autoscaling, anomaly baselines. It is a **time series** problem with
+strong **seasonality** (daily/weekly rhythm): classically **ARIMA/SARIMA**/Holt-Winters, in modern
+form gradient boosting on lag features or **LSTMs** (module 09). For a baseline model, one thing
+almost always holds: **seasonal-naive** ("as much as last week at the same time") is surprisingly
+strong — if you do not beat it, your model is not learning anything useful.
+
+---
+
+## 3 · Advanced — where network ML really fails
+
+### 3.1 Class imbalance & the base-rate fallacy ⚠️
+
+**The most important chapter of this module.** Attacks are **rare**. This is exactly where most
+papers and products fail.
+
+**Stage 1 — the accuracy trap.** If 99.99 % of traffic is normal, the classifier
+`return "normal"` achieves an **accuracy of 99.99 %** — and is entirely worthless. **Accuracy is
+not a sensible metric under strong imbalance.** (Project 01 demonstrates this.)
+
+**Stage 2 — the base-rate fallacy** (Axelsson, 2000). Subtler and more fatal. Given:
+- **sensitivity/TPR** $P(A\mid I)$: alarm when there is an attack — e.g. **0.99**
+- **false positive rate/FPR** $P(A\mid \neg I)$: alarm although harmless — e.g. **0.001** (0.1 %!)
+- **base rate/prior** $\pi = P(I)$: share of attacks in total traffic — realistically **0.0001**
+
+What is asked is what the analyst cares about: **given an alarm — how likely is it real?** That is
+the **positive predictive value (PPV/precision)**, and Bayes gives
+$$\boxed{\;P(I\mid A)=\frac{P(A\mid I)\,\pi}{P(A\mid I)\,\pi + P(A\mid\neg I)\,(1-\pi)}\;}$$
+Substituting:
+$$P(I\mid A)=\frac{0.99\cdot 10^{-4}}{0.99\cdot 10^{-4} + 10^{-3}\cdot 0.9999} \approx \frac{0.000099}{0.001099}\approx \mathbf{9\,\%}.$$
+
+**More than 90 % of all alarms are false alarms** — with a detector that has 99 % detection and
+only a 0.1 % false alarm rate. The model is not to blame, the **tiny base rate** is: the 0.1 % FPR
+is applied to the *enormous* amount of harmless traffic and simply swamps the few genuine hits by
+sheer mass.
+
+**Consequences for practice:**
+- The limiting factor is almost always the **FPR**, not the detection rate. If you want PPV ≈ 50 %
+  at $\pi=10^{-4}$, you need FPR ≈ $10^{-4}$ — **a hundred times better** than 0.1 %.
+- **Alert fatigue** is the real consequence: analysts ignore alarms that are 90 % wrong — and miss
+  the real one among them.
+- Always compute in **absolute numbers**: 0.1 % FPR at 10 million flows/day = **10,000 false
+  alarms per day**. No team in the world works through that.
+
+*Project 02 computes exactly this — including alarms per day and threshold selection.*
+
+### 3.2 Metrics: why ROC lies here
+
+The **ROC curve** (TPR over FPR) is **deceptively optimistic** under strong imbalance, because the
+FPR has the **enormous** negative set in its denominator: 10,000 false alarms among 10 million
+negatives means FPR = 0.001 → the ROC curve continues to look excellent (AUC ≈ 0.99), even though
+the result is operationally useless.
+
+The **precision-recall curve** uses **precision** instead, whose denominator pits the false
+positives directly against the *few* true positives → it **collapses visibly** and shows the
+truth. **Rule of thumb: under strong imbalance always use the PR curve + PR-AUC** (the baseline of
+the PR curve is the base rate $\pi$, not 0.5!). In addition: **precision@k** ("of the k most urgent
+alarms — how many are real?"), which matches the way a SOC works.
+
+### 3.3 Concept drift
+
+The model is trained on March data and deployed in September — the traffic has long since changed
+(new apps, new attacks, new user behaviour). One distinguishes:
+- **virtual drift**: $P(x)$ changes (different traffic mix),
+- **real drift**: $P(y\mid x)$ changes (the same pattern must now be judged differently).
+
+Countermeasures: **time-based evaluation** (do not split randomly!), continuous **monitoring** of
+the score distribution, periodic **retraining**, drift detectors (ADWIN, DDM). **The half-life of
+a model in the network is short** — an IDS is a *process*, not an artifact.
+
+### 3.4 Deployment: line rate, latency, location
+
+A model in the network path has hard constraints that never existed in modules 04/05:
+- **Line rate**: at 100 Gbit/s only **nanoseconds** remain per packet. A random forest with 500
+  trees is unthinkable there → lean models, flow instead of packet level, pre-filtering, hardware
+  (P4/SmartNIC/FPGA).
+- **Where?** On the router (fast, dumb), at a collector (medium), in the data centre (powerful,
+  but delayed by seconds).
+- **Earliness:** for QoS prioritization the decision must be made after the **first few packets** —
+  after the flow has ended it is useless. "Early classification" is therefore a research topic of
+  its own.
+
+### 3.5 Data leakage, adversarial attacks, privacy
+
+- **Data leakage** is endemic in this domain. If you split flows **at random**, flows of **the same
+  attack** end up in train *and* test → the model "detects" the attack it has already seen, and the
+  metrics are fantastic **and worthless**. Correct: split **temporally** or group by host/attack
+  type (`GroupKFold`). *(This is why the final project holds back entire attack types.)*
+- **Adversarial/evasion:** the adversary is **active and intelligent** — unlike with cat pictures.
+  They can insert padding, change timing, run the attack slowly ("low and slow") to stay below the
+  threshold. Even **poisoning** is possible: slowly accustoming the model to the attack.
+- **Privacy:** traffic data is personal data (metadata reveal a great deal — see website
+  fingerprinting). Flow instead of payload level, anonymization/aggregation, possibly federated
+  learning.
+
+### 3.6 Dataset criticism — why KDD Cup 99 is notorious
+
+The projects use **KDD Cup 99** (via `sklearn.datasets.fetch_kddcup99`). This has to be classified
+**openly**:
+
+**Problems** (McHugh 2000; Tavallaee et al. 2009):
+- **Ancient** (a simulation from 1998/99) — the attacks and the traffic have little to do with
+  today.
+- **Synthetically** generated, not from a real production network.
+- **Massively redundant**: many duplicates → distorted class shares, models memorize what is
+  frequent.
+- **Too easy**: even a random forest reaches ~99.99 % — the classes are almost perfectly separable
+  through artifacts (among others `src_bytes`). Results here are **not** transferable to real
+  networks.
+- **NSL-KDD** is the cleaned version (duplicates removed); **UNSW-NB15** (2015) and
+  **CIC-IDS2017/2018** are the modern successors.
+
+**Why we still take it:** it is available through sklearn **without any download hurdle**, has
+**real flow features** and a **realistic imbalance** — so it is excellently suited to learning
+*methodology* and *pitfalls*. **What it cannot do** is make a statement about the real quality of
+an IDS. Precisely this distinction — *good methodology* vs. *trustworthy result* — is itself a
+learning outcome of this module. For real work: UNSW-NB15 or CIC-IDS2017.
+
+---
+
+## 4 · Summary / cheat sheet
+
+**Data levels.** Packet (`pcap`, huge, payload) → **flow** (5-tuple + aggregates, NetFlow/IPFIX,
+*the ML sweet spot*) → time series (SNMP, forecasting). Measurement active/passive; **sampling**
+erases small flows.
+
+**5-tuple.** (src IP, dst IP, src port, dst port, protocol).
+
+**Tasks.** Traffic classification (port→DPI→**statistical ML**→encrypted) · intrusion detection
+(misuse ↔ **anomaly**) · **QoS→QoE** (IQX: $\alpha e^{-\beta x}+\gamma$; Weber-Fechner) ·
+forecasting (seasonality; baseline **seasonal-naive**).
+
+**Base-rate fallacy** (the heart of it all):
+$$P(I\mid A)=\frac{\text{TPR}\cdot\pi}{\text{TPR}\cdot\pi+\text{FPR}\cdot(1-\pi)}$$
+TPR 0.99 · FPR 0.001 · $\pi=10^{-4}$ ⇒ **PPV ≈ 9 %**. The bottleneck is the **FPR**, not the
+detection rate. Always compute **alarms per day**.
+
+**Metrics.** Accuracy ❌ · ROC/AUC ❌ (too optimistic, enormous negative set) · **PR curve +
+PR-AUC ✅** (baseline = $\pi$) · precision@k ✅.
+
+**Pitfalls.** random split → **leakage** (→ temporal/`GroupKFold`) · **concept drift** (→
+retraining) · **line rate** (→ lean models) · **adversarial** opponent · heavy tails (→ **log
+transform**) · **KDD99 is too easy & outdated**.
+
+---
+
+## 5 · Self-test
+
+<details>
+<summary><b>1.</b> Why is port-based classification no longer sufficient, and why does ML work despite encryption?</summary>
+
+Ports have become unreliable (dynamic ports, everything tunnelled over 443). Encryption hides the
+**content**, but not the **metadata**: packet sizes, timing, directions and burstiness remain
+visible — and from those the application can be recognized statistically (a video stream still
+looks like one when encrypted). DPI, by contrast, needs readable payload and is therefore dead.
+</details>
+
+<details>
+<summary><b>2.</b> What is a flow, and why is the flow level the sweet spot for ML?</summary>
+
+A flow is the aggregation of all packets with the same **5-tuple** (src IP, dst IP, src port, dst
+port, protocol) within a time window, stored as an aggregate (duration, bytes, packets, flags).
+Sweet spot because: compact enough for high data rates, informative enough to learn from, and
+**without payload** much more privacy-friendly than `pcap`.
+</details>
+
+<details>
+<summary><b>3.</b> An IDS has 99.99 % accuracy. Why does that say nothing?</summary>
+
+Because with a base rate of, say, 0.01 % attacks, the trivial classifier "everything is normal"
+already reaches **99.99 %** accuracy — without ever finding an attack. Under strong imbalance,
+accuracy is dominated by the majority class and therefore **useless**; you need precision/recall
+or the PR curve.
+</details>
+
+<details>
+<summary><b>4.</b> Compute: TPR = 0.99, FPR = 0.001, base rate π = 10⁻⁴. How many alarms are real?</summary>
+
+$$P(I|A)=\frac{0.99\cdot10^{-4}}{0.99\cdot10^{-4}+0.001\cdot0.9999}=\frac{0.000099}{0.001099}\approx 9\,\%.$$
+Only **~9 %** of the alarms are real, **~91 % false alarms** — despite "99 % detection, only 0.1 %
+false alarm rate". This is the **base-rate fallacy**: the small FPR meets an enormous amount of
+harmless traffic.
+</details>
+
+<details>
+<summary><b>5.</b> Why the PR curve instead of the ROC curve for attack detection?</summary>
+
+The ROC uses the **FPR**, whose denominator is the enormous negative set → even 10,000 false alarms
+appear as "FPR 0.001" and the curve stays visually excellent. **Precision** confronts the false
+positives directly with the *few* true positives → the PR curve **collapses visibly** and reflects
+the operational reality. The PR baseline is the **base rate π**, not 0.5.
+</details>
+
+<details>
+<summary><b>6.</b> Misuse vs. anomaly detection — difference and respective price?</summary>
+
+**Misuse/signature** models known **attacks** → few false alarms, but **blind to zero-days**.
+**Anomaly detection** models the **normal** and reports deviations → can find the unknown, but
+produces **many false alarms**, because *anomalous ≠ malicious* (the nightly backup).
+Semi-supervised (training on normal traffic only) is the practical middle ground.
+</details>
+
+<details>
+<summary><b>7.</b> Why is a random train/test split dangerous for network data?</summary>
+
+**Data leakage**: flows are not i.i.d. Flows of the same attack/host end up in train *and* test →
+the model recognizes what it has seen, and the metrics are excellent and **worthless**. The correct
+approach is a **temporal** split (predict the future) or grouping by host/attack type
+(`GroupKFold`) — and for zero-day tests: hold back entire attack types.
+</details>
+
+<details>
+<summary><b>8.</b> What is concept drift, and what follows from it organizationally?</summary>
+
+The distribution changes over time — **virtual** ($P(x)$, new traffic mix) or **real**
+($P(y|x)$, different assessment of the same pattern). Consequence: models **become stale quickly**.
+You need time-based evaluation, monitoring of the score distribution and periodic **retraining** —
+an IDS is a **process**, not a one-off delivered artifact.
+</details>
+
+<details>
+<summary><b>9.</b> What do the IQX hypothesis and Weber-Fechner say about QoE?</summary>
+
+**IQX:** QoE depends **exponentially** on the QoS impairment, $\text{QoE}=\alpha e^{-\beta x}+\gamma$.
+**Weber-Fechner:** perception reacts to **relative**, not absolute changes. In practice: 100→200 ms
+of latency is severe, 2.0→2.1 s is unnoticeable. For video, **stalling** dominates the MOS more
+strongly than the resolution.
+</details>
+
+<details>
+<summary><b>10.</b> Name three reasons why KDD Cup 99 permits no statement about real IDS quality.</summary>
+
+Any three: **outdated** (1998/99), **synthetic** (no production network), **massively redundant**
+(duplicates distort the class shares), **too easy** (RF ≈ 99.99 % through artifacts such as
+`src_bytes`), unrealistic base rate. Modern alternatives: **NSL-KDD**, **UNSW-NB15**,
+**CIC-IDS2017**.
+</details>
+
+---
+
+## 6 · Literature & sources
+
+**The classic on the core topic (free, absolutely worth reading):**
+- 📄 **S. Axelsson (2000), *The Base-Rate Fallacy and the Difficulty of Intrusion Detection***
+  (ACM TISSEC). The paper behind section 3.1 — short, computational, disillusioning.
+  *Beginner-friendly, freely findable.* **Best single source of the module.**
+- 📄 **R. Sommer & V. Paxson (2010), *Outside the Closed World: On Using Machine Learning for
+  Network Intrusion Detection*** (IEEE S&P). Why ML so often fails in the IDS context — mandatory
+  reading, excellently written. *Free.*
+
+**Dataset criticism:**
+- 📄 **J. McHugh (2000), *Testing Intrusion Detection Systems*** — the original criticism of
+  DARPA/KDD.
+- 📄 **Tavallaee et al. (2009), *A Detailed Analysis of the KDD CUP 99 Data Set*** — introduces
+  **NSL-KDD**. *Free.*
+- 🌐 **UNSW-NB15** (unsw.adfa.edu.au) and **CIC-IDS2017** (unb.ca/cic/datasets) — the modern
+  datasets for serious work. *Free, download required.*
+
+**Traffic classification & measurement:**
+- 📄 **Nguyen & Armitage (2008), *A Survey of Techniques for Internet Traffic Classification
+  using Machine Learning*** (IEEE Comm. Surveys) — the standard overview. *In depth.*
+- 📘 **M. Crotti et al. / Taylor et al., *AppScanner*** — fingerprinting of encrypted traffic.
+  *In depth.*
+- 🌐 **Wireshark** (wireshark.org) — hands-on: look at real traffic yourself. *Beginner.*
+
+**QoE (a core Würzburg topic):**
+- 📄 **Fiedler, Hoßfeld & Tran-Gia (2010), *A Generic Quantitative Relationship between QoS and
+  QoE*** (IEEE Network) — the **IQX hypothesis**. *Beginner→in depth.*
+- 📄 **Hoßfeld et al., *Quantification of YouTube QoE via Crowdsourcing*** — stalling and MOS.
+
+**Books/courses:**
+- 📗 **Bishop / Hastie et al.** for the ML foundations (already known from modules 04/05).
+- 📘 **Kurose & Ross, *Computer Networking: A Top-Down Approach*** — in case you lack the
+  networking basics (TCP/IP, ports, routers). *Beginner-friendly.*
+- 🌐 **scikit-learn user guide: *Imbalanced classification* / *Precision-Recall*** — practical and
+  free.
+
+---
+
+## Next module
+
+**Module 16 — Machine Learning for Networks 2** goes deeper: **graph-based** learning on network
+topologies (GNNs), network **time series**/forecasting in detail, encrypted traffic analysis and
+self-learning/self-optimizing networks. The foundation learned here — flow features, imbalance,
+base rate, drift, sound evaluation — continues to hold there unchanged.
+
+---
+
+# Modul 15 — Machine Learning for Networks 1 (deutsche Fassung)
 
 > **Worum geht es?** Ein Kommunikationsnetz ist eine der größten Datenquellen der Informatik:
 > jede Sekunde entstehen Millionen Pakete, Flows und Messwerte. Dieses Modul wendet **Machine
