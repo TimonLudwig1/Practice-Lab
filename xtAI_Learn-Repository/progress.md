@@ -53,8 +53,8 @@ Letzte abgeschlossene Einheit: **Modul 05 „Machine Learning 2" (komplett: Skri
 
 > ### NEXT ACTION dieses Auftrags
 > **Modul 09 „NLP 2" ist KOMPLETT auf Englisch/bilingual (READMEs `35e7123`, P01-Notebook `83af0b6`, P02 `.py` `f006195`, P03 `gpt.py` `303b7b8`). Verifiziert: P01 LSTM 0.788/Train 0.993/BoW 0.860; P02 8/8 Tests grün, Transformer 1.000 vs BoW 0.503; P03 Smoke-Test 200 Iter läuft (Start-Loss 3.96 ~ ln 65, 818k Params).**
-> **Modul 13 „Reinforcement Learning" ist KOMPLETT auf Englisch/bilingual** (READMEs `1428f59`, P01-Notebook `bce30a7`, P02 `.py` `adeb98c`, P03 `.py` `bce1116`). Verifiziert: P01 Bandits greedy 34.4%/eps0.1 80.6%/UCB 86.7%; P02 10/10 Tests, SARSA online -27.7/greedy -17 vs Q-Learning -51.6/greedy -13; P03 10/10 Tests, VI (s,S) s~4/S=16, Opt.-Lücke MC 1.49%/Q 3.07%/SARSA 7.05%, alpha-Sweetspot 0.05.
-> **Als Nächstes: Modul 14 „Deep Reinforcement Learning for Optimal Control" — Modul-README + 3 Projekt-READMEs bilingual, P01-Notebook englisch, P02/P03 `.py` englisch. Format wie 08–13: Notebook nur P01, P02+P03 sind .py. ACHTUNG: torch-Modelle (DQN P01 ~6s, Policy-Gradient P02 5-Seed ~60s, LQR-vs-PG P03 ~20-70s) — CPU, klein. Vorher IMMER: `grep -rnE '"daten"|cd loesung|loesung/' modules/14-deep-reinforcement-learning/` UND Notebook-Code per Python-decode auf `\"daten\"` prüfen. nbconvert-Rezept s.o. (PATH-Prepend + `python -m nbconvert`).****
+> **Modul 14 „Deep Reinforcement Learning for Optimal Control" ist KOMPLETT auf Englisch/bilingual** (READMEs `b3b22e9`, P01-Notebook `8785ebf`, P02 `.py` `86ba087`, P03 `.py` `1482d83`). Verifiziert: P01 DQN CartPole gelöst Ep. 160/greedy 478.1; P02 9/9 Tests, REINFORCE ohne Baseline 443±81 (3/5)/mit 211±43 (5/5)/A2C 274±116; P03 12/12 Tests, Riccati -K=[-2.76,-2.51], modellfrei w=[-2.04,-2.23] Opt.-Lücke 3.38%.
+> **Als Nächstes: Modul 15 „Machine Learning for Networks 1" — Modul-README + 3 Projekt-READMEs bilingual, P01-Notebook englisch, P02/P03 `.py` englisch. Format wie 08–14: Notebook nur P01, P02+P03 sind .py. Inhalt selbst zugeschnitten (ML für Kommunikationsnetze; Daten: fetch_kddcup99 sklearn-Loader). Vorher IMMER: `grep -rnE '"daten"|cd loesung|loesung/' modules/15-ml-for-networks-1/` UND Notebook-Code per Python-decode auf `\"daten\"` prüfen. nbconvert-Rezept s.o. (PATH-Prepend + `python -m nbconvert`).****
 > **WICHTIG nbconvert-Ausführung (Falle beim venv-Umzug): Konsolen-Skripte haben kaputte Shebangs → `jupyter nbconvert` scheitert. Rezept: `cd <solution>; export PATH="$VBIN:$PATH"; "$VBIN/python" -m nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=python3 <nb>` (VBIN=.venv/bin; PATH-Prepend nötig, damit der python3-Kernel — argv[0]=bare `python` — die venv-Pakete wie sentencepiece findet).**
 > **Falle 8 erweitert: `DATA_DIR = "daten"` steckt in NOTEBOOK-CODE als JSON-escaptes `\"daten\"` → der Prosa-grep findet es NICHT. Immer auch per Python-decode prüfen.**
 > **Modul 08 ist komplett.** Modul 09 hat wieder das 06/07/08-Format: **Notebook nur P01**, P02+P03 sind .py-Projekte (LSTM-Sentiment, SDPA/MHA/Encoder von Hand, Char-GPT from scratch).
@@ -102,8 +102,9 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 11 Computer Vision | ✓ | ✓ 3/3 (+2 datasets, gitignored) | ✓ Notebook + alle .py | `61e7ff7`, `14d9294`, `0605e8b`, `b3d51ac` |
 | 12 Image Processing | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `a9674a7`, `2930d64`, `a263eb7`, `2df5438` |
 | 13 RL & Decision-Making | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `1428f59`, `bce30a7`, `adeb98c`, `bce1116` |
-| **14 Deep RL for Optimal Control** | **offen — als Nächstes** | offen | offen | — |
-| 15–21 | offen | offen | offen | — |
+| 14 Deep RL for Optimal Control | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `b3b22e9`, `8785ebf`, `86ba087`, `1482d83` |
+| **15 ML for Networks 1** | **offen — als Nächstes** | offen | offen | — |
+| 16–21 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)
 1. Altes Notebook dumpen: `python -c "import json; nb=json.load(open(PFAD)); [print('####',i,c['cell_type'],''.join(c['source'])) for i,c in enumerate(nb['cells'])]"`.
