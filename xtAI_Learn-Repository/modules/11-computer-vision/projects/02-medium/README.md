@@ -1,4 +1,85 @@
-# Projekt 02 (medium) — Transfer Learning als Feature-Extraktor (EuroSAT)
+# Project 02 (medium) — Transfer learning as a feature extractor (EuroSAT)
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Module 11 — Computer Vision** · Format: **Python project** (several modules + test suite)
+
+## Why this format?
+
+The core is a **practical skill**: correctly using a pretrained model as a feature extractor
+(load, freeze, remove the head, preprocess correctly, pull features). As a **codebase** you
+cleanly separate these building blocks and the **test suite** checks that you really froze
+the backbone and tapped into it correctly.
+
+## Goal
+
+You use a **frozen** ImageNet backbone (MobileNetV3-Small) as a **feature extractor** on
+**EuroSAT** (satellite images — a *completely different* domain from ImageNet) and train a
+small classifier on top. Core points (script 3.2, mode B):
+
+- **load** a pretrained model, **freeze** it (`requires_grad = False`) and **replace** the
+  classification head with `Identity`;
+- preprocess images with **`weights.transforms()`** exactly as in pretraining (incl. ImageNet
+  normalization) and extract **feature vectors** (576-dim);
+- **the aha moment:** a linear classifier on these features reaches **~0.94**, while the same
+  method on **raw pixels** achieves only **~0.41** — *without* ever training the backbone.
+  Transferable features clearly beat raw pixels.
+
+## Prior knowledge
+
+- **Script** section 3 (what a pretrained model is, the three usage modes, normalization,
+  from-scratch vs. transfer).
+- PyTorch/torchvision basics; scikit-learn (`LogisticRegression`).
+
+## Project structure
+
+```
+02-medium/
+  transfer.py        # build the feature extractor + pull features   <- YOU (task 1 + 2)
+  data.py            # load EuroSAT + subsets                          (given)
+  run.py             # pipeline: features vs. raw pixels + error analysis (given)
+  test_transfer.py   # test suite (5 tests, fast)                     (given)
+  solution/          # complete, tested reference solution
+```
+
+## Assignment
+
+Little is given — the two practical cores are yours (`# TODO` in `transfer.py`):
+
+1. **`build_feature_extractor`**: load pretrained MobileNetV3-Small, **freeze** it,
+   `classifier = Identity`, `eval()`, and return `WEIGHTS.transforms()`.
+2. **`extract_features`**: preprocess the images batch-wise and send them through the network
+   under `torch.no_grad()`; return the feature matrix `(N, 576)`.
+
+`raw_pixel_features` (the baseline), loading and classification are given.
+
+**How to proceed:**
+
+```bash
+source ../../../../.venv/bin/activate
+python test_transfer.py     # red -> fill in the tasks -> all 5 tests green
+python run.py               # real EuroSAT: feature vs. raw-pixel accuracy
+```
+
+`run.py` downloads EuroSAT on the first run (~90 MB, fast) and caches the extracted features
+in `datasets/` (rebuild with `--rebuild`).
+
+## What should work in the end
+
+- `python test_transfer.py` → **all 5 tests green**: backbone frozen & headless, feature
+  shape `(N, 576)`, correct preprocessing (normalization produces negative values), the
+  raw-pixel baseline, and an integration test that pretrained features separate toy classes.
+- `python run.py` → **raw pixels ~0.41 vs. pretrained features ~0.94** on EuroSAT, plus a
+  short error analysis of the weakest classes.
+
+## Reference solution
+
+Complete in [`solution/`](solution/) (all tests green, ~0.94). Try it yourself first — the
+root `transfer.py` raises `NotImplementedError` until you fill in the TODOs.
+
+---
+
+# Projekt 02 (medium) — Transfer Learning als Feature-Extraktor (EuroSAT) (deutsche Fassung)
 
 **Modul 11 — Computer Vision** · Format: **Python-Projekt** (mehrere Module + Testsuite)
 

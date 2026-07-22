@@ -1,4 +1,78 @@
-# Projekt 01 (basic) — Faltung & Filter von Hand, und gelernte Filter
+# Project 01 (basic) — Convolution & filters by hand, and learned filters
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Module 11 — Computer Vision** · Format: **Jupyter notebook** (`convolution_filters.ipynb`)
+
+## Why this format?
+
+You understand the convolution by *computing and seeing* it: sliding a kernel over the
+image, displaying the result. A notebook connects the implementation, the filters and the
+visualization with immediately visible images — ideal for this guided start.
+
+## Goal
+
+You implement the **2D convolution** yourself, apply classical **hand-designed** filters to
+a real photo and then visualize the first filters *learned* by a **pretrained ResNet**. Core
+points (script sections 1–2):
+
+- 2D convolution with zero padding from scratch;
+- **Sobel edge detection** via the gradient magnitude $G=\sqrt{G_x^2+G_y^2}$; Gaussian &
+  sharpening;
+- **the central CNN insight:** a network does not *design* filters, it *learns* them — the
+  64 first filters of ResNet18 look like learned edge/color detectors, strikingly similar to
+  your Sobel/Gaussian kernels;
+- feature maps after the first convolution layer.
+
+## Prior knowledge
+
+- **Script** sections 1–2 (image tensor, convolution, padding/stride, classical filters,
+  CNN principles).
+- Python/NumPy (slicing, broadcasting), the basic idea of `matplotlib.imshow`.
+
+## Setup
+
+Requires `numpy`, `matplotlib`, `torch`, `torchvision` (repo `requirements.txt`). The
+example image (*Grace Hopper*) is **included** in matplotlib — no download. The pretrained
+**ResNet18** (~45 MB) loads once into the torch cache on the first run.
+
+```bash
+source ../../../../.venv/bin/activate
+jupyter lab      # or open convolution_filters.ipynb in VS Code, kernel = repo .venv
+```
+
+Runs in **seconds on the CPU**, no training.
+
+## Assignment (step by step)
+
+**Part A** (load the image, grayscale) is given. Then three tasks (marked with `# TODO`):
+
+1. **`convolve2d`** by hand (zero padding, vectorized over the kernel positions); verified
+   with an identity and a box-blur test.
+2. **Sobel edges**: $G_x, G_y$ and the gradient magnitude $G$ (Gaussian & sharpening are
+   given).
+3. **Learned filters**: visualize the `conv1` filters of ResNet18 (given) and send the image
+   through `conv1` to show **feature maps**.
+
+At the end a short written **reflection part** (4 questions).
+
+## What should work in the end
+
+- The self-implemented convolution passes the identity test; box blur/Gaussian smooth.
+- The gradient magnitude clearly traces the **contours** of the image.
+- The 64 learned ResNet `conv1` filters show oriented edges and color blobs; the feature
+  maps $(1,64,112,112)$ highlight different image structures.
+
+## Reference solution
+
+A fully filled-in, **executed** notebook is in
+[`solution/convolution_filters_solution.ipynb`](solution/convolution_filters_solution.ipynb).
+Try it yourself first — the stub cells raise `NotImplementedError` until you fill them. The
+reference answers to the reflection questions are at the end of that solution notebook.
+
+---
+
+# Projekt 01 (basic) — Faltung & Filter von Hand, und gelernte Filter (deutsche Fassung)
 
 **Modul 11 — Computer Vision** · Format: **Jupyter Notebook** (`convolution_filters.ipynb`)
 
