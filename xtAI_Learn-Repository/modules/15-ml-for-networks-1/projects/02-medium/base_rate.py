@@ -1,82 +1,82 @@
-"""Der Base-Rate-Fallacy, quantitativ (Axelsson 2000) — Skript Abschnitt 3.1.
+"""The base-rate fallacy, quantitatively (Axelsson 2000) — script section 3.1.
 
->>> DEINE AUFGABE <<<  Fuelle die fuenf mit TODO markierten Funktionen. Sie sind alle kurz —
-die Schwierigkeit liegt nicht im Code, sondern darin, die Formeln WIRKLICH zu verstehen.
+>>> YOUR TASK <<<  Fill in the five functions marked with TODO. They are all short —
+the difficulty is not the code, it is REALLY understanding the formulas.
 
-Die Kernfrage eines Analysten ist NICHT "wie oft erkennt der Detektor einen Angriff?" (TPR),
-sondern: **"Es hat Alarm geschlagen — ist da wirklich was?"** Das ist der positive
-Vorhersagewert (PPV / Precision):
+The core question of an analyst is NOT "how often does the detector recognize an attack?" (TPR),
+but: **"it raised an alarm — is there really something there?"** That is the positive predictive
+value (PPV / precision):
 
     P(I|A) = P(A|I)*pi / ( P(A|I)*pi + P(A|~I)*(1-pi) )
            =   TPR*pi  / (   TPR*pi   +    FPR*(1-pi)  )
 
-mit  I = Angriff ("Intrusion"),  A = Alarm,  pi = P(I) = Basisrate.
+with  I = intrusion (attack),  A = alarm,  pi = P(I) = base rate.
 
-Kontrollrechnung (die dein Code reproduzieren muss):
-    TPR=0.99, FPR=0.001, pi=1e-4  ->  PPV ~ 9 %   (also ~91 % Fehlalarme!)
+Sanity check (which your code has to reproduce):
+    TPR=0.99, FPR=0.001, pi=1e-4  ->  PPV ~ 9 %   (so ~91 % false alarms!)
 
-Musterloesung: solution/base_rate.py — erst selbst versuchen!
+Reference solution: solution/base_rate.py — try it yourself first!
 """
 from __future__ import annotations
 import numpy as np
 
 
-def ppv_bei_basisrate(tpr, fpr, pi):
-    """Positiver Vorhersagewert P(Angriff | Alarm) nach Bayes.
+def ppv_at_base_rate(tpr, fpr, pi):
+    """Positive predictive value P(attack | alarm) via Bayes.
 
-    Muss Skalare UND Arrays fuer `pi` verarbeiten (fuer die Kurve in run.py).
-    Randfall: ist gar kein Alarm moeglich (Nenner 0), gib 0.0 zurueck.
+    Must handle scalars AND arrays for `pi` (for the curve in run.py).
+    Edge case: if no alarm is possible at all (denominator 0), return 0.0.
 
-    Tipp: np.asarray(..., dtype=float) am Anfang, dann np.where(nenner > 0, ...).
+    Hint: np.asarray(..., dtype=float) at the start, then np.where(denominator > 0, ...).
     """
     # TODO
     raise NotImplementedError
 
 
-def benoetigte_fpr(tpr, pi, ziel_ppv):
-    """Welche FPR ist noetig, um einen Ziel-PPV zu erreichen?
+def required_fpr(tpr, pi, target_ppv):
+    """Which FPR is needed to reach a target PPV?
 
-    Stelle die Bayes-Formel nach FPR um (Papier und Bleistift!). Wirf einen ValueError,
-    wenn ziel_ppv nicht echt zwischen 0 und 1 liegt.
+    Rearrange the Bayes formula for FPR (pen and paper!). Raise a ValueError if
+    target_ppv does not lie strictly between 0 and 1.
 
-    Selbstcheck: ppv_bei_basisrate(tpr, benoetigte_fpr(tpr, pi, z), pi) == z
+    Self-check: ppv_at_base_rate(tpr, required_fpr(tpr, pi, z), pi) == z
     """
     # TODO
     raise NotImplementedError
 
 
-def alarme_pro_tag(n_flows_pro_tag, tpr, fpr, pi):
-    """Absolute Alarmzahlen pro Tag. Rueckgabe: (echte_alarme, fehlalarme).
+def alarms_per_day(n_flows_per_day, tpr, fpr, pi):
+    """Absolute alarm counts per day. Returns: (true_alarms, false_alarms).
 
-    Der wichtigste Reality-Check ueberhaupt: Prozente verschleiern, absolute Zahlen nicht.
-    Von n Flows sind pi*n Angriffe (davon TPR erkannt) und (1-pi)*n harmlos
-    (davon FPR faelschlich alarmiert).
+    The most important reality check there is: percentages obscure, absolute numbers do not.
+    Of n flows, pi*n are attacks (of which TPR are detected) and (1-pi)*n are harmless
+    (of which FPR trigger a false alarm).
     """
     # TODO
     raise NotImplementedError
 
 
-def erwartete_kosten(n_flows_pro_tag, tpr, fpr, pi,
-                     kosten_fehlalarm, kosten_verpasst):
-    """Erwartete Tageskosten eines Betriebspunkts.
+def expected_cost(n_flows_per_day, tpr, fpr, pi,
+                  cost_false_alarm, cost_missed):
+    """Expected daily cost of an operating point.
 
-    Zwei Fehlerarten kosten Geld:
-      Fehlalarm          -> Analystenzeit        (Anzahl: FPR*(1-pi)*n)
-      verpasster Angriff -> Schaden              (Anzahl: (1-TPR)*pi*n)
+    Two kinds of error cost money:
+      false alarm    -> analyst time  (count: FPR*(1-pi)*n)
+      missed attack  -> damage        (count: (1-TPR)*pi*n)
     """
     # TODO
     raise NotImplementedError
 
 
-def bester_betriebspunkt(fpr_kurve, tpr_kurve, schwellen, n_flows_pro_tag, pi,
-                         kosten_fehlalarm, kosten_verpasst):
-    """Waehlt aus einer ROC-Kurve den KOSTENMINIMALEN Betriebspunkt.
+def best_operating_point(fpr_curve, tpr_curve, thresholds, n_flows_per_day, pi,
+                         cost_false_alarm, cost_missed):
+    """Picks the COST-MINIMAL operating point from a ROC curve.
 
-    Fuer jeden Punkt (fpr, tpr) der Kurve die erwarteten Kosten ausrechnen und das
-    Minimum nehmen. Rueckgabe: (index, schwelle, kosten) als (int, float, float).
+    Compute the expected cost for every point (fpr, tpr) of the curve and take the
+    minimum. Returns: (index, threshold, cost) as (int, float, float).
 
-    Das ist die Bruecke zu Modul 04 (Kosten-Schwelle beim Adult-Projekt): die richtige
-    Schwelle folgt aus den KOSTEN, nicht aus 0.5.
+    This is the bridge to module 04 (cost-based threshold in the Adult project): the right
+    threshold follows from the COSTS, not from 0.5.
     """
     # TODO
     raise NotImplementedError

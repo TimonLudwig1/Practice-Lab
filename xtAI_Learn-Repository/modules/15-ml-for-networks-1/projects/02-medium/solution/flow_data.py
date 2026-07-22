@@ -1,68 +1,69 @@
-"""Laden und Vorverarbeiten der KDD-Cup-99-Flowdaten — Infrastruktur, vollstaendig gegeben.
+"""Loading and preprocessing the KDD Cup 99 flow data — infrastructure, fully given.
 
-Datensatz-Einordnung (Skript 3.6): KDD99 ist veraltet (1999), synthetisch und ZU LEICHT.
-Wir nutzen ihn, weil er ohne Download-Huerde echte Flow-Features mit realistischem
-Ungleichgewicht liefert. Er erlaubt KEINE Aussage ueber reale IDS-Guete.
+Classifying the dataset (script 3.6): KDD99 is outdated (1999), synthetic and TOO EASY.
+We use it because it delivers real flow features with a realistic imbalance and no download
+hurdle. It permits NO statement about real IDS quality.
 """
 from __future__ import annotations
 import numpy as np
 import pandas as pd
 from sklearn.datasets import fetch_kddcup99
 
-KATEGORIAL = ["protocol_type", "service", "flag"]
-LOG_SPALTEN = ["src_bytes", "dst_bytes", "duration"]
+CATEGORICAL = ["protocol_type", "service", "flag"]
+LOG_COLUMNS = ["src_bytes", "dst_bytes", "duration"]
 
-# Bewusst SCHWACHER Featuresatz: nur Volumen/Zeit/Zaehler, keine der leaky
-# KDD-Artefakte (serror_rate & Co). Zwei Gruende:
-#   1. Mit allen Features erreicht ein Random Forest FPR = 0.0 -> es gaebe nichts zu zeigen.
-#      Das ist ein Artefakt des Datensatzes, nicht Realitaet.
-#   2. Bei VERSCHLUESSELTEM Verkehr hat man real genau das: Volumen und Timing (Skript 2.1).
-# Damit ist der Detektor realistisch stark statt unrealistisch perfekt.
+# Deliberately WEAK feature set: only volume/time/counters, none of the leaky
+# KDD artifacts (serror_rate & co). Two reasons:
+#   1. With all features a random forest reaches FPR = 0.0 -> there would be nothing to show.
+#      That is an artifact of the dataset, not reality.
+#   2. With ENCRYPTED traffic this is exactly what you really have: volume and timing
+#      (script 2.1).
+# This makes the detector realistically strong instead of unrealistically perfect.
 FEATURES_META = ["duration", "src_bytes", "dst_bytes", "wrong_fragment",
                  "urgent", "hot", "count", "srv_count"]
 
 
-def _bytes_zu_str(spalte: pd.Series) -> pd.Series:
-    """Bytes sauber dekodieren.
+def _bytes_to_str(column: pd.Series) -> pd.Series:
+    """Decode bytes properly.
 
-    NICHT `.str.strip("b'")` benutzen! strip() entfernt eine Zeichen-MENGE, kein Praefix:
-    aus b'back.' wuerde "ack" und aus b'bgp' wuerde "gp".
+    Do NOT use `.str.strip("b'")`! strip() removes a character SET, not a prefix:
+    b'back.' would become "ack" and b'bgp' would become "gp".
     """
-    return spalte.apply(lambda v: v.decode() if isinstance(v, bytes) else str(v))
+    return column.apply(lambda v: v.decode() if isinstance(v, bytes) else str(v))
 
 
-def lade_flows(random_state: int = 0) -> pd.DataFrame:
-    """KDD99-Subset 'SA' laden und saeubern. Rueckgabe: DataFrame mit sauberen Typen."""
+def load_flows(random_state: int = 0) -> pd.DataFrame:
+    """Load and clean the KDD99 subset 'SA'. Returns a DataFrame with proper types."""
     data = fetch_kddcup99(subset="SA", percent10=True, as_frame=True,
                           random_state=random_state)
     df = data.frame.copy()
-    df["labels"] = _bytes_zu_str(df["labels"]).str.rstrip(".")
-    numerisch = [c for c in df.columns if c not in KATEGORIAL + ["labels"]]
-    for c in KATEGORIAL:
-        df[c] = _bytes_zu_str(df[c])
-    for c in numerisch:
+    df["labels"] = _bytes_to_str(df["labels"]).str.rstrip(".")
+    numeric = [c for c in df.columns if c not in CATEGORICAL + ["labels"]]
+    for c in CATEGORICAL:
+        df[c] = _bytes_to_str(df[c])
+    for c in numeric:
         df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
-    assert "back" in set(df["labels"]), "Label 'back' zerstoert -> strip-Falle!"
+    assert "back" in set(df["labels"]), "label 'back' destroyed -> the strip trap!"
     return df
 
 
-def baue_xy(df: pd.DataFrame, features=None):
-    """Design-Matrix X (log-transformiert) und binaeres Ziel y (1 = Angriff)."""
+def build_xy(df: pd.DataFrame, features=None):
+    """Design matrix X (log-transformed) and binary target y (1 = attack)."""
     features = FEATURES_META if features is None else features
     X = df[features].copy()
-    for c in LOG_SPALTEN:
+    for c in LOG_COLUMNS:
         if c in X.columns:
             X[c] = np.log1p(X[c])
     y = (df["labels"] != "normal").astype(int)
     return X.astype(float), y
 
 
-def subsample_zu_basisrate(y, scores, pi, rng):
-    """Testmenge auf eine Ziel-Basisrate `pi` bringen, indem ANGRIFFE ausgeduennt werden
-    (alle Normalflows bleiben). Rueckgabe: (y_neu, scores_neu) oder None, wenn zu wenige
-    Angriffe fuer die Zielrate vorhanden sind.
+def subsample_to_base_rate(y, scores, pi, rng):
+    """Bring the test set to a target base rate `pi` by THINNING OUT THE ATTACKS
+    (all normal flows are kept). Returns (y_new, scores_new), or None if there are too few
+    attacks for the target rate.
 
-    Damit simulieren wir ein realistischeres Netz, ohne den Detektor zu veraendern.
+    This simulates a more realistic network without changing the detector.
     """
     y = np.asarray(y)
     neg = np.flatnonzero(y == 0)

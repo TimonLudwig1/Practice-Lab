@@ -1,79 +1,79 @@
-"""Der Base-Rate-Fallacy, quantitativ (Axelsson 2000) — Skript Abschnitt 3.1.
+"""The base-rate fallacy, quantitatively (Axelsson 2000) — script section 3.1.
 
-Die Kernfrage eines Analysten ist NICHT "wie oft erkennt der Detektor einen Angriff?" (TPR),
-sondern: **"Es hat Alarm geschlagen — ist da wirklich was?"** Das ist der positive
-Vorhersagewert (PPV / Precision), und er haengt entscheidend von der Basisrate ab:
+The core question of an analyst is NOT "how often does the detector recognize an attack?" (TPR),
+but: **"it raised an alarm — is there really something there?"** That is the positive predictive
+value (PPV / precision), and it depends crucially on the base rate:
 
     P(I|A) = P(A|I)*pi / ( P(A|I)*pi + P(A|~I)*(1-pi) )
            =   TPR*pi  / (   TPR*pi   +    FPR*(1-pi)  )
 
-mit  I = Angriff ("Intrusion"),  A = Alarm,  pi = P(I) = Basisrate.
+with  I = intrusion (attack),  A = alarm,  pi = P(I) = base rate.
 """
 from __future__ import annotations
 import numpy as np
 
 
-def ppv_bei_basisrate(tpr, fpr, pi):
-    """Positiver Vorhersagewert P(Angriff | Alarm) nach Bayes.
+def ppv_at_base_rate(tpr, fpr, pi):
+    """Positive predictive value P(attack | alarm) via Bayes.
 
-    Akzeptiert Skalare oder Arrays (fuer pi). Rueckgabe: gleiche Form wie die Eingabe.
+    Accepts scalars or arrays (for pi). Returns: the same shape as the input.
     """
     tpr = np.asarray(tpr, dtype=float)
     fpr = np.asarray(fpr, dtype=float)
     pi = np.asarray(pi, dtype=float)
-    zaehler = tpr * pi
-    nenner = tpr * pi + fpr * (1.0 - pi)
-    # Wo gar kein Alarm moeglich ist (Nenner 0), ist der PPV undefiniert -> 0.
+    numerator = tpr * pi
+    denominator = tpr * pi + fpr * (1.0 - pi)
+    # Where no alarm is possible at all (denominator 0), the PPV is undefined -> 0.
     with np.errstate(divide="ignore", invalid="ignore"):
-        out = np.where(nenner > 0, zaehler / nenner, 0.0)
+        out = np.where(denominator > 0, numerator / denominator, 0.0)
     return out if out.ndim else float(out)
 
 
-def benoetigte_fpr(tpr, pi, ziel_ppv):
-    """Welche FPR ist noetig, um einen Ziel-PPV zu erreichen? (Umstellung der Bayes-Formel)
+def required_fpr(tpr, pi, target_ppv):
+    """Which FPR is needed to reach a target PPV? (rearrangement of the Bayes formula)
 
         ppv = TPR*pi / (TPR*pi + FPR*(1-pi))
     =>  FPR = TPR*pi*(1-ppv) / (ppv*(1-pi))
     """
-    tpr = float(tpr); pi = float(pi); ziel_ppv = float(ziel_ppv)
-    if not (0.0 < ziel_ppv < 1.0):
-        raise ValueError("ziel_ppv muss in (0,1) liegen")
-    return tpr * pi * (1.0 - ziel_ppv) / (ziel_ppv * (1.0 - pi))
+    tpr = float(tpr); pi = float(pi); target_ppv = float(target_ppv)
+    if not (0.0 < target_ppv < 1.0):
+        raise ValueError("target_ppv must lie in (0,1)")
+    return tpr * pi * (1.0 - target_ppv) / (target_ppv * (1.0 - pi))
 
 
-def alarme_pro_tag(n_flows_pro_tag, tpr, fpr, pi):
-    """Absolute Alarmzahlen pro Tag. Rueckgabe: (echte_alarme, fehlalarme).
+def alarms_per_day(n_flows_per_day, tpr, fpr, pi):
+    """Absolute alarm counts per day. Returns: (true_alarms, false_alarms).
 
-    Der wichtigste Reality-Check ueberhaupt: Prozente verschleiern, absolute Zahlen nicht.
+    The most important reality check there is: percentages obscure, absolute numbers do not.
     """
-    n = float(n_flows_pro_tag)
-    echte = tpr * pi * n
-    falsch = fpr * (1.0 - pi) * n
-    return echte, falsch
+    n = float(n_flows_per_day)
+    true_alarms = tpr * pi * n
+    false_alarms = fpr * (1.0 - pi) * n
+    return true_alarms, false_alarms
 
 
-def erwartete_kosten(n_flows_pro_tag, tpr, fpr, pi,
-                     kosten_fehlalarm, kosten_verpasst):
-    """Erwartete Tageskosten eines Betriebspunkts.
+def expected_cost(n_flows_per_day, tpr, fpr, pi,
+                  cost_false_alarm, cost_missed):
+    """Expected daily cost of an operating point.
 
-    Fehlalarm  -> Analystenzeit (kosten_fehlalarm je Stueck)
-    Verpasster Angriff -> Schaden (kosten_verpasst je Stueck)
+    False alarm    -> analyst time (cost_false_alarm each)
+    Missed attack  -> damage      (cost_missed each)
     """
-    n = float(n_flows_pro_tag)
-    fehlalarme = fpr * (1.0 - pi) * n
-    verpasste = (1.0 - tpr) * pi * n
-    return fehlalarme * kosten_fehlalarm + verpasste * kosten_verpasst
+    n = float(n_flows_per_day)
+    false_alarms = fpr * (1.0 - pi) * n
+    missed = (1.0 - tpr) * pi * n
+    return false_alarms * cost_false_alarm + missed * cost_missed
 
 
-def bester_betriebspunkt(fpr_kurve, tpr_kurve, schwellen, n_flows_pro_tag, pi,
-                         kosten_fehlalarm, kosten_verpasst):
-    """Waehlt aus einer ROC-Kurve den kostenminimalen Betriebspunkt.
+def best_operating_point(fpr_curve, tpr_curve, thresholds, n_flows_per_day, pi,
+                         cost_false_alarm, cost_missed):
+    """Picks the cost-minimal operating point from a ROC curve.
 
-    Rueckgabe: (index, schwelle, kosten) des Minimums.
+    Returns: (index, threshold, cost) of the minimum.
     """
-    kosten = np.array([
-        erwartete_kosten(n_flows_pro_tag, t, f, pi, kosten_fehlalarm, kosten_verpasst)
-        for f, t in zip(fpr_kurve, tpr_kurve)
+    cost = np.array([
+        expected_cost(n_flows_per_day, t, f, pi, cost_false_alarm, cost_missed)
+        for f, t in zip(fpr_curve, tpr_curve)
     ])
-    i = int(np.argmin(kosten))
-    return i, float(schwellen[i]), float(kosten[i])
+    i = int(np.argmin(cost))
+    return i, float(thresholds[i]), float(cost[i])
