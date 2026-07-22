@@ -1,22 +1,22 @@
-"""Stochastisches Bestandsmanagement (stochastic inventory control) — ein MDP.
+"""Stochastic inventory control — an MDP.
 
-Ein Haendler haelt ein Lager der Kapazitaet M. Zu jeder Periode:
-  1. Er beobachtet den Bestand i (Zustand, 0..M).
-  2. Er bestellt a Einheiten (Aktion), die SOFORT eintreffen; Bestand -> x = i + a (<= M).
-  3. Eine stochastische Nachfrage D ~ Poisson(lam) tritt ein.
-  4. Verkauf = min(x, D). Nicht befriedigte Nachfrage geht VERLOREN (lost sales).
-     Neuer Bestand i' = max(x - D, 0).
-Kosten (negative Belohnung) je Periode:
-     - Bestellfixkosten K, falls a > 0            (macht die optimale Politik zu (s,S))
-     - variable Bestellkosten c pro Einheit
-     - Lagerkosten h pro Einheit Endbestand
-     - Strafkosten p pro Einheit verlorener Nachfrage (Fehlmenge)
+A retailer holds a warehouse of capacity M. Each period:
+  1. It observes the inventory i (the state, 0..M).
+  2. It orders a units (the action), which arrive IMMEDIATELY; inventory -> x = i + a (<= M).
+  3. A stochastic demand D ~ Poisson(lam) occurs.
+  4. Sales = min(x, D). Unsatisfied demand is LOST (lost sales).
+     New inventory i' = max(x - D, 0).
+Cost (negative reward) per period:
+     - fixed ordering cost K, if a > 0            (makes the optimal policy an (s,S) one)
+     - variable ordering cost c per unit
+     - holding cost h per unit of ending inventory
+     - penalty cost p per unit of lost demand (shortage)
   reward = -(K*[a>0] + c*a + h*max(x-D,0) + p*max(D-x,0))
 
-Das ist ein klassisches Operations-Research-Problem. Weil das Modell (Poisson-Nachfrage +
-Kosten) hier BEKANNT ist, kann man die exakte optimale Politik per Value Iteration berechnen
-(siehe dp_reference.py) — die dient als Referenz fuer die modellfreien Lerner, die das Modell
-NICHT benutzen duerfen.
+This is a classical operations-research problem. Because the model (Poisson demand + costs)
+is KNOWN here, one can compute the exact optimal policy via value iteration (see
+dp_reference.py) — that serves as the reference for the model-free learners, which must NOT
+use the model.
 """
 from __future__ import annotations
 import numpy as np
@@ -24,12 +24,12 @@ from math import exp, lgamma
 
 
 def poisson_pmf(lam: float, d_max: int) -> np.ndarray:
-    """PMF von Poisson(lam) auf 0..d_max, wobei der Rest-Tail auf d_max gebuendelt wird
-    (damit sich die Wahrscheinlichkeiten exakt zu 1 summieren)."""
+    """PMF of Poisson(lam) on 0..d_max, with the remaining tail bundled onto d_max (so that
+    the probabilities sum exactly to 1)."""
     ks = np.arange(0, d_max + 1)
     logpmf = ks * np.log(lam) - lam - np.array([lgamma(k + 1) for k in ks])
     pmf = np.exp(logpmf)
-    pmf[-1] += 1.0 - pmf.sum()      # Tail P(D > d_max) auf d_max legen
+    pmf[-1] += 1.0 - pmf.sum()      # put the tail P(D > d_max) onto d_max
     return pmf
 
 
@@ -41,12 +41,12 @@ class InventoryEnv:
         self.c, self.K, self.h, self.p = c, K, h, p
         self.d_max = d_max
         self.n_states = capacity + 1
-        self.n_actions = capacity + 1          # Bestellmengen 0..M (durch Kapazitaet gedeckelt)
+        self.n_actions = capacity + 1          # order quantities 0..M (capped by the capacity)
         self.pmf = poisson_pmf(lam, d_max)
         self.rng = np.random.default_rng(seed)
         self._state = 0
 
-    # ---- welche Aktionen sind in Zustand i zulaessig? (nicht ueber Kapazitaet bestellen) ----
+    # ---- which actions are admissible in state i? (do not order above the capacity) ----
     def valid_actions(self, i: int) -> np.ndarray:
         return np.arange(0, self.M - i + 1)
 
@@ -55,7 +55,7 @@ class InventoryEnv:
         mask[: self.M - i + 1] = True
         return mask
 
-    # ---- deterministische Kostenfunktion gegeben realisierte Nachfrage d ----
+    # ---- deterministic cost function given a realized demand d ----
     def _reward(self, i: int, a: int, d: int) -> float:
         x = i + a
         ending = max(x - d, 0)
@@ -63,20 +63,20 @@ class InventoryEnv:
         cost = self.K * (a > 0) + self.c * a + self.h * ending + self.p * lost
         return -cost
 
-    # ---- Gym-artige API (modellfrei nutzbar) ----
+    # ---- gym-like API (usable model-free) ----
     def reset(self, state=None) -> int:
         self._state = self.rng.integers(self.n_states) if state is None else int(state)
         return self._state
 
     def step(self, a: int):
         i = self._state
-        assert 0 <= a <= self.M - i, f"unzulaessige Aktion a={a} in Zustand i={i}"
+        assert 0 <= a <= self.M - i, f"inadmissible action a={a} in state i={i}"
         d = int(self.rng.choice(len(self.pmf), p=self.pmf))
         r = self._reward(i, a, d)
         self._state = max(i + a - d, 0)
-        return self._state, r, False        # fortlaufende Aufgabe: nie 'done'
+        return self._state, r, False        # a continuing task: never 'done'
 
-    # ---- das explizite Modell P, R (NUR fuer die DP-Referenz, nicht fuers Lernen!) ----
+    # ---- the explicit model P, R (ONLY for the DP reference, not for learning!) ----
     def expected_reward(self, i: int, a: int) -> float:
         x = i + a
         d = np.arange(len(self.pmf))
@@ -86,10 +86,10 @@ class InventoryEnv:
         return -(self.K * (a > 0) + self.c * a + float(self.pmf @ stage))
 
     def transition_probs(self, i: int, a: int) -> np.ndarray:
-        """P(i' | i, a) als Vektor der Laenge n_states."""
+        """P(i' | i, a) as a vector of length n_states."""
         x = i + a
         probs = np.zeros(self.n_states)
         d = np.arange(len(self.pmf))
-        nxt = np.maximum(x - d, 0)           # naechster Zustand je Nachfrage d
+        nxt = np.maximum(x - d, 0)           # the next state per demand d
         np.add.at(probs, nxt, self.pmf)
         return probs
