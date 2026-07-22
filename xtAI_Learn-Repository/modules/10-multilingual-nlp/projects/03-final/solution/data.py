@@ -1,4 +1,4 @@
-"""Tatoeba DE-EN laden + Tokenisierung (vorgegeben)."""
+"""Load Tatoeba DE-EN + tokenization (given)."""
 import os
 import io
 import re
@@ -11,10 +11,10 @@ URL = "https://www.manythings.org/anki/deu-eng.zip"
 
 
 def load_pairs():
-    """Liste von (deutsch, englisch) — wir übersetzen DE -> EN."""
+    """List of (german, english) — we translate DE -> EN."""
     os.makedirs(DATA_DIR, exist_ok=True)
     if not os.path.exists(RAW):
-        print("Lade Tatoeba DE-EN ...")
+        print("Downloading Tatoeba DE-EN ...")
         hdr = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                              "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -29,10 +29,10 @@ def load_pairs():
     for ln in lines:
         parts = ln.split("\t")
         if len(parts) >= 2:
-            pairs.append((parts[1], parts[0]))   # (deutsch, englisch)
+            pairs.append((parts[1], parts[0]))   # (german, english)
     return pairs
 
 
 def tokenize(s):
-    """Kleinschreibung, Wörter + Satzzeichen als Tokens."""
+    """Lowercase, words + punctuation as tokens."""
     return re.findall(r"[a-zäöüßA-ZÄÖÜ]+|[.!?,]", s.lower())

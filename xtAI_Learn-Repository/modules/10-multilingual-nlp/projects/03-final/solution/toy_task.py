@@ -1,11 +1,11 @@
-"""Synthetische Toy-Aufgabe: Sequenz-Umkehr (vorgegeben, sehr billig).
+"""Synthetic toy task: sequence reversal (given, very cheap).
 
-Quelle = zufällige Symbolfolge; Ziel = dieselbe Folge **rückwärts**. Diese Aufgabe ist
-nur lösbar, wenn die **Cross-Attention** funktioniert (Decoder-Schritt j muss auf
-Quellposition L-1-j schauen). Sie trainiert in Sekunden auf der CPU und ist damit ein
-billiger, aber echter Nachweis, dass der Encoder-Decoder-Transformer korrekt ist.
+Source = a random symbol sequence; target = the same sequence **reversed**. This task is
+only solvable if the **cross-attention** works (decoder step j must look at source position
+L-1-j). It trains in seconds on the CPU and is thus a cheap but genuine proof that the
+encoder-decoder transformer is correct.
 
-Vokabular: PAD=0, BOS=1, EOS=2, Inhaltssymbole ab 3.
+Vocabulary: PAD=0, BOS=1, EOS=2, content symbols from 3 on.
 """
 import torch
 

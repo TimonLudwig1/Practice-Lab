@@ -1,15 +1,15 @@
-r"""IBM Model 1 — statistische Wort-Übersetzung via EM (Brown et al. 1993).
+r"""IBM Model 1 — statistical word translation via EM (Brown et al. 1993).
 
-Das klassische Fundament der maschinellen Übersetzung und der konzeptuelle Vorläufer der
-**Attention** ("weiches Alignment", Skript 4.2): Aus rein *parallelen* Sätzen — ganz ohne
-Wörterbuch — lernt der EM-Algorithmus eine Übersetzungstabelle $t(e\mid f)$ und damit
-Wort-**Alignments**. Rein zählbasiert: schnell, CPU-only, kein neuronales Training.
+The classical foundation of machine translation and the conceptual predecessor of
+**attention** ("soft alignment", script 4.2): from purely *parallel* sentences — without any
+dictionary — the EM algorithm learns a translation table $t(e\mid f)$ and thereby word
+**alignments**. Purely count-based: fast, CPU-only, no neural training.
 
-Modell (für ein Satzpaar mit Quellsatz $f_1^m$ und Zielsatz $e_1^l$):
+Model (for a sentence pair with source sentence $f_1^m$ and target sentence $e_1^l$):
 $$P(e\mid f) = \frac{\epsilon}{(m+1)^l}\prod_{j=1}^{l}\sum_{i=0}^{m} t(e_j\mid f_i),$$
-wobei $f_0=\text{NULL}$. Alle Alignments sind gleich wahrscheinlich (Model-1-Annahme);
-gelernt wird nur $t(e\mid f)$. EM konvergiert hier gegen ein **globales** Optimum
-(die Likelihood ist konvex in $t$).
+where $f_0=\text{NULL}$. All alignments are equally probable (the Model 1 assumption);
+only $t(e\mid f)$ is learned. EM converges here to a **global** optimum
+(the likelihood is convex in $t$).
 """
 from collections import defaultdict
 
@@ -19,11 +19,11 @@ NULL = "<null>"
 
 
 def train(pairs, n_iter=5, min_count=1, verbose=True):
-    r"""EM für IBM Model 1. pairs: Liste von (deutsch, englisch).
+    r"""EM for IBM Model 1. pairs: list of (german, english).
 
-    Lernt t[e][f] = p(englisches Wort e | deutsches Wort f). Rückgabe: dict-of-dict.
+    Learns t[e][f] = p(english word e | german word f). Returns: dict-of-dict.
     """
-    # Sätze tokenisieren; Quelle (DE) um NULL erweitern.
+    # Tokenize the sentences; extend the source (DE) by NULL.
     corpus = []
     for de, en in pairs:
         f = [NULL] + tokenize(de)
@@ -31,7 +31,7 @@ def train(pairs, n_iter=5, min_count=1, verbose=True):
         if e and len(f) > 1:
             corpus.append((e, f))
 
-    # t(e|f) uniform initialisieren (nur über tatsächlich kookkurrierende Paare).
+    # Initialize t(e|f) uniformly (only over pairs that actually co-occur).
     t = defaultdict(lambda: defaultdict(float))
     co = defaultdict(set)
     for e, f in corpus:
@@ -49,19 +49,19 @@ def train(pairs, n_iter=5, min_count=1, verbose=True):
         loglik = 0.0
         for e, f in corpus:
             for ew in e:
-                # Normierung s_total(e) = Σ_f t(e|f)
+                # Normalization s_total(e) = sum_f t(e|f)
                 s_total = sum(t[ew][fw] for fw in f)
                 loglik += _safe_log(s_total)
                 for fw in f:
-                    c = t[ew][fw] / s_total               # erwartete Anzahl (E-Schritt)
+                    c = t[ew][fw] / s_total               # expected count (E-step)
                     count[ew][fw] += c
                     total[fw] += c
-        # M-Schritt: t(e|f) = count(e,f) / total(f)
+        # M-step: t(e|f) = count(e,f) / total(f)
         for ew in count:
             for fw in count[ew]:
                 t[ew][fw] = count[ew][fw] / total[fw]
         if verbose:
-            print(f"  EM-Iteration {it}: log-Likelihood {loglik:,.0f}")
+            print(f"  EM iteration {it}: log likelihood {loglik:,.0f}")
     return t
 
 
@@ -71,9 +71,9 @@ def _safe_log(x):
 
 
 def align(t, de_sent, en_sent):
-    r"""Viterbi-Alignment (Model 1): jedes Zielwort $e_j$ auf $\arg\max_i t(e_j\mid f_i)$.
+    r"""Viterbi alignment (Model 1): each target word $e_j$ to $\arg\max_i t(e_j\mid f_i)$.
 
-    Rückgabe: Liste von (englisches Wort, ausgerichtetes deutsches Wort oder NULL).
+    Returns: list of (english word, aligned german word or NULL).
     """
     f = [NULL] + tokenize(de_sent)
     e = tokenize(en_sent)
@@ -85,14 +85,14 @@ def align(t, de_sent, en_sent):
 
 
 def translate(t, de_sent):
-    r"""Grob-Übersetzung DE->EN: jedes deutsche Wort auf sein wahrscheinlichstes
-    englisches Pendant $\arg\max_e t(e\mid f)$ abbilden (Wort-für-Wort, ohne Reordering
-    oder Sprachmodell — die bekannte Schwäche von Model 1 allein)."""
-    # invertiere: pro deutschem Wort f das e mit größtem t(e|f)
+    r"""Rough translation DE->EN: map each german word to its most probable english
+    counterpart $\arg\max_e t(e\mid f)$ (word-for-word, without reordering or a language
+    model — the well-known weakness of Model 1 alone)."""
+    # invert: for each german word f the e with the largest t(e|f)
     best_e_for_f = {}
-    # baue Umkehrung nur für die im Satz vorkommenden f
+    # build the inversion only for the f occurring in the sentence
     fs = tokenize(de_sent)
-    # Sammle Kandidaten: alle e, die f als Key haben
+    # collect candidates: all e that have f as a key
     cache = getattr(translate, "_cache", None)
     if cache is None or cache[0] is not t:
         inv = defaultdict(list)

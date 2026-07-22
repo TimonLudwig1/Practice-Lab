@@ -1,12 +1,11 @@
-"""Encoder-Decoder-Transformer mit Cross-Attention — von Grund auf.
+"""Encoder-decoder transformer with cross-attention — from scratch.
 
-Die vollständige NMT-Architektur (Skript 4.3): bidirektionaler Encoder, kausaler Decoder
-und die **Cross-Attention**, die beide verbindet (Query=Decoder, Key/Value=Encoder). Wir
-*trainieren nur auf einer winzigen synthetischen Aufgabe* (Sequenz-Umkehr), die sich in
-Sekunden auf der CPU lösen lässt und **nur** mit funktionierender Cross-Attention gelingt —
-ein billiger, aber vollständiger Nachweis, dass die Architektur korrekt ist. Das teure
-Training auf echten Übersetzungsdaten wäre für einen Laptop zu aufwändig; die IBM-Model-1-
-Datei liefert stattdessen die reale (statistische) Übersetzung.
+The full NMT architecture (script 4.3): a bidirectional encoder, a causal decoder and the
+**cross-attention** that connects the two (query=decoder, key/value=encoder). We *train only
+on a tiny synthetic task* (sequence reversal) that can be solved in seconds on the CPU and
+succeeds **only** with working cross-attention — a cheap but complete proof that the
+architecture is correct. Expensive training on real translation data would be too costly for
+a laptop; the IBM Model 1 file provides the real (statistical) translation instead.
 """
 import math
 import torch
@@ -17,7 +16,7 @@ PAD, BOS, EOS = 0, 1, 2
 
 
 class MultiHeadAttention(nn.Module):
-    """Multi-Head-Attention mit getrennten Query-/Key-Value-Eingaben (für Cross-Attn)."""
+    """Multi-head attention with separate query/key-value inputs (for cross-attn)."""
 
     def __init__(self, d_model, n_heads, dropout=0.0):
         super().__init__()
@@ -91,8 +90,8 @@ class DecoderLayer(nn.Module):
         self.n1, self.n2, self.n3 = nn.LayerNorm(d_model), nn.LayerNorm(d_model), nn.LayerNorm(d_model)
 
     def forward(self, x, enc, tgt_mask, cross_mask):
-        x = self.n1(x + self.self_attn(x, x, tgt_mask))        # kausale Self-Attention
-        x = self.n2(x + self.cross_attn(x, enc, cross_mask))   # Cross-Attention auf Encoder
+        x = self.n1(x + self.self_attn(x, x, tgt_mask))        # causal self-attention
+        x = self.n2(x + self.cross_attn(x, enc, cross_mask))   # cross-attention onto the encoder
         x = self.n3(x + self.ff(x))
         return x
 
