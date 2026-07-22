@@ -1,19 +1,18 @@
-"""Lineares System mit quadratischen Kosten — der klassische Optimal-Control-Aufbau.
+"""Linear system with quadratic costs — the classical optimal-control setup.
 
-System (doppelter Integrator = Masse auf reibungsfreier Schiene):
-    Zustand  x = [Position, Geschwindigkeit],  Stellgroesse u = Kraft (kontinuierlich, skalar)
-    Dynamik  x_{t+1} = A x_t + B u_t
+System (double integrator = a mass on a frictionless rail):
+    state    x = [position, velocity],  control input u = force (continuous, scalar)
+    dynamics x_{t+1} = A x_t + B u_t
              A = [[1, dt], [0, 1]],  B = [[dt^2/2], [dt]]
-Kosten je Schritt (quadratisch):
-    c(x,u) = x^T Q x + u^T R u          -> Belohnung r = -c(x,u)
+Cost per step (quadratic):
+    c(x,u) = x^T Q x + u^T R u          -> reward r = -c(x,u)
 
-Ziel: den Wagen aus einem zufaelligen Startzustand moeglichst schnell UND
-energiesparend in den Ursprung (x=0, v=0) bringen. Q gewichtet den Zustandsfehler,
-R die Stellenergie.
+Goal: bring the cart from a random start state into the origin (x=0, v=0) as quickly AND
+energy-efficiently as possible. Q weights the state error, R the control energy.
 
-WICHTIG: A, B, Q, R sind hier als Attribute sichtbar — aber NUR die Referenzloesung
-(lqr_reference.py) darf sie benutzen. Der modellfreie Lerner sieht ausschliesslich
-(x, u, r, x') aus reset()/step().
+IMPORTANT: A, B, Q, R are visible here as attributes — but ONLY the reference solution
+(lqr_reference.py) may use them. The model-free learner sees exclusively (x, u, r, x') from
+reset()/step().
 """
 from __future__ import annotations
 import numpy as np
@@ -39,12 +38,12 @@ class LinearQuadraticSystem:
         return self._x.copy()
 
     def cost(self, x, u):
-        """Quadratische Schrittkosten c = x^T Q x + u^T R u (u skalar)."""
+        """Quadratic step cost c = x^T Q x + u^T R u (u scalar)."""
         u = float(np.asarray(u).ravel()[0])
         return float(x @ self.Q @ x + u * self.R[0, 0] * u)
 
     def step(self, u):
-        """Rueckgabe: (x_next, reward, done) mit reward = -cost."""
+        """Returns: (x_next, reward, done) with reward = -cost."""
         u = float(np.asarray(u).ravel()[0])
         r = -self.cost(self._x, u)
         self._x = self.A @ self._x + self.B.ravel() * u
@@ -52,9 +51,9 @@ class LinearQuadraticSystem:
         done = self._t >= self.horizon
         return self._x.copy(), r, done
 
-    # ---- Hilfsfunktion: eine lineare Rueckfuehrung u = w^T x ausrollen ----
+    # ---- helper: roll out a linear feedback u = w^T x ----
     def rollout_linear(self, w, x0, horizon=None):
-        """Simuliert u = w @ x deterministisch. Rueckgabe: (Gesamtkosten, Trajektorie)."""
+        """Simulates u = w @ x deterministically. Returns: (total cost, trajectory)."""
         H = self.horizon if horizon is None else horizon
         x = np.asarray(x0, float).copy()
         total = 0.0

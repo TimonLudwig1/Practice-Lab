@@ -1,26 +1,25 @@
-"""Exakte Optimalsteuerung: LQR via Riccati-Gleichung (Modell BEKANNT).
+"""Exact optimal control: LQR via the Riccati equation (model KNOWN).
 
-Das ist die Bruecke Modul 13 -> 14: dort lieferte **Value Iteration** die exakte Referenz fuer
-einen diskreten MDP; hier liefert der **LQR** die exakte Referenz fuer ein kontinuierliches
-Steuerungsproblem. Beides ist derselbe Bellman-Gedanke — nur ist er im linear-quadratischen
-Fall in geschlossener Form loesbar.
+This is the bridge module 13 -> 14: there **value iteration** provided the exact reference for a
+discrete MDP; here the **LQR** provides the exact reference for a continuous control problem. Both
+are the same Bellman idea — only in the linear-quadratic case it is solvable in closed form.
 
-Diskrete algebraische Riccati-Gleichung (DARE):
+Discrete algebraic Riccati equation (DARE):
     P = Q + A^T P A - A^T P B (R + B^T P B)^{-1} B^T P A
-Optimale Rueckfuehrung (linear!):
+Optimal feedback (linear!):
     K = (R + B^T P B)^{-1} B^T P A          ->  u* = -K x
-Optimale Kosten-to-go (unendlicher Horizont, deterministisch):
+Optimal cost-to-go (infinite horizon, deterministic):
     J*(x0) = x0^T P x0
 
-Wir loesen die DARE per Fixpunkt-Iteration — das ist inhaltlich **Value Iteration auf der
-quadratischen Wertfunktion** V(x) = x^T P x (statt auf einer Tabelle).
+We solve the DARE by fixed-point iteration — this is, in content, **value iteration on the
+quadratic value function** V(x) = x^T P x (instead of on a table).
 """
 from __future__ import annotations
 import numpy as np
 
 
 def solve_dare(A, B, Q, R, tol=1e-12, max_iter=10_000):
-    """Riccati-Fixpunktiteration. Rueckgabe: (P, K, iters)."""
+    """Riccati fixed-point iteration. Returns: (P, K, iters)."""
     P = Q.copy()
     iters = max_iter
     for i in range(max_iter):
@@ -38,18 +37,18 @@ def solve_dare(A, B, Q, R, tol=1e-12, max_iter=10_000):
 
 
 def lqr_gain(env, **kw):
-    """Optimale Rueckfuehrmatrix K fuer das System in `env` (u* = -K x)."""
+    """The optimal feedback matrix K for the system in `env` (u* = -K x)."""
     P, K, iters = solve_dare(env.A, env.B, env.Q, env.R, **kw)
     return P, K, iters
 
 
 def closed_loop_eigenvalues(env, K):
-    """Eigenwerte von (A - B K). Betrag < 1 => stabil (diskrete Zeit)."""
+    """Eigenvalues of (A - B K). Magnitude < 1 => stable (discrete time)."""
     return np.linalg.eigvals(env.A - env.B @ K)
 
 
 def optimal_cost(P, x0):
-    """J*(x0) = x0^T P x0 (unendlicher Horizont, deterministisch)."""
+    """J*(x0) = x0^T P x0 (infinite horizon, deterministic)."""
     x0 = np.asarray(x0, float)
     return float(x0 @ P @ x0)
 
@@ -59,12 +58,12 @@ if __name__ == "__main__":
     env = LinearQuadraticSystem()
     P, K, iters = lqr_gain(env)
     ev = closed_loop_eigenvalues(env, K)
-    print(f"Riccati konvergiert nach {iters} Iterationen.")
+    print(f"Riccati converges after {iters} iterations.")
     print("P =\n", np.round(P, 4))
-    print("K =", np.round(K.ravel(), 4), " -> optimale Politik u* = -K x")
-    print("closed-loop Eigenwerte:", np.round(ev, 4), "| Betraege:", np.round(np.abs(ev), 4),
-          "(< 1 => stabil)")
+    print("K =", np.round(K.ravel(), 4), " -> the optimal policy u* = -K x")
+    print("closed-loop eigenvalues:", np.round(ev, 4), "| magnitudes:", np.round(np.abs(ev), 4),
+          "(< 1 => stable)")
     x0 = np.array([1.0, 0.0])
     sim_cost, _ = env.rollout_linear(-K.ravel(), x0, horizon=400)
-    print(f"\nProbe: simulierte Kosten von u=-Kx ab x0={x0}: {sim_cost:.4f}")
-    print(f"       Theorie  J*(x0) = x0^T P x0        : {optimal_cost(P, x0):.4f}")
+    print(f"\nCheck: simulated cost of u=-Kx from x0={x0}: {sim_cost:.4f}")
+    print(f"       theory  J*(x0) = x0^T P x0          : {optimal_cost(P, x0):.4f}")
