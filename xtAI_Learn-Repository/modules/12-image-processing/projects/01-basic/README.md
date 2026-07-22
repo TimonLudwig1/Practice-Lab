@@ -1,4 +1,67 @@
-# Projekt 01 (basic) — Punktoperationen & Histogrammausgleich
+# Project 01 (basic) — Point operations & histogram equalization
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Module 12 — Image Processing** · Format: **Jupyter notebook** (`point_ops_histogram.ipynb`)
+
+## Why this format?
+
+You understand image operations by seeing the result *and* the histogram. A notebook connects
+the implementation with the image + distribution — ideal for this guided start.
+
+## Goal
+
+You implement **point operations** and **histogram equalization** by hand and make their
+effect visible (script section 1):
+
+- a linear point operation ($s=a\,r+b$) and **gamma** ($s=255(r/255)^\gamma$) with clipping;
+- the **histogram** as a brightness distribution;
+- **histogram equalization** via the **CDF** ($s=(L-1)\cdot\text{cdf}(r)$) — the contrast is
+  stretched, and the CDF afterwards becomes almost a straight line.
+
+## Prior knowledge
+
+- **Script** section 1 (point operations, gamma, histogram, equalization).
+- NumPy (indexing, `bincount`, `cumsum`), `matplotlib`.
+
+## Setup
+
+Requires `numpy`, `matplotlib`, `Pillow` (repo `requirements.txt`). The example image
+(*Grace Hopper*) is **included** in matplotlib — no download.
+
+```bash
+source ../../../../.venv/bin/activate
+jupyter lab      # or open the notebook in VS Code, kernel = repo .venv
+```
+
+Runs in **seconds** (pure NumPy, no training).
+
+## Assignment (step by step)
+
+**Part A** (image + histogram) is given. Then three tasks (marked with `# TODO`):
+
+1. **`linear(img, a, b)`** and **`gamma(img, g)`** — with clipping to $[0,255]$.
+2. **`equalize(img)`** — histogram → CDF → mapping table `T = round(255·cdf)` → `T[img]`.
+3. **Plot the CDF** before/after equalization (after equalization ≈ the diagonal).
+
+At the end a short written **reflection part** (4 questions).
+
+## What should work in the end
+
+- Linear/gamma change brightness/contrast visibly; gamma 0.5 lifts shadow detail.
+- Equalization stretches a low-contrast image to (almost) the full range 0–255; the histogram
+  becomes wider/flatter, the CDF approaches the diagonal.
+
+## Reference solution
+
+A fully filled-in, **executed** notebook is in
+[`solution/point_ops_histogram_solution.ipynb`](solution/point_ops_histogram_solution.ipynb).
+Try it yourself first — the stub cells raise `NotImplementedError`. The reference answers to
+the reflection questions are at the end of that solution notebook.
+
+---
+
+# Projekt 01 (basic) — Punktoperationen & Histogrammausgleich (deutsche Fassung)
 
 **Modul 12 — Image Processing** · Format: **Jupyter Notebook** (`point_ops_histogram.ipynb`)
 
