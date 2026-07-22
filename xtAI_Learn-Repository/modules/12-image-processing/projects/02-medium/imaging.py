@@ -1,11 +1,11 @@
-"""Bild laden, Rauschen erzeugen, Referenz-Faltung (vorgegeben)."""
+"""Load an image, generate noise, reference convolution (given)."""
 import numpy as np
 import matplotlib.cbook as cbook
 from PIL import Image
 
 
 def load_gray():
-    """Graustufen-Beispielbild (Grace Hopper) als float64-Array in [0,255]."""
+    """Grayscale example image (Grace Hopper) as a float64 array in [0,255]."""
     with cbook.get_sample_data("grace_hopper.jpg") as f:
         return np.asarray(Image.open(f).convert("L"), dtype=np.float64)
 
@@ -25,9 +25,11 @@ def add_salt_pepper(img, p=0.05, seed=0):
 
 
 def circular_convolve(img, kernel):
-    """*Zirkuläre* 2D-Faltung im Ortsraum (wrap-around) — Referenz für den Faltungssatz.
+    """*Circular* 2D convolution in the spatial domain (wrap-around) — the reference for the
+    convolution theorem.
 
-    Genau für diese Randbedingung gilt der Satz exakt (Multiplikation im Frequenzraum).
+    Exactly for this boundary condition the theorem holds exactly (multiplication in the
+    frequency domain).
     """
     kh, kw = kernel.shape
     pad_h, pad_w = kh // 2, kw // 2
@@ -39,8 +41,8 @@ def circular_convolve(img, kernel):
 
 
 def kernel_to_mask(kernel, shape):
-    """Bettet einen kleinen Kernel in Bildgröße ein (Zentrum im Ursprung) und gibt seine
-    FFT zurück — der Frequenz-„Filter", der der zirkulären Faltung mit `kernel` entspricht."""
+    """Embeds a small kernel into image size (center at the origin) and returns its FFT — the
+    frequency "filter" that corresponds to the circular convolution with `kernel`."""
     kh, kw = kernel.shape
     Kp = np.zeros(shape, dtype=np.float64)
     Kp[:kh, :kw] = kernel

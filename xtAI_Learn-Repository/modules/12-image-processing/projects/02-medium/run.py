@@ -1,9 +1,9 @@
-"""Frequenzraum & Entrauschen — Demonstration (vorgegeben).
+"""Frequency domain & denoising — demonstration (given).
 
-    python run.py            # zeigt Spektrum, Tief-/Hochpass, Faltungssatz, Entrauschen
-    python run.py --save     # zusätzlich Abbildungen als PNG in results/ speichern
+    python run.py            # shows spectrum, low-/high-pass, convolution theorem, denoising
+    python run.py --save     # additionally save figures as PNG into results/
 
-Alles NumPy/SciPy, CPU, Sekunden.
+All NumPy/SciPy, CPU, seconds.
 """
 import argparse
 import os
@@ -20,30 +20,30 @@ def main():
     ap.add_argument("--save", action="store_true")
     args = ap.parse_args()
     img = load_gray()
-    print(f"Bild {img.shape}")
+    print(f"Image {img.shape}")
 
-    # --- Faltungssatz: zirkuläre Faltung == Multiplikation im Frequenzraum ---
+    # --- convolution theorem: circular convolution == multiplication in the frequency domain ---
     K = np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]], float); K /= K.sum()
     spatial = circular_convolve(img, K)
     freq = apply_frequency_filter(img, kernel_to_mask(K, img.shape))
-    print(f"Faltungssatz: max|spatial - freq| = {np.abs(spatial - freq).max():.2e}  (≈0 erwartet)")
+    print(f"Convolution theorem: max|spatial - freq| = {np.abs(spatial - freq).max():.2e}  (≈0 expected)")
 
-    # --- Tief-/Hochpass ---
+    # --- low-/high-pass ---
     lp = gaussian_lowpass_mask(img.shape, 0.05)
     low = apply_frequency_filter(img, lp)
     high = apply_frequency_filter(img, 1 - lp)
-    print(f"Tiefpass std {low.std():.1f} (glatt) | Hochpass std {high.std():.1f}, mean {high.mean():.2f} (Kanten)")
+    print(f"Low-pass std {low.std():.1f} (smooth) | high-pass std {high.std():.1f}, mean {high.mean():.2f} (edges)")
 
-    # --- Entrauschen: Gauß vs. Median gegen zwei Rauscharten ---
-    print("\nEntrauschen (PSNR in dB, höher = besser):")
-    for name, noisy in [("Gaußsches Rauschen", add_gaussian_noise(img, 25)),
-                        ("Salz&Pfeffer", add_salt_pepper(img, 0.05))]:
+    # --- denoising: Gaussian vs. median against two noise types ---
+    print("\nDenoising (PSNR in dB, higher = better):")
+    for name, noisy in [("Gaussian noise", add_gaussian_noise(img, 25)),
+                        ("Salt&pepper", add_salt_pepper(img, 0.05))]:
         g = denoise_gaussian(noisy, 1.2)
         m = denoise_median(noisy, 3)
-        print(f"  {name:20} | verrauscht {psnr(img, noisy):5.1f} | "
-              f"Gauß {psnr(img, g):5.1f} | Median {psnr(img, m):5.1f}")
-    print("\n-> Gauß und Median helfen ähnlich bei gaußschem Rauschen; bei Salz&Pfeffer")
-    print("   gewinnt der Median deutlich (robust gegen Ausreißer, kantenerhaltend).")
+        print(f"  {name:20} | noisy {psnr(img, noisy):5.1f} | "
+              f"Gaussian {psnr(img, g):5.1f} | median {psnr(img, m):5.1f}")
+    print("\n-> Gaussian and median help similarly with Gaussian noise; on salt&pepper")
+    print("   the median wins clearly (robust against outliers, edge-preserving).")
 
     if args.save:
         import matplotlib
@@ -52,10 +52,10 @@ def main():
         os.makedirs("results", exist_ok=True)
         fig, ax = plt.subplots(1, 4, figsize=(16, 4))
         for a, im, t in zip(ax, [img, spectrum(img), low, high],
-                            ["Original", "Spektrum (log)", "Tiefpass", "Hochpass"]):
+                            ["Original", "Spectrum (log)", "Low-pass", "High-pass"]):
             a.imshow(im, cmap="gray"); a.set_title(t); a.axis("off")
-        plt.tight_layout(); plt.savefig("results/frequenz.png", dpi=90)
-        print("\nAbbildung gespeichert: results/frequenz.png")
+        plt.tight_layout(); plt.savefig("results/frequency.png", dpi=90)
+        print("\nFigure saved: results/frequency.png")
 
 
 if __name__ == "__main__":

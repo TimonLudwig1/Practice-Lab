@@ -1,10 +1,10 @@
-"""Entrauschen & Metrik (Skript-Abschnitt 2)."""
+"""Denoising & metric (script section 2)."""
 import numpy as np
 from scipy.ndimage import gaussian_filter, median_filter
 
 
 def psnr(clean, test):
-    """Peak Signal-to-Noise Ratio in dB (höher = näher am sauberen Bild)."""
+    """Peak signal-to-noise ratio in dB (higher = closer to the clean image)."""
     mse = np.mean((clean.astype(np.float64) - test.astype(np.float64)) ** 2)
     if mse == 0:
         return float("inf")
@@ -12,10 +12,10 @@ def psnr(clean, test):
 
 
 def denoise_gaussian(img, sigma=1.2):
-    """Linearer Gauß-Filter — gut gegen gaußsches Rauschen (verwischt Kanten)."""
+    """Linear Gaussian filter — good against Gaussian noise (blurs edges)."""
     return gaussian_filter(img, sigma)
 
 
 def denoise_median(img, size=3):
-    """Nichtlinearer Median-Filter — gut gegen Salz&Pfeffer (kantenerhaltend)."""
+    """Nonlinear median filter — good against salt&pepper (edge-preserving)."""
     return median_filter(img, size=size)
