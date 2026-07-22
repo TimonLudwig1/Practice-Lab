@@ -1,10 +1,10 @@
-"""Volle Pipeline: pretrained Feature-Extraktion vs. Rohpixel-Baseline auf EuroSAT.
+"""Full pipeline: pretrained feature extraction vs. raw-pixel baseline on EuroSAT.
 
-    python run.py            # nutzt Feature-Cache in datasets/ (erster Lauf ~40 s Extraktion)
-    python run.py --rebuild  # Features neu extrahieren
+    python run.py            # uses the feature cache in datasets/ (first run ~40 s extraction)
+    python run.py --rebuild  # re-extract the features
 
-Zeigt, dass ein *eingefrorenes* ImageNet-Backbone die Genauigkeit auf Satellitenbildern
-massiv hebt (~0.94 vs. ~0.41) — ganz ohne das Backbone zu trainieren. Alles CPU.
+Shows that a *frozen* ImageNet backbone massively raises the accuracy on satellite images
+(~0.94 vs. ~0.41) — without training the backbone at all. Everything CPU.
 """
 import argparse
 import os
@@ -24,14 +24,14 @@ def main():
     tr, te, classes = load_eurosat()
     ytr = np.array([y for _, y in tr])
     yte = np.array([y for _, y in te])
-    print(f"EuroSAT: Train {len(tr)}, Test {len(te)}, {len(classes)} Klassen")
+    print(f"EuroSAT: train {len(tr)}, test {len(te)}, {len(classes)} classes")
 
     cache = os.path.join(DATA_DIR, "feat_cache.npz")
     if not args.rebuild and os.path.exists(cache):
         d = np.load(cache)
         Ftr, Fte = d["Ftr"], d["Fte"]
     else:
-        print("Extrahiere pretrained Features (einmalig ~40 s) ...")
+        print("Extracting pretrained features (once, ~40 s) ...")
         model, preprocess = build_feature_extractor()
         Ftr = extract_features(model, preprocess, [img for img, _ in tr])
         Fte = extract_features(model, preprocess, [img for img, _ in te])
@@ -45,17 +45,17 @@ def main():
     acc_raw = accuracy_score(yte, raw_clf.predict(Rte))
     acc_feat = accuracy_score(yte, feat_clf.predict(Fte))
 
-    print(f"\nRohpixel-Baseline (16x16 + LogReg):   Test-Accuracy {acc_raw:.3f}")
-    print(f"Pretrained-Features (+ LogReg):       Test-Accuracy {acc_feat:.3f}")
-    print(f"  -> Transfer Learning gewinnt um {acc_feat - acc_raw:+.3f}")
+    print(f"\nRaw-pixel baseline (16x16 + LogReg):   test accuracy {acc_raw:.3f}")
+    print(f"Pretrained features (+ LogReg):        test accuracy {acc_feat:.3f}")
+    print(f"  -> transfer learning wins by {acc_feat - acc_raw:+.3f}")
 
-    # kurze Fehleranalyse
+    # short error analysis
     pred = feat_clf.predict(Fte)
     cm = confusion_matrix(yte, pred)
     worst = np.argsort(np.diag(cm) / cm.sum(1))[:3]
-    print("\nSchwächste Klassen (Feature-Modell):")
+    print("\nWeakest classes (feature model):")
     for c in worst:
-        print(f"  {classes[c]:22} Recall {cm[c, c] / cm[c].sum():.2f}")
+        print(f"  {classes[c]:22} recall {cm[c, c] / cm[c].sum():.2f}")
 
 
 if __name__ == "__main__":

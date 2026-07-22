@@ -1,8 +1,8 @@
-"""Transfer Learning per Feature-Extraktion — der Kern des Projekts.
+"""Transfer learning via feature extraction — the core of the project.
 
-Ein **vortrainiertes** Backbone (MobileNetV3-Small, auf ImageNet trainiert) als
-**eingefrorener Merkmalsextraktor** nutzen: Bilder -> Feature-Vektoren, auf denen dann ein
-kleiner Klassifikator trainiert wird. Siehe Skript-Abschnitt 3.2 (Modus B).
+Use a **pretrained** backbone (MobileNetV3-Small, trained on ImageNet) as a **frozen feature
+extractor**: images -> feature vectors, on which a small classifier is then trained. See
+script section 3.2 (mode B).
 """
 import numpy as np
 import torch
@@ -12,22 +12,22 @@ WEIGHTS = MobileNet_V3_Small_Weights.IMAGENET1K_V1
 
 
 def build_feature_extractor():
-    """Lädt das vortrainierte Backbone, **friert es ein** und entfernt den
-    Klassifikationskopf, sodass der Forward-Pass **Feature-Vektoren** liefert.
+    """Loads the pretrained backbone, **freezes it** and removes the classification head, so
+    that the forward pass yields **feature vectors**.
 
-    Rückgabe: (model im eval-Modus, preprocess-Transform).
+    Returns: (model in eval mode, preprocess transform).
     """
     model = mobilenet_v3_small(weights=WEIGHTS)
     for p in model.parameters():
-        p.requires_grad = False              # einfrieren: kein Training des Backbones
-    model.classifier = torch.nn.Identity()   # ImageNet-Kopf entfernen -> 576-dim Features
+        p.requires_grad = False              # freeze: do not train the backbone
+    model.classifier = torch.nn.Identity()   # remove the ImageNet head -> 576-dim features
     model.eval()
-    return model, WEIGHTS.transforms()       # exakt die Vorverarbeitung des Vortrainings
+    return model, WEIGHTS.transforms()       # exactly the preprocessing of the pretraining
 
 
 def extract_features(model, preprocess, pil_images, batch_size=128):
-    """Schickt die Bilder (vorverarbeitet) durch das eingefrorene Netz und gibt die
-    Feature-Matrix (N, 576) als NumPy-Array zurück."""
+    """Sends the images (preprocessed) through the frozen network and returns the feature
+    matrix (N, 576) as a NumPy array."""
     feats = []
     for i in range(0, len(pil_images), batch_size):
         batch = torch.stack([preprocess(img) for img in pil_images[i:i + batch_size]])
@@ -37,7 +37,7 @@ def extract_features(model, preprocess, pil_images, batch_size=128):
 
 
 def raw_pixel_features(pil_images, size=16):
-    """Baseline: Bilder auf size×size verkleinern und zu Vektoren plätten (rohe Pixel)."""
+    """Baseline: shrink the images to size×size and flatten them into vectors (raw pixels)."""
     out = []
     for img in pil_images:
         arr = np.asarray(img.resize((size, size)), dtype=np.float32) / 255.0

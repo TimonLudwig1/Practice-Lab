@@ -1,10 +1,10 @@
-"""Testsuite (schnell — kein Backbone-Training).
+"""Test suite (fast — no backbone training).
 
     python test_transfer.py
 
-Prüft, dass der Feature-Extraktor korrekt aufgebaut ist (eingefroren, Kopf entfernt,
-richtige Ausgabeform) und dass die pretrained Features eine kleine EuroSAT-Stichprobe
-deutlich besser klassifizieren als rohe Pixel.
+Checks that the feature extractor is built correctly (frozen, head removed, correct output
+shape) and that the pretrained features classify a small EuroSAT sample markedly better than
+raw pixels.
 """
 import numpy as np
 import torch
@@ -27,39 +27,39 @@ def _dummy_images(n, color=None, seed=0):
 
 def test_extractor_frozen_and_headless():
     model, preprocess = build_feature_extractor()
-    assert all(not p.requires_grad for p in model.parameters()), "Backbone muss eingefroren sein"
-    assert isinstance(model.classifier, torch.nn.Identity), "Klassifikationskopf muss entfernt sein"
-    assert not model.training, "Modell muss im eval-Modus sein"
-    print("  Feature-Extraktor eingefroren & ohne Kopf ... OK")
+    assert all(not p.requires_grad for p in model.parameters()), "backbone must be frozen"
+    assert isinstance(model.classifier, torch.nn.Identity), "classification head must be removed"
+    assert not model.training, "model must be in eval mode"
+    print("  Feature extractor frozen & headless ... OK")
 
 
 def test_feature_shape():
     model, preprocess = build_feature_extractor()
     feats = extract_features(model, preprocess, _dummy_images(5))
     assert feats.shape == (5, 576), feats.shape
-    print("  Feature-Form (N, 576) ... OK")
+    print("  Feature shape (N, 576) ... OK")
 
 
 def test_preprocess_normalizes():
     _, preprocess = build_feature_extractor()
     x = preprocess(_dummy_images(1)[0])
-    assert x.shape[0] == 3 and x.shape[-1] == 224, x.shape          # 3-Kanal, 224x224
-    # ImageNet-Normalisierung -> Werte i.d.R. außerhalb [0,1], teils negativ
-    assert x.min() < 0.0, "Normalisierung sollte negative Werte erzeugen"
-    print("  Vorverarbeitung (Resize+Normalisierung) ... OK")
+    assert x.shape[0] == 3 and x.shape[-1] == 224, x.shape          # 3-channel, 224x224
+    # ImageNet normalization -> values usually outside [0,1], partly negative
+    assert x.min() < 0.0, "normalization should produce negative values"
+    print("  Preprocessing (resize+normalization) ... OK")
 
 
 def test_raw_pixel_features():
     R = raw_pixel_features(_dummy_images(4), size=16)
     assert R.shape == (4, 16 * 16 * 3)
     assert 0.0 <= R.min() and R.max() <= 1.0
-    print("  Rohpixel-Features ... OK")
+    print("  Raw-pixel features ... OK")
 
 
 def test_transfer_beats_raw_on_toy():
-    # Zwei klar getrennte "Klassen" (rötliche vs. bläuliche Kacheln). Auf pretrained
-    # Features trennt ein linearer Klassifikator sie perfekt; das ist ein schneller
-    # Integrationstest der ganzen Kette.
+    # Two clearly separated "classes" (reddish vs. bluish tiles). On pretrained features a
+    # linear classifier separates them perfectly; this is a fast integration test of the
+    # whole chain.
     model, preprocess = build_feature_extractor()
     red = _dummy_images(30, color=np.array([200, 40, 40]), seed=1)
     blue = _dummy_images(30, color=np.array([40, 40, 200]), seed=2)
@@ -71,12 +71,12 @@ def test_transfer_beats_raw_on_toy():
     clf = LogisticRegression(max_iter=1000).fit(F[tr], y[tr])
     acc = accuracy_score(y[te], clf.predict(F[te]))
     assert acc > 0.9, acc
-    print(f"  pretrained Features trennen Toy-Klassen (acc {acc:.2f}) ... OK")
+    print(f"  pretrained features separate toy classes (acc {acc:.2f}) ... OK")
 
 
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
-    print(f"Starte {len(tests)} Tests ...")
+    print(f"Running {len(tests)} tests ...")
     for t in tests:
         t()
-    print("Alle Tests bestanden.")
+    print("All tests passed.")
