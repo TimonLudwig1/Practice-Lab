@@ -1,11 +1,11 @@
-"""Tabellarische TD-Kontrolle: SARSA (on-policy) und Q-Learning (off-policy).
+"""Tabular TD control: SARSA (on-policy) and Q-learning (off-policy).
 
-Beide teilen sich alles bis auf das Bootstrapping-Ziel im Update:
-  SARSA:      Ziel = r + gamma * Q[s', a']        (a' ~ aktuelle epsilon-greedy-Policy)
-  Q-Learning: Ziel = r + gamma * max_a Q[s', a]   (greedy, unabhaengig von a')
+Both share everything except the bootstrapping target in the update:
+  SARSA:      target = r + gamma * Q[s', a']        (a' ~ the current epsilon-greedy policy)
+  Q-learning: target = r + gamma * max_a Q[s', a]   (greedy, independent of a')
 
-Das ist der ganze Unterschied zwischen "lerne den Wert der Policy, die ich AUSFUEHRE"
-(on-policy) und "lerne die OPTIMALE Policy, waehrend ich explorierend handle" (off-policy).
+That is the whole difference between "learn the value of the policy I EXECUTE" (on-policy)
+and "learn the OPTIMAL policy while acting with exploration" (off-policy).
 """
 from __future__ import annotations
 import numpy as np
@@ -24,7 +24,7 @@ class TDAgent:
         self.Q = np.zeros((n_states, n_actions))
         self.rng = np.random.default_rng(seed)
 
-    # ---- epsilon-greedy Auswahl (mit fairem Tie-Breaking) ----
+    # ---- epsilon-greedy selection (with fair tie-breaking) ----
     def select_action(self, s: int) -> int:
         if self.rng.random() < self.epsilon:
             return int(self.rng.integers(self.n_actions))
@@ -37,7 +37,7 @@ class TDAgent:
         best = np.flatnonzero(q == q.max())
         return int(self.rng.choice(best))
 
-    # ---- das eine TD-Update, das beide Algorithmen unterscheidet ----
+    # ---- the one TD update that distinguishes the two algorithms ----
     def update(self, s, a, r, s_next, a_next, done):
         if done:
             target = r
@@ -52,11 +52,11 @@ class TDAgent:
 
 
 def train(env, agent, n_episodes=500, max_steps=1000):
-    """Trainiere den Agenten. Rueckgabe: Array der Belohnungssummen je Episode.
+    """Train the agent. Returns: an array of the reward sums per episode.
 
-    Wichtig fuer SARSA: die naechste Aktion a' muss VOR dem Update aus s' gezogen und
-    dann im naechsten Schritt tatsaechlich ausgefuehrt werden (daher der (s,a)->(s',a')-
-    Uebergang). Q-Learning ignoriert a' im Update, laeuft aber mit derselben Schleife.
+    Important for SARSA: the next action a' must be drawn from s' BEFORE the update and then
+    actually executed in the next step (hence the (s,a)->(s',a') transition). Q-learning
+    ignores a' in the update but runs with the same loop.
     """
     returns = np.zeros(n_episodes)
     for ep in range(n_episodes):
@@ -76,7 +76,7 @@ def train(env, agent, n_episodes=500, max_steps=1000):
 
 
 def rollout_greedy(env, agent, max_steps=1000):
-    """Fuehre die greedy-Policy einmal aus (ohne Exploration). Rueckgabe: Ertrag."""
+    """Execute the greedy policy once (without exploration). Returns: the return."""
     s = env.reset()
     total = 0.0
     for _ in range(max_steps):

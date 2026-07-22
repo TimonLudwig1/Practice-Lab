@@ -1,16 +1,16 @@
-"""Tabellarische TD-Kontrolle: SARSA (on-policy) und Q-Learning (off-policy).
+"""Tabular TD control: SARSA (on-policy) and Q-learning (off-policy).
 
->>> DEINE AUFGABE <<<  Fuelle die drei mit TODO markierten Stellen aus:
-   1) select_action  — epsilon-greedy Auswahl
-   2) update         — das eine TD-Update, das SARSA von Q-Learning unterscheidet
-   3) train          — die Trainingsschleife (Achtung SARSA: a' vor dem Update ziehen!)
+>>> YOUR TASK <<<  Fill in the three places marked with TODO:
+   1) select_action  — epsilon-greedy selection
+   2) update         — the one TD update that distinguishes SARSA from Q-learning
+   3) train          — the training loop (attention SARSA: draw a' before the update!)
 
-Der EINZIGE Unterschied der Algorithmen steckt im Bootstrapping-Ziel:
-  SARSA:      Ziel = r + gamma * Q[s', a']        (a' ~ aktuelle epsilon-greedy-Policy)
-  Q-Learning: Ziel = r + gamma * max_a Q[s', a]   (greedy, unabhaengig von a')
-Am terminalen Uebergang (done=True) gibt es keinen Folgewert: Ziel = r.
+The ONLY difference of the algorithms is in the bootstrapping target:
+  SARSA:      target = r + gamma * Q[s', a']        (a' ~ the current epsilon-greedy policy)
+  Q-learning: target = r + gamma * max_a Q[s', a]   (greedy, independent of a')
+At the terminal transition (done=True) there is no successor value: target = r.
 
-Die Musterloesung liegt in solution/td_control.py — erst selbst versuchen!
+The reference solution is in solution/td_control.py — try it yourself first!
 """
 from __future__ import annotations
 import numpy as np
@@ -30,18 +30,18 @@ class TDAgent:
         self.rng = np.random.default_rng(seed)
 
     def select_action(self, s: int) -> int:
-        # TODO: mit Wkt. self.epsilon eine zufaellige Aktion
-        #       (self.rng.integers(self.n_actions)), sonst argmax_a Q[s,a].
-        #   Tipp fuer faires Tie-Breaking bei Gleichstand:
+        # TODO: with prob. self.epsilon a random action
+        #       (self.rng.integers(self.n_actions)), otherwise argmax_a Q[s,a].
+        #   Tip for fair tie-breaking on ties:
         #       best = np.flatnonzero(q == q.max()); self.rng.choice(best)
         raise NotImplementedError
 
     def update(self, s, a, r, s_next, a_next, done):
-        # TODO: berechne das Ziel (siehe Modulkopf) und mache das Update
-        #       Q[s,a] += alpha * (Ziel - Q[s,a]).
-        #   - done:        Ziel = r
-        #   - sarsa:       Ziel = r + gamma * Q[s_next, a_next]
-        #   - qlearning:   Ziel = r + gamma * max(Q[s_next])
+        # TODO: compute the target (see the module header) and do the update
+        #       Q[s,a] += alpha * (target - Q[s,a]).
+        #   - done:        target = r
+        #   - sarsa:       target = r + gamma * Q[s_next, a_next]
+        #   - qlearning:   target = r + gamma * max(Q[s_next])
         raise NotImplementedError
 
     def greedy_policy(self) -> np.ndarray:
@@ -49,26 +49,26 @@ class TDAgent:
 
 
 def train(env, agent, n_episodes=500, max_steps=1000):
-    """Trainiere den Agenten. Rueckgabe: Array (Laenge n_episodes) der Belohnungssummen.
+    """Train the agent. Returns: an array (length n_episodes) of the reward sums.
 
-    Ablauf einer Episode (fuer SARSA korrekt, fuer Q-Learning ebenfalls gueltig):
+    The flow of an episode (correct for SARSA, also valid for Q-learning):
       s = env.reset(); a = agent.select_action(s)
-      wiederhole bis done oder max_steps:
+      repeat until done or max_steps:
         s', r, done = env.step(a)
-        a' = agent.select_action(s')          # a' VOR dem Update ziehen
+        a' = agent.select_action(s')          # draw a' BEFORE the update
         agent.update(s, a, r, s', a', done)
-        s, a = s', a'                          # a' wird naechster Schritt ausgefuehrt
-        Belohnungssumme aktualisieren
+        s, a = s', a'                          # a' is executed in the next step
+        update the reward sum
     """
     returns = np.zeros(n_episodes)
     for ep in range(n_episodes):
-        # TODO: eine Episode nach obigem Ablauf spielen und returns[ep] setzen.
+        # TODO: play one episode following the flow above and set returns[ep].
         raise NotImplementedError
     return returns
 
 
 def rollout_greedy(env, agent, max_steps=1000):
-    """Fuehre die greedy-Policy einmal aus (ohne Exploration). Rueckgabe: Ertrag."""
+    """Execute the greedy policy once (without exploration). Returns: the return."""
     s = env.reset()
     total = 0.0
     for _ in range(max_steps):

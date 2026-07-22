@@ -1,14 +1,14 @@
-"""Tests fuer Cliff-Walking-Umgebung und TD-Kontrolle.
+"""Tests for the cliff-walking environment and TD control.
 
-Aufruf:  python test_td.py        (kein pytest noetig)
-   oder:  python -m pytest -q     (falls pytest installiert ist)
+Call:  python test_td.py        (no pytest needed)
+   or:  python -m pytest -q     (if pytest is installed)
 """
 import numpy as np
 from cliff_walking import CliffWalking
 from td_control import TDAgent, train, rollout_greedy
 
 
-# ----------------------------- Umgebung -----------------------------
+# ----------------------------- environment -----------------------------
 def test_encode_decode_roundtrip():
     env = CliffWalking()
     for s in range(env.n_states):
@@ -18,8 +18,8 @@ def test_encode_decode_roundtrip():
 def test_step_cost_and_bounds():
     env = CliffWalking()
     env.reset()
-    # links an der Wand -> bleibt Start, Kosten -1
-    s, r, done = env.step(3)   # links
+    # left into the wall -> stays at start, cost -1
+    s, r, done = env.step(3)   # left
     assert r == -1.0 and not done
     assert env.decode(s) == env.start
 
@@ -27,23 +27,23 @@ def test_step_cost_and_bounds():
 def test_cliff_resets_to_start():
     env = CliffWalking()
     env.reset()
-    # vom Start (3,0) nach rechts -> (3,1) ist Klippe
-    s, r, done = env.step(1)   # rechts
+    # from the start (3,0) to the right -> (3,1) is the cliff
+    s, r, done = env.step(1)   # right
     assert r == -100.0 and not done
     assert env.decode(s) == env.start
 
 
 def test_goal_terminates():
     env = CliffWalking()
-    # kuenstlich neben das Ziel setzen: (2,11), dann runter -> Ziel (3,11)
+    # artificially place next to the goal: (2,11), then down -> goal (3,11)
     env._state = (2, env.cols - 1)
-    s, r, done = env.step(2)   # runter
+    s, r, done = env.step(2)   # down
     assert done and r == -1.0
     assert env.decode(s) == env.goal
 
 
 def test_optimal_path_return_is_minus_13():
-    # kuerzeste sichere Route: hoch, 11x rechts, runter = 13 Schritte, Ertrag -13
+    # shortest safe route: up, 11x right, down = 13 steps, return -13
     env = CliffWalking()
     env.reset()
     total, done = 0.0, False
@@ -53,9 +53,9 @@ def test_optimal_path_return_is_minus_13():
     assert done and total == -13.0
 
 
-# ----------------------------- Agenten -----------------------------
+# ----------------------------- agents -----------------------------
 def test_update_targets_differ():
-    # SARSA nutzt Q[s',a'], Q-Learning nutzt max_a Q[s',.]
+    # SARSA uses Q[s',a'], Q-learning uses max_a Q[s',.]
     for algo, exp in [("sarsa", 0.5 * (1 + 1.0 * 2.0)),
                       ("qlearning", 0.5 * (1 + 1.0 * 5.0))]:
         ag = TDAgent(3, 2, algo=algo, alpha=0.5, gamma=1.0, epsilon=0.0)
@@ -66,7 +66,7 @@ def test_update_targets_differ():
 
 def test_terminal_update_ignores_bootstrap():
     ag = TDAgent(3, 2, algo="qlearning", alpha=1.0, gamma=1.0)
-    ag.Q[1] = np.array([99.0, 99.0])       # sollte ignoriert werden bei done
+    ag.Q[1] = np.array([99.0, 99.0])       # should be ignored on done
     ag.update(s=0, a=0, r=-1.0, s_next=1, a_next=0, done=True)
     assert np.isclose(ag.Q[0, 0], -1.0)
 
@@ -78,7 +78,7 @@ def test_epsilon_zero_is_greedy():
 
 
 def test_qlearning_finds_optimal_greedy_path():
-    # nach Training soll die greedy-Policy den optimalen Ertrag -13 liefern
+    # after training the greedy policy should yield the optimal return -13
     env = CliffWalking()
     ag = TDAgent(env.n_states, env.n_actions, algo="qlearning",
                  alpha=0.5, gamma=1.0, epsilon=0.1, seed=1)
@@ -87,7 +87,7 @@ def test_qlearning_finds_optimal_greedy_path():
 
 
 def test_sarsa_online_beats_qlearning_online():
-    # SARSA hat waehrend des Trainings (mit Exploration) den besseren Online-Ertrag
+    # SARSA has the better online return during training (with exploration)
     env = CliffWalking()
     def mean_online(algo, seed):
         ag = TDAgent(env.n_states, env.n_actions, algo=algo,
@@ -102,8 +102,8 @@ def test_sarsa_online_beats_qlearning_online():
 if __name__ == "__main__":
     tests = [(k, v) for k, v in sorted(globals().items())
              if k.startswith("test_") and callable(v)]
-    print(f"Starte {len(tests)} Tests ...")
+    print(f"Running {len(tests)} tests ...")
     for name, t in tests:
         t()
         print(f"  {name} ... OK")
-    print("Alle Tests bestanden.")
+    print("All tests passed.")
