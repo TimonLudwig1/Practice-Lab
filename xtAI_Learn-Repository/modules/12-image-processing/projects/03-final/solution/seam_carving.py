@@ -1,17 +1,17 @@
-"""Musterlösung — Seam Carving (content-aware Image Resizing).
+"""Reference solution — seam carving (content-aware image resizing).
 
-Verkleinert ein Bild in der Breite, ohne wichtige Inhalte zu verzerren: es entfernt
-iterativ **energiearme senkrechte Nähte** (zusammenhängende Pixelpfade geringster
-Gradienten-Energie). Die optimale Naht findet **dynamische Programmierung** (Skript 6;
-DP wie in Modul 06/07). Reines NumPy, CPU, Sekunden.
+Shrinks an image in width without distorting important content: it iteratively removes
+**low-energy vertical seams** (connected pixel paths of least gradient energy). The optimal
+seam is found by **dynamic programming** (script 6; DP as in modules 06/07). Pure NumPy, CPU,
+seconds.
 """
 import numpy as np
 
 
 def energy(img):
-    """Energie-Karte = summierter Gradientenbetrag über die Farbkanäle (L1-Gradient).
+    """Energy map = the summed gradient magnitude over the color channels (L1 gradient).
 
-    img: (H, W) oder (H, W, C), float. Rückgabe: (H, W) mit „Wichtigkeit" pro Pixel.
+    img: (H, W) or (H, W, C), float. Returns: (H, W) with the "importance" per pixel.
     """
     if img.ndim == 2:
         gy, gx = np.gradient(img)
@@ -24,9 +24,9 @@ def energy(img):
 
 
 def cumulative_energy(e):
-    r"""Kumulierte Minimalenergie per DP (von oben nach unten):
+    r"""Cumulative minimum energy via DP (top to bottom):
     M(i,j) = e(i,j) + min(M(i-1,j-1), M(i-1,j), M(i-1,j+1)).
-    Ränder mit +inf abgesichert. Rückgabe: (H, W)-Matrix M.
+    Borders guarded with +inf. Returns: the (H, W) matrix M.
     """
     H, W = e.shape
     M = e.astype(np.float64).copy()
@@ -39,8 +39,8 @@ def cumulative_energy(e):
 
 
 def find_seam(M):
-    """Backtracking der billigsten Naht: Start am Minimum der letzten Zeile, nach oben je
-    zum kleinsten der (bis zu) drei oberen Nachbarn. Rückgabe: (H,) Spaltenindizes."""
+    """Backtracking of the cheapest seam: start at the minimum of the last row, upwards to the
+    smallest of the (up to) three upper neighbours. Returns: (H,) column indices."""
     H, W = M.shape
     seam = np.empty(H, dtype=int)
     seam[-1] = int(np.argmin(M[-1]))
@@ -52,7 +52,7 @@ def find_seam(M):
 
 
 def remove_seam(img, seam):
-    """Entfernt die Naht (ein Pixel pro Zeile) → Breite um 1 kleiner."""
+    """Removes the seam (one pixel per row) → the width is smaller by 1."""
     H, W = img.shape[:2]
     if img.ndim == 3:
         out = np.empty((H, W - 1, img.shape[2]), dtype=img.dtype)
@@ -66,8 +66,8 @@ def remove_seam(img, seam):
 
 
 def carve(img, num_seams, record=False):
-    """Entfernt `num_seams` senkrechte Nähte nacheinander (Energie wird jeweils neu
-    berechnet). record=True gibt zusätzlich die erste Naht + Energie zurück (für Viz)."""
+    """Removes `num_seams` vertical seams one after another (the energy is recomputed each
+    time). record=True additionally returns the first seam + energy (for visualization)."""
     first = None
     for k in range(num_seams):
         e = energy(img)
