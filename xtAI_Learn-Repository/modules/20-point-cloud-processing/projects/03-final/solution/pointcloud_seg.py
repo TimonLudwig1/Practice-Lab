@@ -1,29 +1,29 @@
-"""Tabletop-Segmentierung: RANSAC-Ebene + Euclidean Clustering.  (Referenzloesung P03-final)
+"""Tabletop segmentation: RANSAC plane + Euclidean clustering.  (Reference solution P03-final)
 
-Modul 20 — 3D Point Cloud Processing.
+Module 20 — 3D Point Cloud Processing.
 
-Pipeline (Skript Kap. 9-10): eine Szene aus (leicht geneigtem) Boden + Objekten + Ausreissern.
-  1. RANSAC findet die dominante Ebene (Boden) -> Inlier abtrennen.
-  2. Die Rest-Punkte per Euclidean Clustering (Region Growing, kd-Baum) in Objekte trennen.
-  3. Auswertung gegen ground-truth-Labels (Boden-Recall/Precision, Objekt-ARI, Objektzahl).
-Alles from scratch (numpy/scipy); nur die Metrik ARI kommt aus sklearn. CPU-Sekunden.
+Pipeline (script ch. 9-10): a scene of a (slightly tilted) ground + objects + outliers.
+  1. RANSAC finds the dominant plane (the ground) -> separate off the inliers.
+  2. Split the remaining points into objects by Euclidean clustering (region growing, kd-tree).
+  3. Evaluate against the ground-truth labels (ground recall/precision, object ARI, object count).
+Everything from scratch (numpy/scipy); only the ARI metric comes from sklearn. CPU seconds.
 """
 import numpy as np
 from scipy.spatial import cKDTree
 
 
 # ==========================================================================
-# Szenen-Generator (offengelegt, reproduzierbar)
+# Scene generator (disclosed, reproducible)
 # ==========================================================================
 def make_scene(seed=0, n_ground=3000, n_objects=4, tilt_deg=8.0,
                ground_noise=0.008, outlier_frac=0.05):
-    """Boden (leicht geneigte Ebene) + n_objects Objekte (Kugeln/Quader) + Ausreisser.
+    """Ground (slightly tilted plane) + n_objects objects (spheres/boxes) + outliers.
 
-    Rueckgabe: pts (N,3), labels (N,) mit 0=Boden, 1..k=Objekte, -1=Ausreisser; plus
-    plane_normal (die wahre Bodennormale).
+    Returns: pts (N,3), labels (N,) with 0=ground, 1..k=objects, -1=outliers; plus
+    plane_normal (the true ground normal).
     """
     rng = np.random.default_rng(seed)
-    # --- Boden: Ebene z=0, um eine zufaellige Achse leicht gekippt ---
+    # --- ground: the plane z=0, slightly tilted about a random axis ---
     gx = rng.uniform(-2, 2, n_ground)
     gy = rng.uniform(-2, 2, n_ground)
     gz = rng.normal(0, ground_noise, n_ground)
@@ -36,32 +36,32 @@ def make_scene(seed=0, n_ground=3000, n_objects=4, tilt_deg=8.0,
     plane_normal = Rt @ np.array([0.0, 0.0, 1.0])
     pts_list = [ground]; lab_list = [np.zeros(n_ground, int)]
 
-    # --- Objekte auf dem Boden (mit Mindestabstand, damit sie nicht verschmelzen) ---
+    # --- objects on the ground (with a minimum separation so they do not merge) ---
     centers = []
     for k in range(1, n_objects + 1):
-        for _try in range(100):                # rejection sampling: Zentren >= 0.9 auseinander
+        for _try in range(100):                # rejection sampling: centres >= 0.9 apart
             cx, cy = rng.uniform(-1.5, 1.5, 2)
             if all((cx - ux) ** 2 + (cy - uy) ** 2 > 0.9 ** 2 for ux, uy in centers):
                 break
         centers.append((cx, cy))
         kind = rng.integers(2)
         n_obj = rng.integers(250, 450)
-        if kind == 0:                          # Kugel
+        if kind == 0:                          # sphere
             r = rng.uniform(0.18, 0.32)
             d = rng.normal(size=(n_obj, 3)); d /= np.linalg.norm(d, axis=1, keepdims=True)
             obj = d * r + np.array([cx, cy, r])
-        else:                                  # Quader-Oberflaeche
+        else:                                  # box surface
             s = rng.uniform(0.2, 0.4, 3)
             obj = rng.uniform(-1, 1, (n_obj, 3)) * s
-            ax = rng.integers(0, 3, n_obj)     # jeden Punkt auf eine Wuerfelseite druecken
+            ax = rng.integers(0, 3, n_obj)     # push each point onto one face of the box
             obj[np.arange(n_obj), ax] = np.sign(obj[np.arange(n_obj), ax]) * s[ax]
             obj = obj + np.array([cx, cy, s[2]])
-        obj = obj @ Rt.T                       # mit dem Boden mitkippen
+        obj = obj @ Rt.T                       # tilt along with the ground
         obj = obj + rng.normal(0, 0.006, obj.shape)
         pts_list.append(obj); lab_list.append(np.full(len(obj), k, int))
 
     pts = np.vstack(pts_list); labels = np.concatenate(lab_list)
-    # --- Ausreisser im Volumen ---
+    # --- outliers in the volume ---
     n_out = int(outlier_frac * len(pts))
     lo, hi = pts.min(0), pts.max(0)
     outliers = rng.uniform(lo, hi, (n_out, 3))
@@ -71,10 +71,10 @@ def make_scene(seed=0, n_ground=3000, n_objects=4, tilt_deg=8.0,
 
 
 # ==========================================================================
-# RANSAC-Ebenenschaetzung
+# RANSAC plane estimation
 # ==========================================================================
 def fit_plane_3pts(p1, p2, p3):
-    """Ebene aus 3 Punkten: Normale (Einheit) + Offset d mit n . x = d."""
+    """Plane from 3 points: normal (unit) + offset d with n . x = d."""
     n = np.cross(p2 - p1, p3 - p1)
     nn = np.linalg.norm(n)
     if nn < 1e-12:
@@ -84,8 +84,8 @@ def fit_plane_3pts(p1, p2, p3):
 
 
 def ransac_plane(pts, tau=0.02, iters=200, seed=0):
-    """RANSAC-Ebene: gib (normal, d, inlier_mask, n_inliers) des besten Modells.
-    Verfeinert die Ebene am Ende per PCA ueber alle Inlier."""
+    """RANSAC plane: return (normal, d, inlier_mask, n_inliers) of the best model.
+    Refines the plane at the end by a PCA over all inliers."""
     rng = np.random.default_rng(seed)
     N = len(pts)
     best_mask = None; best_count = -1; best_n = None; best_d = None
@@ -99,28 +99,28 @@ def ransac_plane(pts, tau=0.02, iters=200, seed=0):
         c = int(mask.sum())
         if c > best_count:
             best_count, best_mask, best_n, best_d = c, mask, n, d
-    # PCA-Verfeinerung auf den Inliern
+    # PCA refinement on the inliers
     inl = pts[best_mask]
     c0 = inl.mean(0)
     C = (inl - c0).T @ (inl - c0)
     evals, evecs = np.linalg.eigh(C)
-    n_ref = evecs[:, 0]                          # kleinster Eigenwert = Normale
+    n_ref = evecs[:, 0]                          # smallest eigenvalue = the normal
     d_ref = n_ref @ c0
     mask_ref = np.abs(pts @ n_ref - d_ref) < tau
     return n_ref, d_ref, mask_ref, int(mask_ref.sum())
 
 
 def ransac_iterations(w, s, p):
-    """Theoretische Iterationszahl N = log(1-p) / log(1 - w^s)."""
+    """Theoretical iteration count N = log(1-p) / log(1 - w^s)."""
     return np.log(1 - p) / np.log(1 - w ** s)
 
 
 # ==========================================================================
-# Euclidean Clustering (Region Growing per kd-Baum)
+# Euclidean clustering (region growing via the kd-tree)
 # ==========================================================================
 def euclidean_clustering(pts, eps=0.06, min_size=30):
-    """Region Growing: Punkte, deren eps-Nachbarschaften sich beruehren, bilden ein Cluster.
-    Gibt labels (n,) mit 0,1,... fuer Cluster und -1 fuer Rauschen (Cluster < min_size)."""
+    """Region growing: points whose eps-neighbourhoods touch form a cluster.
+    Returns labels (n,) with 0,1,... for clusters and -1 for noise (clusters < min_size)."""
     tree = cKDTree(pts)
     n = len(pts)
     labels = np.full(n, -1, int)
@@ -129,7 +129,7 @@ def euclidean_clustering(pts, eps=0.06, min_size=30):
     for start in range(n):
         if visited[start]:
             continue
-        # BFS ueber eps-Nachbarschaften
+        # BFS over the eps-neighbourhoods
         queue = [start]; visited[start] = True; comp = []
         while queue:
             i = queue.pop()

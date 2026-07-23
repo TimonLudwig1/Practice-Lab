@@ -59,7 +59,7 @@ Plots go to `results/` (gitignored), the test suite is a `__main__` runner.
 
 ## What should come out (reference orders of magnitude)
 
-**Experiment A**: RANSAC finds the ground with a **normal error of ~0.01°**, precision ~0.98, recall ~0.98. The iteration-count formula at $w\approx0.65$: $N\approx7$ ($p=0.9$) is enough for ~90 % success, $N\approx14$ ($p=0.99$) for ~100 % — the formula **holds empirically**.
+**Experiment A**: RANSAC finds the ground with a **normal error of ~0.02°**, precision ~0.97, recall ~0.99. The iteration-count formula at $w\approx0.66$: $N\approx7$ ($p=0.9$) gives an empirical success rate of ~0.78, $N\approx13$ ($p=0.99$) ~0.95, $N\approx20$ ($p=0.999$) ~0.98 — the measured success rate tracks the requested confidence, so the formula **holds empirically** (it is a lower bound on the effort, not a guarantee per run).
 
 **Experiment B**: 4/4 objects found, **object ARI ~0.99** (clean separation), object-point recall ~0.93 (the object bottoms inside the plane tolerance band are absorbed along with it).
 
@@ -155,7 +155,7 @@ Plots nach `results/` (gitignored), Testsuite als `__main__`-Runner.
 
 ## Was am Ende herauskommen soll (Referenz-Größenordnungen)
 
-**Experiment A**: RANSAC findet den Boden mit **Normalen-Fehler ~0.01°**, Precision ~0.98, Recall ~0.98. Iterationszahl-Formel bei $w\approx0.65$: $N\approx7$ ($p=0.9$) reicht für ~90 % Erfolg, $N\approx14$ ($p=0.99$) für ~100 % — die Formel **stimmt empirisch**.
+**Experiment A**: RANSAC findet den Boden mit **Normalen-Fehler ~0.02°**, Precision ~0.97, Recall ~0.99. Iterationszahl-Formel bei $w\approx0.66$: $N\approx7$ ($p=0.9$) ergibt eine empirische Erfolgsrate von ~0.78, $N\approx13$ ($p=0.99$) ~0.95, $N\approx20$ ($p=0.999$) ~0.98 — die gemessene Erfolgsrate folgt der geforderten Konfidenz, die Formel **stimmt empirisch** (sie ist eine Untergrenze für den Aufwand, keine Garantie pro Lauf).
 
 **Experiment B**: 4/4 Objekte gefunden, **Objekt-ARI ~0.99** (saubere Trennung), Objektpunkt-Recall ~0.93 (die Objektböden im Ebenen-Toleranzband werden mit-absorbiert).
 

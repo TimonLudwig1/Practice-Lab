@@ -1,4 +1,4 @@
-"""Testsuite P03-final (Segmentierung). pytest fehlt -> __main__-Runner.
+"""Test suite P03-final (segmentation). pytest is missing -> __main__ runner.
     /Users/.../.venv/bin/python test_pointcloud_seg.py
 """
 import numpy as np
@@ -13,10 +13,10 @@ def _angle(u, v):
 
 
 def test_fit_plane_3pts():
-    # drei Punkte in der xy-Ebene -> Normale +-z, d=0
+    # three points in the xy plane -> normal +-z, d=0
     n, d = fit_plane_3pts(np.array([0, 0, 0.]), np.array([1, 0, 0.]), np.array([0, 1, 0.]))
     assert abs(abs(n[2]) - 1.0) < 1e-9 and abs(d) < 1e-9
-    # kollineare Punkte -> None
+    # collinear points -> None
     n2, d2 = fit_plane_3pts(np.array([0, 0, 0.]), np.array([1, 1, 1.]), np.array([2, 2, 2.]))
     assert n2 is None
 
@@ -25,16 +25,16 @@ def test_ransac_iterations_formula():
     # w=0.5, s=3, p=0.99 -> N ~ 34-35
     N = ransac_iterations(0.5, 3, 0.99)
     assert 33 < N < 36
-    # sinkt w, steigt N stark
+    # as w falls, N grows steeply
     assert ransac_iterations(0.3, 3, 0.99) > ransac_iterations(0.5, 3, 0.99)
 
 
 def test_ransac_finds_ground():
     pts, labels, true_n = make_scene(seed=0)
     n, d, mask, n_in = ransac_plane(pts, tau=0.02, iters=300, seed=1)
-    # gefundene Normale ~ wahre Bodennormale
+    # the normal found ~ the true ground normal
     assert _angle(n, true_n) < 2.0
-    # hoher Boden-Recall und -Precision
+    # high ground recall and precision
     assert np.mean(mask[labels == 0]) > 0.9
     assert np.mean(labels[mask] == 0) > 0.9
 
@@ -45,7 +45,7 @@ def test_euclidean_clustering_separates_blobs():
     b = rng.normal([2, 0, 0], 0.05, (100, 3))
     cl = euclidean_clustering(np.vstack([a, b]), eps=0.2, min_size=20)
     assert len(set(cl[cl >= 0])) == 2
-    # innerhalb eines Blobs gleiches Label
+    # the same label within one blob
     assert len(set(cl[:100])) == 1 and len(set(cl[100:])) == 1
 
 
@@ -65,7 +65,7 @@ def test_minsize_controls_noise_clusters():
     obj = pts[~plane_mask]
     n_small = len(set(euclidean_clustering(obj, eps=0.12, min_size=5)) - {-1})
     n_big = len(set(euclidean_clustering(obj, eps=0.12, min_size=30)) - {-1})
-    assert n_small > n_big    # kleines min_size -> mehr (Rausch-)Cluster
+    assert n_small > n_big    # a small min_size -> more (noise) clusters
 
 
 if __name__ == "__main__":
@@ -78,4 +78,4 @@ if __name__ == "__main__":
             print(f"FAIL  {t.__name__}: {e}")
         except Exception as e:
             print(f"ERROR {t.__name__}: {type(e).__name__}: {e}")
-    print(f"\n{passed}/{len(tests)} Tests bestanden.")
+    print(f"\n{passed}/{len(tests)} tests passed.")
