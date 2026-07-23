@@ -1,41 +1,41 @@
-"""Zeige-Praezision & Reichweite: angulares Fitts' Law und Go-Go.  (Referenzloesung P02-medium)
+"""Pointing precision & reach: the angular Fitts' law and Go-Go.  (Reference solution P02-medium)
 
-Modul 19 — 3D User Interfaces.
+Module 19 — 3D User Interfaces.
 
-Wir modellieren zwei Selektionstechniken MECHANISTISCH (nicht per angenommener Fitts-Kurve):
+We model two selection techniques MECHANISTICALLY (not via an assumed Fitts curve):
 
-  RAY-CASTING: Ein Ziel (Radius r) in Distanz L subtendiert den angularen Radius
-    theta_r ~ arctan(r/L)  -> schrumpft mit L. Das Zeigen hat festes ANGULARES Rauschen
-    sigma_theta. Getroffen, wenn der 2D-Winkelfehler < theta_r. Trefferrate faellt mit L.
+  RAY-CASTING: a target (radius r) at distance L subtends the angular radius
+    theta_r ~ arctan(r/L)  -> it shrinks with L. The pointing has a fixed ANGULAR noise
+    sigma_theta. A hit if the 2D angular error < theta_r. The hit rate falls with L.
 
-  GO-GO (Poupyrev 1996): Die virtuelle Hand folgt der realen nichtlinear
-    r_v = r_r                    fuer r_r < D
-    r_v = r_r + k (r_r - D)^2    fuer r_r >= D
-  Reichweite waechst quadratisch -> ferne Ziele erreichbar. ABER: die C/D-Verstaerkung
-  g = dr_v/dr_r = 1 + 2k(r_r-D) verstaerkt jenseits von D auch das HAND-Rauschen
-    sigma_v = g * sigma_r  -> Praezision faellt im gestreckten Bereich. Das ist der
-  eigentliche Go-Go-Trade-off (Reichweite gegen Praezision), hier exakt herausgearbeitet.
+  GO-GO (Poupyrev 1996): the virtual hand follows the real one non-linearly
+    r_v = r_r                    for r_r < D
+    r_v = r_r + k (r_r - D)^2    for r_r >= D
+  The reach grows quadratically -> distant targets become reachable. BUT: the C/D gain
+  g = dr_v/dr_r = 1 + 2k(r_r-D) also amplifies the HAND noise beyond D
+    sigma_v = g * sigma_r  -> precision falls in the extended range. That is the actual
+  Go-Go trade-off (reach against precision), worked out exactly here.
 """
 import numpy as np
 
 
 # ==========================================================================
-# Angulares Modell (Ray-Casting)
+# The angular model (ray-casting)
 # ==========================================================================
 def angular_radius(r, L):
-    """Angularer Radius (rad) eines Ziels mit Radius r in Distanz L. arctan(r/L)."""
+    """The angular radius (rad) of a target with radius r at distance L. arctan(r/L)."""
     return np.arctan2(r, L)
 
 
 def p_hit_raycasting(r, L, sigma_theta):
-    """Trefferwahrscheinlichkeit beim Ray-Casting.
+    """The hit probability for ray-casting.
 
-    Der 2D-Winkelfehler (Azimut, Elevation) ist je Achse N(0, sigma_theta^2); sein Betrag
-    ist Rayleigh-verteilt. Treffer, wenn Betrag < theta_r = angular_radius(r, L):
+    The 2D angular error (azimuth, elevation) is N(0, sigma_theta^2) per axis; its magnitude
+    is Rayleigh distributed. A hit if the magnitude < theta_r = angular_radius(r, L):
 
         P(hit) = 1 - exp( - theta_r^2 / (2 sigma_theta^2) ).
 
-    theta_r ~ r/L schrumpft mit der Distanz -> P(hit) faellt.
+    theta_r ~ r/L shrinks with the distance -> P(hit) falls.
     """
     theta_r = angular_radius(r, L)
     return 1.0 - np.exp(-(theta_r**2) / (2.0 * sigma_theta**2))
@@ -45,22 +45,22 @@ def p_hit_raycasting(r, L, sigma_theta):
 # Go-Go
 # ==========================================================================
 def go_go(r_r, D, k):
-    """Nichtlineare Go-Go-Abbildung reale -> virtuelle Handdistanz."""
+    """The non-linear Go-Go mapping from the real to the virtual hand distance."""
     r_r = np.asarray(r_r, float)
     return np.where(r_r < D, r_r, r_r + k * (r_r - D)**2)
 
 
 def go_go_gain(r_r, D, k):
-    """C/D-Verstaerkung g = dr_v/dr_r. 1 im Nahbereich, 1+2k(r_r-D) jenseits von D."""
+    """The C/D gain g = dr_v/dr_r. 1 up close, 1+2k(r_r-D) beyond D."""
     r_r = np.asarray(r_r, float)
     return np.where(r_r < D, 1.0, 1.0 + 2.0 * k * (r_r - D))
 
 
 def go_go_inverse(L, D, k):
-    """Welche reale Handdistanz r_r erzeugt die virtuelle Reichweite L? (loest r_v=L)
+    """Which real hand distance r_r produces the virtual reach L? (solves r_v=L)
 
-    Fuer L < D:  r_r = L.
-    Fuer L >= D: k r_r^2 + (1-2kD) r_r + (kD^2 - L) = 0, die physik. (groessere) Wurzel.
+    For L < D:  r_r = L.
+    For L >= D: k r_r^2 + (1-2kD) r_r + (kD^2 - L) = 0, the physical (larger) root.
     """
     L = np.asarray(L, float)
     if k <= 0:
@@ -74,12 +74,12 @@ def go_go_inverse(L, D, k):
 
 
 def p_hit_gogo(r, L, D, k, sigma_r, arm_length):
-    """Trefferwahrscheinlichkeit fuer Go-Go/Virtual-Hand bei Ziel-Radius r in Distanz L.
+    """The hit probability for Go-Go/virtual hand for a target of radius r at distance L.
 
-    - Reichweite L erfordert reale Handdistanz r_r = go_go_inverse(L). Ist r_r > arm_length,
-      ist das Ziel UNERREICHBAR -> P(hit)=0 (das ist der Virtual-Hand-Deckel).
-    - Sonst: Fingerspitzen-Rauschen sigma_v = g(r_r)*sigma_r (verstaerkt jenseits D).
-      Treffer, wenn 2D-Positionsfehler < r:  P(hit)=1-exp(-r^2/(2 sigma_v^2)).
+    - A reach of L requires the real hand distance r_r = go_go_inverse(L). If r_r > arm_length,
+      the target is UNREACHABLE -> P(hit)=0 (that is the virtual hand ceiling).
+    - Otherwise: the fingertip noise is sigma_v = g(r_r)*sigma_r (amplified beyond D).
+      A hit if the 2D position error < r:  P(hit)=1-exp(-r^2/(2 sigma_v^2)).
     """
     r_r = float(go_go_inverse(L, D, k))
     if r_r > arm_length:
@@ -90,16 +90,16 @@ def p_hit_gogo(r, L, D, k, sigma_r, arm_length):
 
 
 # ==========================================================================
-# Angulares Fitts' Law (Charakterisierung)
+# The angular Fitts' law (the characterization)
 # ==========================================================================
 def angular_id(theta_D, theta_W):
-    """Index of Difficulty (bits): log2(theta_D/theta_W + 1)."""
+    """The index of difficulty (bits): log2(theta_D/theta_W + 1)."""
     return np.log2(theta_D / theta_W + 1.0)
 
 
 def simulate_fitts_times(theta_D, theta_W, a, b, motor_sigma, n_reps, rng):
-    """Simuliert Bewegungszeiten fuer reciprocal tapping: MT = a + b*ID + Rauschen.
-    Gibt (IDs, MTs) fuer alle Wiederholungen zurueck (zur Regression)."""
+    """Simulates movement times for reciprocal tapping: MT = a + b*ID + noise.
+    Returns (IDs, MTs) for all repetitions (for the regression)."""
     ids, mts = [], []
     for tD, tW in zip(theta_D, theta_W):
         ID = angular_id(tD, tW)
@@ -110,8 +110,8 @@ def simulate_fitts_times(theta_D, theta_W, a, b, motor_sigma, n_reps, rng):
 
 
 def fit_fitts(ids, mts):
-    """Lineare Regression MT = a + b*ID. Gibt (a, b, R^2)."""
-    b, a = np.polyfit(ids, mts, 1)  # polyfit: hoechster Grad zuerst -> steigung, achsenabschnitt
+    """A linear regression MT = a + b*ID. Returns (a, b, R^2)."""
+    b, a = np.polyfit(ids, mts, 1)  # polyfit: the highest degree first -> slope, intercept
     pred = a + b * ids
     ss_res = np.sum((mts - pred)**2)
     ss_tot = np.sum((mts - mts.mean())**2)
