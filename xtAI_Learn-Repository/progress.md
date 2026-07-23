@@ -112,7 +112,7 @@ Achtung: `Musterloesung`/`Referenzloesung`/`Loesung` als deutsche **Prosa** steh
 | 17 Core XR | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `8e8e52f`, `c398e90`, `cdc133e`, `f76e927` |
 | 18 Multimodal Interfaces | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `e1e78f1`, `31e5555`, `4666b61`, `5799330` |
 | 19 3D User Interfaces | ✓ | ✓ 3/3 | ✓ Notebook + alle .py | `6b4f4d9`, `40adfc3`, `a5385d2`, `6738edc` |
-| **20 3D Point Cloud Processing** | **offen — als Nächstes** | offen | offen | — |
+| **20 3D Point Cloud Processing** | ✓ | ✓ 3/3 | **in Arbeit** | (READMEs committet) |
 | 21 Robotics 1 | offen | offen | offen | — |
 
 #### Arbeitsablauf pro Notebook (bewährt, bitte beibehalten)
