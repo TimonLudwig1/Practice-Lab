@@ -1,23 +1,23 @@
-"""Verkehrssimulation auf der ECHTEN AS-Topologie.
+"""Traffic simulation on the REAL AS topology.
 
-WARUM SYNTHETISCH? Die Topologie ist echt (SNAP oregon1), der Verkehr ist simuliert. Grund:
-oeffentliche Verkehrsmatrizen echter Backbones (Abilene, GEANT via SNDlib) waren beim Bau nicht
-ohne Huerden ladbar (Zenodo-Mirror: HTTP 403). Statt einen schlechten Ersatz zu nehmen,
-simulieren wir Verkehr mit den Eigenschaften, die echter Netzverkehr nachweislich hat — und
-legen den Generator offen, damit jede Annahme sichtbar und veraenderbar ist.
+WHY SYNTHETIC? The topology is real (SNAP oregon1), the traffic is simulated. The reason: public
+traffic matrices of real backbones (Abilene, GEANT via SNDlib) could not be loaded without
+hurdles at build time (Zenodo mirror: HTTP 403). Instead of taking a poor substitute, we simulate
+traffic with the properties that real network traffic demonstrably has — and we disclose the
+generator, so that every assumption is visible and changeable.
 
-Modellierte Eigenschaften (Skript 3.1):
-  * Grundlast ~ log(Grad)          (Gravity-Idee: grosse AS tragen mehr Verkehr)
-  * Tagesgang (Periode 24 h)       + knotenindividuelle Phase
-  * Wochengang (Wochenende ~ -30 %)
-  * AR(1)-Rauschen                 (Verkehr ist korreliert, nicht weisses Rauschen)
-  * PROPAGIERENDE EREIGNISSE       (Flash Crowd / Congestion): ein Ausbruch an EINEM Knoten
-    breitet sich mit Verzoegerung ueber die Kanten aus.
+Modelled properties (script 3.1):
+  * base load ~ log(degree)        (the gravity idea: large AS carry more traffic)
+  * a daily pattern (period 24 h)  + a node-individual phase
+  * a weekly pattern (weekend ~ -30 %)
+  * AR(1) noise                    (traffic is correlated, not white noise)
+  * PROPAGATING EVENTS             (flash crowd / congestion): an outbreak at ONE node
+    spreads across the edges with a delay.
 
-Das letzte Element ist der eigentliche Punkt des Projekts: NUR wenn Verkehr sich raeumlich
-ausbreitet, kann die Topologie ueberhaupt Zusatzinformation liefern. Ueber `decay` und `spread`
-laesst sich genau das dosieren — und damit die zentrale Frage messen:
-**Wie stark muss Verkehr propagieren, damit ein Graph-Modell sich lohnt?**
+The last element is the actual point of the project: ONLY if traffic spreads spatially can the
+topology provide any additional information at all. `decay` and `spread` dose exactly that — and
+thereby make the central question measurable:
+**How strongly does traffic have to propagate for a graph model to be worth it?**
 """
 from __future__ import annotations
 import gzip
@@ -28,89 +28,89 @@ import networkx as nx
 import numpy as np
 
 URL = "https://snap.stanford.edu/data/oregon1_010331.txt.gz"
-PFAD = "datasets/oregon1_010331.txt.gz"
+PATH = "datasets/oregon1_010331.txt.gz"
 
 
-def lade_topologie(pfad: str = PFAD) -> nx.Graph:
-    os.makedirs(os.path.dirname(pfad), exist_ok=True)
-    if not os.path.exists(pfad):
-        req = urllib.request.Request(URL, headers={"User-Agent": "Mozilla/5.0"})  # ohne UA: 403
-        with urllib.request.urlopen(req, timeout=60) as r, open(pfad, "wb") as f:
+def load_topology(path: str = PATH) -> nx.Graph:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    if not os.path.exists(path):
+        req = urllib.request.Request(URL, headers={"User-Agent": "Mozilla/5.0"})  # without UA: 403
+        with urllib.request.urlopen(req, timeout=60) as r, open(path, "wb") as f:
             f.write(r.read())
-    with gzip.open(pfad, "rt") as f:
-        zeilen = [z for z in f if not z.startswith("#")]
-    return nx.parse_edgelist(zeilen, nodetype=int)
+    with gzip.open(path, "rt") as f:
+        lines = [l for l in f if not l.startswith("#")]
+    return nx.parse_edgelist(lines, nodetype=int)
 
 
-def backbone_teilgraph(G: nx.Graph, max_knoten: int = 200) -> nx.Graph:
-    """Zusammenhaengender Teilgraph rund um die groessten Hubs.
+def backbone_subgraph(G: nx.Graph, max_nodes: int = 200) -> nx.Graph:
+    """A connected subgraph around the largest hubs.
 
-    Warum ein Teilgraph? Ein realer Backbone hat ~10-100 PoPs; 10 670 AS stuendlich zu
-    simulieren waere weder realistisch noch noetig. Wir behalten die echte Struktur
-    (Hubs + deren Nachbarschaft), nur kleiner.
+    Why a subgraph? A real backbone has ~10-100 PoPs; simulating 10,670 AS hourly would be
+    neither realistic nor necessary. We keep the real structure (hubs + their neighbourhood),
+    only smaller.
     """
     hubs = [n for n, _ in sorted(G.degree(), key=lambda t: -t[1])[:12]]
-    ausgewaehlt = set(hubs)
+    selected = set(hubs)
     for h in hubs:
-        ausgewaehlt.update(list(G.neighbors(h))[:30])
-    S = G.subgraph(list(ausgewaehlt)[:max_knoten]).copy()
+        selected.update(list(G.neighbors(h))[:30])
+    S = G.subgraph(list(selected)[:max_nodes]).copy()
     return S.subgraph(max(nx.connected_components(S), key=len)).copy()
 
 
-def normalisierte_nachbarschaft(G: nx.Graph) -> np.ndarray:
-    """Zeilennormierte Adjazenz: (A_norm @ y)[i] = Mittelwert von y ueber die Nachbarn von i."""
+def row_normalized_adjacency(G: nx.Graph) -> np.ndarray:
+    """Row-normalized adjacency: (A_norm @ y)[i] = the mean of y over the neighbours of i."""
     A = nx.to_numpy_array(G)
     return A / np.maximum(A.sum(axis=1, keepdims=True), 1.0)
 
 
-def simuliere_verkehr(G: nx.Graph, wochen: int = 4, decay: float = 0.2, spread: float = 0.75,
-                      n_ereignisse: int = 300, seed: int = 0):
-    """Erzeugt eine Verkehrs-Zeitreihe Y der Form (T, n) — T Stunden x n Knoten.
+def simulate_traffic(G: nx.Graph, weeks: int = 4, decay: float = 0.2, spread: float = 0.75,
+                     n_events: int = 300, seed: int = 0):
+    """Produces a traffic time series Y of shape (T, n) — T hours x n nodes.
 
-    decay  : wie stark ein Ereignis am Knoten SELBST nachwirkt   (0 = gar nicht)
-    spread : wie stark es auf die NACHBARN uebergeht             (hoch = starke Propagation)
+    decay  : how strongly an event persists at the node ITSELF        (0 = not at all)
+    spread : how strongly it carries over to the NEIGHBOURS           (high = strong propagation)
 
-    Faustregel: je kleiner `decay` und je groesser `spread`, desto mehr Information steckt in
-    der Topologie (und desto weniger in der eigenen Vergangenheit des Knotens).
+    Rule of thumb: the smaller `decay` and the larger `spread`, the more information sits in the
+    topology (and the less in the node's own past).
 
-    Rueckgabe: (Y, E) mit E = reiner Ereignisanteil (fuer Diagnose).
+    Returns: (Y, E) with E = the pure event component (for diagnosis).
     """
     rng = np.random.default_rng(seed)
     n = G.number_of_nodes()
-    T = 24 * 7 * wochen
-    A_norm = normalisierte_nachbarschaft(G)
+    T = 24 * 7 * weeks
+    A_norm = row_normalized_adjacency(G)
 
-    grad = np.array([d for _, d in G.degree()], dtype=float)
-    grundlast = 50 + 20 * np.log1p(grad)                 # Gravity-Idee
-    stunde = np.arange(T) % 24
-    tag = (np.arange(T) // 24) % 7
-    wochengang = np.where(tag >= 5, 0.7, 1.0)            # Wochenende schwaecher
-    phase = rng.uniform(0, 2 * np.pi, n)                 # jeder Knoten leicht verschoben
+    degree = np.array([d for _, d in G.degree()], dtype=float)
+    base_load = 50 + 20 * np.log1p(degree)               # the gravity idea
+    hour = np.arange(T) % 24
+    day = (np.arange(T) // 24) % 7
+    weekly_pattern = np.where(day >= 5, 0.7, 1.0)        # the weekend is weaker
+    phase = rng.uniform(0, 2 * np.pi, n)                 # every node slightly shifted
 
-    # --- propagierende Ereignisse ---
-    ausbruch = np.zeros((T, n))
-    for _ in range(n_ereignisse):
-        ausbruch[rng.integers(0, T - 6), rng.integers(0, n)] += rng.uniform(300, 800)
+    # --- propagating events ---
+    outbreak = np.zeros((T, n))
+    for _ in range(n_events):
+        outbreak[rng.integers(0, T - 6), rng.integers(0, n)] += rng.uniform(300, 800)
     E = np.zeros((T, n))
     for k in range(1, T):
-        E[k] = decay * E[k - 1] + spread * (A_norm @ E[k - 1]) + ausbruch[k]
+        E[k] = decay * E[k - 1] + spread * (A_norm @ E[k - 1]) + outbreak[k]
 
-    # --- Gesamtverkehr ---
+    # --- total traffic ---
     Y = np.zeros((T, n))
-    rausch = np.zeros(n)
+    noise = np.zeros(n)
     for k in range(T):
-        rausch = 0.8 * rausch + rng.normal(0, 3, n)      # AR(1)
-        saison = 1 + 0.6 * np.sin(2 * np.pi * stunde[k] / 24 - np.pi / 2 + 0.3 * phase)
-        Y[k] = np.maximum(grundlast * saison * wochengang[k] + rausch + E[k], 1.0)
+        noise = 0.8 * noise + rng.normal(0, 3, n)        # AR(1)
+        season = 1 + 0.6 * np.sin(2 * np.pi * hour[k] / 24 - np.pi / 2 + 0.3 * phase)
+        Y[k] = np.maximum(base_load * season * weekly_pattern[k] + noise + E[k], 1.0)
     return Y, E
 
 
-def kennzahlen(G: nx.Graph, Y: np.ndarray, E: np.ndarray) -> str:
-    kn = list(G.nodes())
-    idx = {k: i for i, k in enumerate(kn)}
-    korr = np.mean([np.corrcoef(Y[:, idx[u]], Y[:, idx[v]])[0, 1]
+def summary_stats(G: nx.Graph, Y: np.ndarray, E: np.ndarray) -> str:
+    node_list = list(G.nodes())
+    idx = {k: i for i, k in enumerate(node_list)}
+    corr = np.mean([np.corrcoef(Y[:, idx[u]], Y[:, idx[v]])[0, 1]
                     for u, v in list(G.edges())[:200]])
-    return (f"Topologie: {G.number_of_nodes()} Knoten, {G.number_of_edges()} Kanten (echt)\n"
-            f"Verkehr  : {Y.shape[0]} Stunden x {Y.shape[1]} Knoten (simuliert)\n"
-            f"mittlere Korrelation benachbarter Knoten: {korr:.3f}\n"
-            f"Anteil propagierender Ereignisse am Verkehr: {100*E.sum()/Y.sum():.1f} %")
+    return (f"Topology: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges (real)\n"
+            f"Traffic : {Y.shape[0]} hours x {Y.shape[1]} nodes (simulated)\n"
+            f"mean correlation of neighbouring nodes: {corr:.3f}\n"
+            f"share of propagating events in the traffic: {100*E.sum()/Y.sum():.1f} %")
