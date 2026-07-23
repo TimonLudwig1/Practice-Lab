@@ -1,142 +1,141 @@
-"""Tests fuer Datengenerator und Statistik-Werkzeuge.  Aufruf:  python test_study.py"""
+"""Tests for the data generator and the statistical tools.  Call:  python test_study.py"""
 import numpy as np
 from scipy import stats
 
-from generate_study import (generate_study, generate_naiv_ohne_counterbalancing, WAHRHEIT)
+from generate_study import (generate_study, generate_naive_without_counterbalancing, TRUTH)
 from stats_tools import (cohen_dz, rank_biserial, paired_comparison, bonferroni,
                          holm_bonferroni, order_effect)
 
 DF = generate_study(n_participants=24, seed=3)
 
 
-def _paare(df, spalte):
-    a = df[df.condition == "3DoF"].sort_values("participant")[spalte].values
-    b = df[df.condition == "6DoF"].sort_values("participant")[spalte].values
+def _pairs(df, column):
+    a = df[df.condition == "3DoF"].sort_values("participant")[column].values
+    b = df[df.condition == "6DoF"].sort_values("participant")[column].values
     return a, b
 
 
-# ------------------------------ Generator ------------------------------
-def test_generator_reproduzierbar():
+# ------------------------------ the generator ------------------------------
+def test_generator_is_reproducible():
     assert generate_study(seed=3).equals(generate_study(seed=3))
     assert not generate_study(seed=3).equals(generate_study(seed=4))
 
 
-def test_within_subject_struktur():
+def test_within_subject_structure():
     assert DF.participant.nunique() == 24
-    assert len(DF) == 48                                 # 2 Zeilen je Proband
+    assert len(DF) == 48                                 # 2 rows per participant
     assert set(DF.condition) == {"3DoF", "6DoF"}
     for _, g in DF.groupby("participant"):
-        assert set(g.condition) == {"3DoF", "6DoF"}      # jeder hat beide
+        assert set(g.condition) == {"3DoF", "6DoF"}      # everybody has both
 
 
-def test_counterbalancing_ausgeglichen():
-    ersten = DF[DF.position == 1].condition.value_counts()
-    assert ersten["3DoF"] == ersten["6DoF"] == 12        # 12 beginnen je mit einer Bedingung
+def test_counterbalancing_is_balanced():
+    firsts = DF[DF.position == 1].condition.value_counts()
+    assert firsts["3DoF"] == firsts["6DoF"] == 12        # 12 start with each condition
 
 
-def test_werte_in_gueltigen_bereichen():
+def test_values_are_in_valid_ranges():
     assert DF.presence.between(1, 7).all()
     assert DF.comfort.between(1, 7).all()
     assert (DF.sickness >= 0).all()
     assert (DF.time >= 5).all()
 
 
-# ------------------------------ Effektstaerken ------------------------------
-def test_cohen_dz_von_hand():
+# ------------------------------ the effect sizes ------------------------------
+def test_cohen_dz_by_hand():
     # diffs [1,2,3] -> mean 2, sd 1 -> dz = 2
     assert np.isclose(cohen_dz([2, 4, 6], [1, 2, 3]), 2.0)
 
 
-def test_cohen_dz_vorzeichen():
-    assert cohen_dz([5, 6, 7], [1, 1, 1]) > 0            # x > y (nicht-degeneriert)
+def test_cohen_dz_sign():
+    assert cohen_dz([5, 6, 7], [1, 1, 1]) > 0            # x > y (non-degenerate)
     assert cohen_dz([1, 1, 1], [5, 6, 7]) < 0
 
 
-def test_rank_biserial_extreme():
-    assert np.isclose(rank_biserial([2, 3, 4], [1, 1, 1]), 1.0)    # alle Diffs positiv
-    assert np.isclose(rank_biserial([1, 1, 1], [2, 3, 4]), -1.0)   # alle negativ
+def test_rank_biserial_extremes():
+    assert np.isclose(rank_biserial([2, 3, 4], [1, 1, 1]), 1.0)    # all diffs positive
+    assert np.isclose(rank_biserial([1, 1, 1], [2, 3, 4]), -1.0)   # all negative
 
 
-def test_rank_biserial_symmetrisch_nahe_null():
-    x = np.array([1, 2, 3, 4]); y = np.array([2, 1, 4, 3])         # 2 hoch, 2 runter, gleiche Betraege
+def test_rank_biserial_symmetric_near_zero():
+    x = np.array([1, 2, 3, 4]); y = np.array([2, 1, 4, 3])   # 2 up, 2 down, the same magnitudes
     assert abs(rank_biserial(x, y)) < 1e-9
 
 
-def test_rank_biserial_robust_gegen_ausreisser():
-    # ein extremer Ausreisser aendert die Raenge kaum -> r bleibt nahe 1
+def test_rank_biserial_is_robust_against_outliers():
+    # one extreme outlier hardly changes the ranks -> r stays close to 1
     x = np.array([2, 3, 4, 1000.0]); y = np.array([1, 1, 1, 1.0])
     assert rank_biserial(x, y) == 1.0
 
 
-# ------------------------------ Korrekturen ------------------------------
-def test_bonferroni_schwelle_und_flags():
-    schwelle, sig = bonferroni([0.01, 0.03, 0.20, 0.04], alpha=0.05)
-    assert np.isclose(schwelle, 0.0125)                  # 0.05 / 4
-    assert sig == [True, False, False, False]            # nur 0.01 < 0.0125
+# ------------------------------ the corrections ------------------------------
+def test_bonferroni_threshold_and_flags():
+    threshold, sig = bonferroni([0.01, 0.03, 0.20, 0.04], alpha=0.05)
+    assert np.isclose(threshold, 0.0125)                 # 0.05 / 4
+    assert sig == [True, False, False, False]            # only 0.01 < 0.0125
 
 
-def test_holm_ist_maechtiger_als_bonferroni():
-    # p=0.03 ueberlebt Holm (0.05/3 = 0.0167? nein 0.03>0.0167 -> faellt). Nimm klareres Beispiel:
+def test_holm_is_more_powerful_than_bonferroni():
     pvals = [0.001, 0.013, 0.5]
-    _, bonf = bonferroni(pvals, 0.05)                    # Schwelle 0.0167
+    _, bonf = bonferroni(pvals, 0.05)                    # threshold 0.0167
     holm = holm_bonferroni(pvals, 0.05)
-    # 0.013: Bonferroni 0.013<0.0167 sig; Holm k=1 -> 0.05/2=0.025, 0.013<0.025 sig. Beide sig.
+    # 0.013: Bonferroni 0.013<0.0167 sig; Holm k=1 -> 0.05/2=0.025, 0.013<0.025 sig. Both sig.
     assert bonf[0] and bonf[1] and not bonf[2]
     assert holm[0] and holm[1] and not holm[2]
 
 
-def test_holm_stoppt_beim_ersten_nicht_signifikanten():
-    # Holm arbeitet auf SORTIERTEN p-Werten: beide 0.001 werden signifikant, BEVOR die 0.5
-    # ueberhaupt an die Reihe kommt und den Stopp ausloest.
+def test_holm_stops_at_the_first_non_significant_one():
+    # Holm works on SORTED p-values: both 0.001 become significant BEFORE the 0.5
+    # even comes up and triggers the stop.
     holm = holm_bonferroni([0.001, 0.5, 0.001], 0.05)
     assert holm[0] is True and holm[1] is False and holm[2] is True
-    # Ein echter Stopp: der zweitkleinste ist schon zu gross -> alles danach n.s.
+    # a real stop: the second smallest is already too large -> everything after it is n.s.
     holm2 = holm_bonferroni([0.001, 0.30, 0.40], 0.05)
     assert holm2[0] is True and holm2[1] is False and holm2[2] is False
 
 
-# ------------------------------ Die Auswertung findet die Wahrheit ------------------------------
-def test_paired_comparison_stimmt_mit_scipy():
-    a, b = _paare(DF, "presence")
+# ------------------------------ the analysis finds the truth ------------------------------
+def test_paired_comparison_agrees_with_scipy():
+    a, b = _pairs(DF, "presence")
     r = paired_comparison(a, b)
     assert np.isclose(r["wilcoxon_p"], stats.wilcoxon(a, b).pvalue)
     assert np.isclose(r["t_p"], stats.ttest_rel(a, b).pvalue)
 
 
-def test_analyse_findet_die_eingebauten_effekte():
-    # 6 DoF: mehr presence, weniger sickness, weniger Zeit - alle signifikant (Wilcoxon)
-    a, b = _paare(DF, "presence"); assert b.mean() > a.mean() and stats.wilcoxon(a, b).pvalue < 0.01
-    a, b = _paare(DF, "sickness"); assert b.mean() < a.mean() and stats.wilcoxon(a, b).pvalue < 0.01
-    a, b = _paare(DF, "time");     assert b.mean() < a.mean() and stats.wilcoxon(a, b).pvalue < 0.01
+def test_analysis_finds_the_built_in_effects():
+    # 6 DoF: more presence, less sickness, less time - all significant (Wilcoxon)
+    a, b = _pairs(DF, "presence"); assert b.mean() > a.mean() and stats.wilcoxon(a, b).pvalue < 0.01
+    a, b = _pairs(DF, "sickness"); assert b.mean() < a.mean() and stats.wilcoxon(a, b).pvalue < 0.01
+    a, b = _pairs(DF, "time");     assert b.mean() < a.mean() and stats.wilcoxon(a, b).pvalue < 0.01
 
 
-def test_comfort_ist_der_wacklige_befund():
-    # kleiner Effekt: roh signifikant, aber nach Bonferroni nicht
-    a, b = _paare(DF, "comfort")
+def test_comfort_is_the_shaky_finding():
+    # a small effect: significant raw, but not after Bonferroni
+    a, b = _pairs(DF, "comfort")
     p = stats.wilcoxon(a, b).pvalue
-    assert 0.0125 < p < 0.05                              # zwischen roh-alpha und Bonferroni-Schwelle
-    assert abs(cohen_dz(a, b)) < 0.7                      # deutlich kleiner als die grossen Effekte
+    assert 0.0125 < p < 0.05          # between the raw alpha and the Bonferroni threshold
+    assert abs(cohen_dz(a, b)) < 0.7  # clearly smaller than the large effects
 
 
-def test_order_effekt_carryover_sickness():
+def test_order_effect_carryover_sickness():
     oe = order_effect(DF, "sickness")
-    assert oe["mean_zweite"] > oe["mean_erste"]          # zweite Sitzung kraenker (Carryover)
+    assert oe["mean_second"] > oe["mean_first"]          # the second session is sicker (carryover)
 
 
-def test_ohne_counterbalancing_wird_effekt_maskiert():
-    # DER Kernbefund: naive Analyse unterschaetzt den wahren Sickness-Effekt (12) deutlich
-    dfn = generate_naiv_ohne_counterbalancing(seed=3)
-    a, b = _paare(dfn, "sickness")
-    gemessen = a.mean() - b.mean()
-    wahr = -WAHRHEIT["sickness_effekt"]                   # 12
-    assert gemessen < 0.7 * wahr                          # deutlich unterschaetzt
-    assert gemessen > 0                                   # Richtung stimmt noch
+def test_without_counterbalancing_the_effect_is_masked():
+    # THE core finding: the naive analysis clearly underestimates the true sickness effect (12)
+    dfn = generate_naive_without_counterbalancing(seed=3)
+    a, b = _pairs(dfn, "sickness")
+    measured = a.mean() - b.mean()
+    true_value = -TRUTH["sickness_effect"]               # 12
+    assert measured < 0.7 * true_value                   # clearly underestimated
+    assert measured > 0                                  # the direction is still right
 
 
 if __name__ == "__main__":
     tests = [(k, v) for k, v in sorted(globals().items())
              if k.startswith("test_") and callable(v)]
-    print(f"Starte {len(tests)} Tests ...")
+    print(f"Running {len(tests)} tests ...")
     for name, tf in tests:
         tf(); print(f"  {name} ... OK")
-    print("Alle Tests bestanden.")
+    print("All tests passed.")

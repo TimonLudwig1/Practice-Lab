@@ -1,117 +1,118 @@
-"""Synthetische Daten einer XR-Nutzerstudie: 3 DoF vs. 6 DoF.
+"""Synthetic data of an XR user study: 3 DoF vs. 6 DoF.
 
-WARUM SYNTHETISCH? Eine echte Studie braucht Probanden, Wochen Zeit und eine Ethikkommission.
-Fuer das Erlernen der AUSWERTUNG ist ein simulierter Datensatz sogar besser: die "Wahrheit"
-(die echten Effekte, die Ordnungseffekte) ist bekannt, also kann man pruefen, ob die Statistik
-sie wiederfindet - und was passiert, wenn man Fehler macht. Der Generator ist vollstaendig
-offengelegt, damit jede Annahme sichtbar ist.
+WHY SYNTHETIC? A real study needs participants, weeks of time and an ethics committee. For
+learning the ANALYSIS a simulated dataset is even better: the "truth" (the real effects, the
+order effects) is known, so you can check whether the statistics recover it - and what happens if
+you make mistakes. The generator is fully disclosed so that every assumption is visible.
 
-Studiendesign (Skript 5.2): WITHIN-SUBJECT (jede Person testet BEIDE Bedingungen) mit
-COUNTERBALANCING (die Haelfte beginnt mit 3 DoF, die andere mit 6 DoF). Das ist in XR die
-richtige Wahl, weil die individuellen Unterschiede (Anfaelligkeit, Erfahrung) riesig sind.
+Study design (script 5.2): WITHIN-SUBJECT (every person tests BOTH conditions) with
+COUNTERBALANCING (half start with 3 DoF, the other half with 6 DoF). In XR that is the right
+choice, because the individual differences (susceptibility, experience) are enormous.
 
-Eingebaute "Wahrheit" (die die Auswertung wiederfinden soll):
-  * presence (IPQ, 1-7, hoeher=besser): 6 DoF deutlich hoeher (grosser Effekt)
-  * sickness (SSQ-Delta, hoeher=schlechter): 3 DoF deutlich schlimmer (grosser Effekt)
-  * time (Aufgabenzeit in s, niedriger=besser): 6 DoF schneller (grosser Effekt)
-  * comfort (1-7, hoeher=besser): 6 DoF nur LEICHT besser (kleiner Effekt -> lehrreich fuer
-    Mehrfachvergleiche: roh signifikant, nach Bonferroni nicht mehr)
+The built-in "truth" (which the analysis is supposed to recover):
+  * presence (IPQ, 1-7, higher=better): 6 DoF clearly higher (a large effect)
+  * sickness (the SSQ delta, higher=worse): 3 DoF clearly worse (a large effect)
+  * time (task time in s, lower=better): 6 DoF faster (a large effect)
+  * comfort (1-7, higher=better): 6 DoF only SLIGHTLY better (a small effect -> instructive for
+    multiple comparisons: significant raw, no longer after Bonferroni)
 
-Zwei absichtlich eingebaute ORDNUNGSEFFEKTE (der Grund fuer Counterbalancing):
-  * Carryover: in der ZWEITEN Sitzung ist die Uebelkeit hoeher (sie klingt nicht ganz ab).
-  * Lerneffekt: in der ZWEITEN Sitzung ist man bei der Aufgabe schneller.
-Ohne Counterbalancing wuerden diese die Bedingungseffekte verzerren (run.py zeigt das).
+Two deliberately built-in ORDER EFFECTS (the reason for counterbalancing):
+  * carryover: in the SECOND session the nausea is higher (it does not fully subside).
+  * learning: in the SECOND session you are faster at the task.
+Without counterbalancing these would bias the condition effects (run.py shows that).
 """
 from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-# die "wahren" Effekte (6 DoF relativ zu 3 DoF) - hierhin soll die Auswertung zurueckfinden
-WAHRHEIT = {
-    "presence_effekt": +1.2,     # IPQ-Punkte
-    "sickness_effekt": -12.0,    # SSQ: 6 DoF weniger krank (also 3 DoF +12)
-    "time_effekt": -8.0,         # Sekunden schneller
-    "comfort_effekt": +0.5,      # kleiner Komfort-Vorteil
-    "carryover_sickness": +6.0,  # zweite Sitzung kraenker
-    "lerneffekt_time": -5.0,     # zweite Sitzung schneller
+# the "true" effects (6 DoF relative to 3 DoF) - this is what the analysis should find its way
+# back to
+TRUTH = {
+    "presence_effect": +1.2,       # IPQ points
+    "sickness_effect": -12.0,      # SSQ: 6 DoF less sick (so 3 DoF +12)
+    "time_effect": -8.0,           # seconds faster
+    "comfort_effect": +0.5,        # a small comfort advantage
+    "carryover_sickness": +6.0,    # the second session is sicker
+    "learning_effect_time": -5.0,  # the second session is faster
 }
 
 
 def generate_study(n_participants: int = 24, seed: int = 3) -> pd.DataFrame:
-    """Erzeugt einen Long-Format-DataFrame mit 2 Zeilen je Proband (eine je Bedingung).
+    """Produces a long-format DataFrame with 2 rows per participant (one per condition).
 
-    Spalten: participant, condition ('3DoF'/'6DoF'), position (1=erste Sitzung, 2=zweite),
+    Columns: participant, condition ('3DoF'/'6DoF'), position (1=first session, 2=second),
              presence, sickness, time, comfort.
     """
     rng = np.random.default_rng(seed)
     n = n_participants
 
-    # individuelle Merkmale (in XR gross - deshalb within-subject)
-    anfaelligkeit = rng.normal(0, 1, n)     # sickness-prone
-    geschick = rng.normal(0, 1, n)          # schneller bei der Aufgabe
-    praesenz_basis = rng.normal(0, 1, n)    # generell empfaenglich fuer Praesenz
-    komfort_basis = rng.normal(0, 0.8, n)
+    # individual traits (large in XR - which is why within-subject)
+    susceptibility = rng.normal(0, 1, n)     # sickness-prone
+    skill = rng.normal(0, 1, n)              # faster at the task
+    presence_baseline = rng.normal(0, 1, n)  # generally receptive to presence
+    comfort_baseline = rng.normal(0, 0.8, n)
 
-    # Counterbalancing: exakt die Haelfte beginnt mit 3 DoF (0), die andere mit 6 DoF (1)
-    reihenfolge = np.tile([0, 1], n // 2)
-    rng.shuffle(reihenfolge)
+    # counterbalancing: exactly half start with 3 DoF (0), the other half with 6 DoF (1)
+    order = np.tile([0, 1], n // 2)
+    rng.shuffle(order)
 
-    zeilen = []
+    rows = []
     for i in range(n):
         for cond in ("3DoF", "6DoF"):
-            beginnt_mit_dieser = (reihenfolge[i] == 0 and cond == "3DoF") or \
-                                 (reihenfolge[i] == 1 and cond == "6DoF")
-            position = 1 if beginnt_mit_dieser else 2
+            starts_with_this = (order[i] == 0 and cond == "3DoF") or \
+                               (order[i] == 1 and cond == "6DoF")
+            position = 1 if starts_with_this else 2
 
-            presence = (4.0 + praesenz_basis[i] * 0.8
-                        + (WAHRHEIT["presence_effekt"] if cond == "6DoF" else 0)
+            presence = (4.0 + presence_baseline[i] * 0.8
+                        + (TRUTH["presence_effect"] if cond == "6DoF" else 0)
                         + rng.normal(0, 0.6))
-            sickness = (10 + anfaelligkeit[i] * 8
-                        + (0 if cond == "6DoF" else -WAHRHEIT["sickness_effekt"])   # 3 DoF +12
-                        + (WAHRHEIT["carryover_sickness"] if position == 2 else 0)
+            sickness = (10 + susceptibility[i] * 8
+                        + (0 if cond == "6DoF" else -TRUTH["sickness_effect"])   # 3 DoF +12
+                        + (TRUTH["carryover_sickness"] if position == 2 else 0)
                         + rng.normal(0, 5))
-            time = (40 - geschick[i] * 6
-                    + (WAHRHEIT["time_effekt"] if cond == "6DoF" else 0)
-                    + (WAHRHEIT["lerneffekt_time"] if position == 2 else 0)
+            time = (40 - skill[i] * 6
+                    + (TRUTH["time_effect"] if cond == "6DoF" else 0)
+                    + (TRUTH["learning_effect_time"] if position == 2 else 0)
                     + rng.normal(0, 4))
-            comfort = (4.5 + komfort_basis[i]
-                       + (WAHRHEIT["comfort_effekt"] if cond == "6DoF" else 0)
+            comfort = (4.5 + comfort_baseline[i]
+                       + (TRUTH["comfort_effect"] if cond == "6DoF" else 0)
                        + rng.normal(0, 0.65))
 
-            zeilen.append(dict(
+            rows.append(dict(
                 participant=i, condition=cond, position=position,
                 presence=round(float(np.clip(presence, 1, 7)), 2),
                 sickness=round(float(max(0, sickness)), 1),
                 time=round(float(max(5, time)), 1),
                 comfort=round(float(np.clip(comfort, 1, 7)), 2),
             ))
-    return pd.DataFrame(zeilen)
+    return pd.DataFrame(rows)
 
 
-def generate_naiv_ohne_counterbalancing(n_participants: int = 24, seed: int = 3) -> pd.DataFrame:
-    """Dieselbe Studie, aber ALLE machen 3 DoF zuerst, 6 DoF zweite (kein Counterbalancing).
+def generate_naive_without_counterbalancing(n_participants: int = 24,
+                                            seed: int = 3) -> pd.DataFrame:
+    """The same study, but EVERYBODY does 3 DoF first and 6 DoF second (no counterbalancing).
 
-    Nur fuer die Gegenprobe in run.py: hier faellt der Carryover-Effekt komplett auf die
-    6-DoF-Bedingung und maskiert deren Vorteil.
+    Only for the counter-check in run.py: here the carryover falls entirely on the 6 DoF
+    condition and masks its advantage.
     """
     rng = np.random.default_rng(seed)
     n = n_participants
-    anfaelligkeit = rng.normal(0, 1, n)
-    zeilen = []
+    susceptibility = rng.normal(0, 1, n)
+    rows = []
     for i in range(n):
-        for cond, position in [("3DoF", 1), ("6DoF", 2)]:     # immer 3 DoF zuerst
-            sickness = (10 + anfaelligkeit[i] * 8
-                        + (0 if cond == "6DoF" else -WAHRHEIT["sickness_effekt"])
-                        + (WAHRHEIT["carryover_sickness"] if position == 2 else 0)
+        for cond, position in [("3DoF", 1), ("6DoF", 2)]:     # always 3 DoF first
+            sickness = (10 + susceptibility[i] * 8
+                        + (0 if cond == "6DoF" else -TRUTH["sickness_effect"])
+                        + (TRUTH["carryover_sickness"] if position == 2 else 0)
                         + rng.normal(0, 5))
-            zeilen.append(dict(participant=i, condition=cond,
-                               sickness=round(float(max(0, sickness)), 1)))
-    return pd.DataFrame(zeilen)
+            rows.append(dict(participant=i, condition=cond,
+                             sickness=round(float(max(0, sickness)), 1)))
+    return pd.DataFrame(rows)
 
 
 if __name__ == "__main__":
     df = generate_study()
     print(df.head(6).to_string(index=False))
-    print(f"\n{df.participant.nunique()} Probanden, {len(df)} Zeilen")
+    print(f"\n{df.participant.nunique()} participants, {len(df)} rows")
     print("Counterbalancing:", df.groupby("condition")["position"].apply(
-        lambda s: (s == 1).sum()).to_dict(), "beginnen je mit dieser Bedingung")
+        lambda s: (s == 1).sum()).to_dict(), "start with this condition respectively")

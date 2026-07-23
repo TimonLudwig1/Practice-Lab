@@ -1,32 +1,32 @@
-"""Auswertung der XR-Nutzerstudie: 3 DoF vs. 6 DoF.
+"""Analysis of the XR user study: 3 DoF vs. 6 DoF.
 
-Der rote Faden ist METHODIK, nicht "6 DoF ist besser" (das wissen wir vorher). Es geht darum,
-eine Studie SO auszuwerten, dass die Schluesse tragen:
-  1. deskriptiv + Design pruefen (Counterbalancing eingehalten?)
-  2. der richtige Test (ordinal -> Wilcoxon) und die EFFEKTSTAERKE (nicht nur p)
-  3. Mehrfachvergleiche korrigieren (Bonferroni/Holm)
-  4. Reihenfolge-Effekte belegen - und zeigen, was ohne Counterbalancing passiert waere
+The common thread is METHODOLOGY, not "6 DoF is better" (we know that in advance). The point is
+to evaluate a study SO that the conclusions hold:
+  1. descriptives + check the design (was the counterbalancing kept?)
+  2. the right test (ordinal -> Wilcoxon) and the EFFECT SIZE (not only p)
+  3. correct for multiple comparisons (Bonferroni/Holm)
+  4. demonstrate the order effects - and show what would have happened without counterbalancing
 
-Aufruf:  python run.py       (~1 s)
+Call:  python run.py       (~1 s)
 """
 from __future__ import annotations
 import numpy as np
 
-from generate_study import (generate_study, generate_naiv_ohne_counterbalancing, WAHRHEIT)
+from generate_study import (generate_study, generate_naive_without_counterbalancing, TRUTH)
 from stats_tools import (paired_comparison, bonferroni, holm_bonferroni, order_effect)
 
-# (Name, Spalte, welche Richtung ist "besser fuer 6 DoF"?)
+# (name, column, which direction is "better for 6 DoF"?)
 OUTCOMES = [
-    ("Presence (IPQ)",   "presence", "hoeher"),
-    ("Sickness (SSQ)",   "sickness", "niedriger"),
-    ("Aufgabenzeit [s]", "time",     "niedriger"),
-    ("Comfort",          "comfort",  "hoeher"),
+    ("Presence (IPQ)", "presence", "higher"),
+    ("Sickness (SSQ)", "sickness", "lower"),
+    ("Task time [s]",  "time",     "lower"),
+    ("Comfort",        "comfort",  "higher"),
 ]
 
 
-def paare(df, spalte):
-    a = df[df.condition == "3DoF"].sort_values("participant")[spalte].values
-    b = df[df.condition == "6DoF"].sort_values("participant")[spalte].values
+def pairs(df, column):
+    a = df[df.condition == "3DoF"].sort_values("participant")[column].values
+    b = df[df.condition == "6DoF"].sort_values("participant")[column].values
     return a, b
 
 
@@ -34,85 +34,87 @@ def main():
     df = generate_study(n_participants=24, seed=3)
     n = df.participant.nunique()
 
-    print("=== Studie: 3 DoF vs. 6 DoF, within-subject ===")
-    print(f"N = {n} Probanden, jeder testet BEIDE Bedingungen.")
+    print("=== Study: 3 DoF vs. 6 DoF, within-subject ===")
+    print(f"N = {n} participants, each tests BOTH conditions.")
     cb = df[df.position == 1].condition.value_counts().to_dict()
-    print(f"Counterbalancing: {cb} beginnen je mit dieser Bedingung "
-          f"({'ausgeglichen' if len(set(cb.values())) == 1 else 'UNAUSGEGLICHEN!'}).")
+    print(f"Counterbalancing: {cb} start with this condition respectively "
+          f"({'balanced' if len(set(cb.values())) == 1 else 'UNBALANCED!'}).")
 
-    # ---------- 1)+2) Vergleiche mit Effektstaerke ----------
-    print("\n=== Vergleich je Zielgroesse (ordinal -> Wilcoxon; Effektstaerke IMMER dazu) ===")
-    print(f"{'Zielgroesse':18s} {'3DoF':>7s} {'6DoF':>7s} {'t-p':>8s} {'Wilcox-p':>9s} "
+    # ---------- 1)+2) the comparisons with effect sizes ----------
+    print("\n=== Comparison per outcome (ordinal -> Wilcoxon; ALWAYS add the effect size) ===")
+    print(f"{'Outcome':18s} {'3DoF':>7s} {'6DoF':>7s} {'t-p':>8s} {'Wilcox-p':>9s} "
           f"{'dz':>6s} {'r':>6s}")
     pvals = []
-    for name, spalte, _ in OUTCOMES:
-        a, b = paare(df, spalte)
+    for name, column, _ in OUTCOMES:
+        a, b = pairs(df, column)
         r = paired_comparison(a, b)
         pvals.append(r["wilcoxon_p"])
         print(f"{name:18s} {r['mean_x']:7.1f} {r['mean_y']:7.1f} {r['t_p']:8.4f} "
               f"{r['wilcoxon_p']:9.4f} {r['cohen_dz']:6.2f} {r['rank_biserial']:6.2f}")
-    print("(dz = Cohen's dz parametrisch; r = rank-biserial zum Wilcoxon. |0.2| klein, 0.5 "
-          "mittel, 0.8 gross.)")
+    print("(dz = Cohen's dz, parametric; r = rank-biserial for the Wilcoxon test. |0.2| small, "
+          "0.5 medium, 0.8 large.)")
 
-    # ---------- 3) Mehrfachvergleiche ----------
-    print("\n=== Mehrfachvergleiche korrigieren (4 Tests!) ===")
-    schwelle, bonf = bonferroni(pvals, alpha=0.05)
+    # ---------- 3) multiple comparisons ----------
+    print("\n=== Correcting for multiple comparisons (4 tests!) ===")
+    threshold, bonf = bonferroni(pvals, alpha=0.05)
     holm = holm_bonferroni(pvals, alpha=0.05)
-    print(f"{'Zielgroesse':18s} {'Wilcox-p':>9s} {'roh<0.05':>9s} "
-          f"{'Bonf<'+format(schwelle,'.4f'):>13s} {'Holm':>6s}")
+    print(f"{'Outcome':18s} {'Wilcox-p':>9s} {'raw<0.05':>9s} "
+          f"{'Bonf<'+format(threshold,'.4f'):>13s} {'Holm':>6s}")
     for i, (name, _, _) in enumerate(OUTCOMES):
-        roh = "sig" if pvals[i] < 0.05 else "n.s."
+        raw = "sig" if pvals[i] < 0.05 else "n.s."
         b = "sig" if bonf[i] else "n.s."
         h = "sig" if holm[i] else "n.s."
-        flag = "   <-- kippt!" if roh != b else ""
-        print(f"{name:18s} {pvals[i]:9.4f} {roh:>9s} {b:>13s} {h:>6s}{flag}")
-    print("-> Comfort ist roh signifikant (p<0.05), kippt aber unter Bonferroni - und ist die")
-    print("   EINZIGE mit kleiner Effektstaerke (dz 0.50 vs. >1.1 bei den anderen). Beides sagt:")
-    print("   das ist der WACKLIGSTE Befund. (Holm ist weniger konservativ und behaelt ihn knapp -")
-    print("   genau deshalb berichtet man IMMER die Effektstaerke dazu, nicht nur die Signifikanz.)")
-    print("   Grundgedanke wie beim Base-Rate-Fallacy (Modul 15): viele Tests x kleine Fehlerrate")
-    print("   = viele Fehlalarme.")
+        flag = "   <-- tips!" if raw != b else ""
+        print(f"{name:18s} {pvals[i]:9.4f} {raw:>9s} {b:>13s} {h:>6s}{flag}")
+    print("-> Comfort is significant raw (p<0.05), but tips under Bonferroni - and it is the")
+    print("   ONLY one with a small effect size (dz 0.50 vs. >1.1 for the others). Both say:")
+    print("   this is the SHAKIEST finding. (Holm is less conservative and keeps it narrowly -")
+    print("   which is exactly why you ALWAYS report the effect size alongside, not only the")
+    print("   significance.) The underlying idea is the same as the base-rate fallacy (module 15):")
+    print("   many tests x a small error rate = many false alarms.")
 
-    # ---------- 4) Reihenfolge-Effekte + Gegenprobe ----------
-    print("\n=== Warum Counterbalancing noetig war (Reihenfolge-Effekte) ===")
-    for name, spalte in [("Sickness", "sickness"), ("Aufgabenzeit", "time")]:
-        oe = order_effect(df, spalte)
-        print(f"  {name:12s}: 1. Sitzung {oe['mean_erste']:6.1f}  vs  2. Sitzung "
-              f"{oe['mean_zweite']:6.1f}  (p={oe['p']:.3f})")
-    print("  -> Es GIBT Reihenfolge-Effekte (Carryover-Uebelkeit, Lerneffekt bei der Zeit).")
-    print("     Weil counterbalanced wurde, mitteln sie sich ueber die Bedingungen heraus.")
+    # ---------- 4) order effects + the counter-check ----------
+    print("\n=== Why counterbalancing was necessary (order effects) ===")
+    for name, column in [("Sickness", "sickness"), ("Task time", "time")]:
+        oe = order_effect(df, column)
+        print(f"  {name:12s}: 1st session {oe['mean_first']:6.1f}  vs  2nd session "
+              f"{oe['mean_second']:6.1f}  (p={oe['p']:.3f})")
+    print("  -> There ARE order effects (carryover nausea, a learning effect for the time).")
+    print("     Because counterbalancing was used, they average out across the conditions.")
 
-    print("\n--- Gegenprobe: was ohne Counterbalancing passiert waere ---")
-    df_naiv = generate_naiv_ohne_counterbalancing(n_participants=24, seed=3)
-    a, b = paare(df_naiv, "sickness")
-    gemessen = a.mean() - b.mean()
-    wahr = -WAHRHEIT["sickness_effekt"]      # 3 DoF ist um 12 kraenker
-    print(f"  Wenn ALLE erst 3 DoF, dann 6 DoF machen (kein Counterbalancing):")
-    print(f"  gemessener Sickness-Unterschied {gemessen:.1f} statt wahrer {wahr:.0f} Punkte.")
-    print(f"  -> Der Carryover (+{WAHRHEIT['carryover_sickness']:.0f} auf die 2., also 6-DoF-Sitzung)")
-    print(f"     MASKIERT die Haelfte des echten Effekts. Ohne Counterbalancing haette man")
-    print(f"     6 DoF faelschlich als kaum besser eingestuft.")
+    print("\n--- The counter-check: what would have happened without counterbalancing ---")
+    df_naive = generate_naive_without_counterbalancing(n_participants=24, seed=3)
+    a, b = pairs(df_naive, "sickness")
+    measured = a.mean() - b.mean()
+    true_value = -TRUTH["sickness_effect"]      # 3 DoF is sicker by 12
+    print(f"  If EVERYBODY does 3 DoF first and 6 DoF second (no counterbalancing):")
+    print(f"  the measured sickness difference is {measured:.1f} instead of the true "
+          f"{true_value:.0f} points.")
+    print(f"  -> The carryover (+{TRUTH['carryover_sickness']:.0f} onto the 2nd, i.e. the 6 DoF "
+          f"session)")
+    print(f"     MASKS half of the real effect. Without counterbalancing you would have")
+    print(f"     wrongly classified 6 DoF as barely better.")
 
-    # ---------- Plots ----------
+    # ---------- plots ----------
     try:
         import os
         import matplotlib.pyplot as plt
         os.makedirs("results", exist_ok=True)
         fig, axes = plt.subplots(1, 4, figsize=(15, 4))
-        for ax, (name, spalte, richtung) in zip(axes, OUTCOMES):
-            a, b = paare(df, spalte)
-            # gepaarte Linien: jede Person ist eine Linie zwischen den Bedingungen
+        for ax, (name, column, direction) in zip(axes, OUTCOMES):
+            a, b = pairs(df, column)
+            # paired lines: every person is one line between the conditions
             for pa, pb in zip(a, b):
                 ax.plot([0, 1], [pa, pb], color="gray", alpha=0.35, lw=0.8)
             ax.plot([0, 1], [a.mean(), b.mean()], "o-", color="crimson", lw=2.5, ms=8)
             ax.set_xticks([0, 1]); ax.set_xticklabels(["3 DoF", "6 DoF"])
-            ax.set_title(f"{name}\n({richtung}=besser)", fontsize=9)
+            ax.set_title(f"{name}\n({direction}=better)", fontsize=9)
             ax.grid(alpha=0.3, axis="y")
-        plt.suptitle("Gepaarte Daten: jede graue Linie ist ein Proband", fontsize=10)
+        plt.suptitle("Paired data: every grey line is one participant", fontsize=10)
         plt.tight_layout(); plt.savefig("results/study_results.png", dpi=110)
-        print("\nPlot gespeichert: results/study_results.png")
+        print("\nPlot saved: results/study_results.png")
     except Exception as e:
-        print("(kein Plot:", e, ")")
+        print("(no plot:", e, ")")
 
 
 if __name__ == "__main__":
