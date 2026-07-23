@@ -1,4 +1,111 @@
-# P03 (final) — „Put-that-there": ein multimodaler Referenz-Interpreter
+# P03 (final) — "Put-that-there": a multimodal reference interpreter
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Module 18 — Multimodal Interfaces** · Format: **Python project (free implementation, no given code)**
+
+> This is the final project. There is **no given code** — you build the system yourself out of what you have learned in module 18. The reference solution is in [`solution/`](solution/); look at it **only after your own attempt**. This README is the complete specification.
+
+## What it is about
+
+You rebuild the core of Richard Bolt's legendary system from 1980 (script, sections 2 & 12): an interpreter that merges a **spoken deictic command** ("… put **that** …") with a **simultaneous pointing gesture** in order to resolve *which object* of the scene is meant. That is the **synergistic** CASE case (parallel + fused) with **complementary** modalities (CARE) — the most demanding and most interesting case of multimodal interaction.
+
+The punchline: neither the pointing alone (spatially ambiguous — the pointer comes close to several objects) nor the temporal nor the semantic context alone is sufficient. Only their **multiplicative fusion** (the Bayes product) resolves the reference reliably. You will **prove that quantitatively** — including **mutual disambiguation** and the role of the temporal offset.
+
+## Learning objective
+
+You apply all three fusion levels of the module to a realistic, asynchronous scenario:
+- the **Bayes product rule** over three factors (script, section 12),
+- **temporal fusion** with a time window and the empirical offset "the gesture leads the word" (section 11),
+- **mutual disambiguation** and its measurement (section 10),
+- sound **ablation evaluation** (section 16).
+
+## Prior knowledge
+
+The entire module 18 [README](../../README.md), especially **sections 7 (the Bayes product), 11 (the time window), 12 (reference resolution), 16 (evaluation)**. From P01/P02 the fusion mechanics. Numpy.
+
+---
+
+## Assignment (the specification)
+
+### 1. The scene & asynchronous event streams (the data generator)
+
+Build a **reproducible, disclosed** generator (a fixed seed) — the choice of data is deliberately **synthetic**, because only this way are the *ground truth* (which object was really meant) and the built-in ambiguities exactly controllable; real pointing/speech data would have neither labels nor the targeted traps. Model:
+
+- **The scene**: $n$ objects, each with a 2D screen position $\mathbf{p}_o \in [0,1]^2$ and a **type** $\tau_o$ from e.g. `{button, slider, text, image}`.
+- **The speech stream**: a deictic word "that" at the time $t_{\text{word}}$, plus a **noisy ASR distribution** $q$ over a type-noun slot ("… that **button**"). Model the ASR uncertainty: with probability `asr_correct_prob` the distribution lies on the *true* type, otherwise on a wrong one; sometimes no noun is spoken at all ($q$ uniform).
+- **The gesture stream**: a **sampled, noisy 2D pointing position** $\mathbf{r}(t)$ over time (timestamp + position).
+
+**Deliberately build in two ambiguities** (this is the didactic core):
+1. **A decoy (the temporal trap)**: let the pointer begin its movement **on a different object** and wander from there to the target. This way the pointer comes spatially very close to the decoy — but at the **wrong time** (right at the beginning, far before $t_{\text{word}}$). Only the **temporal** factor can rule it out.
+2. **A twin (the semantic trap)**: with a probability of ~50 % place a second object **directly next to the target**, but with a **different type**. Spatially and temporally almost identical to the target — only the **semantic** factor (the heard type) can separate it.
+
+Important: model the offset "the gesture leads the word" — the pointer reaches the target somewhat *before* the deictic word ($t_{\text{arrive}} = t_{\text{word}} + \mu$ with $\mu < 0$, empirically ~$-0.15$ s). Afterwards the pointer moves on (to the "there" position), so that the target is a *sharp waypoint*, not a permanent dwelling.
+
+### 2. The interpreter (the fusion)
+
+For every object $o$ compute $\log P(o) = \log P_{\text{point}}(o) + \log P_{\text{temp}}(o) + \log P_{\text{sem}}(o)$, then a softmax over the objects. What is resolved is $\arg\max_o P(o)$. The three factors:
+
+$$P_{\text{point}}(o) \propto \exp\!\Big(-\frac{d_{\min}(o)^2}{2\sigma^2}\Big), \qquad
+  P_{\text{temp}}(o) \propto \exp\!\Big(-\frac{(\delta_o - \mu)^2}{2\tau^2}\Big), \qquad
+  P_{\text{sem}}(o) = q[\tau_o]$$
+
+where $d_{\min}(o)$ is the minimal pointer-object distance over the whole stream and $\delta_o = t_{\text{near}}(o) - t_{\text{word}}$ is the temporal distance of the moment of greatest proximity to the deictic word. $P_{\text{point}}$ asks *"did the pointer ever come close?"*, $P_{\text{temp}}$ *"did that happen at the right time?"*, $P_{\text{sem}}$ *"does the type fit what was heard?"*.
+
+Build the factors so that they can be **switched off individually** (flags), so that you can run ablations.
+
+### 3. Evaluation
+
+Produce a large pool of commands (e.g. 3000 over changing scenes) and measure the **resolution accuracy** (resolved == true object) for:
+
+- **Ablations**: pointing only · semantics only · pointing+semantics (without time) · pointing+time (without semantics) · **the full fusion**. Plus a **naive baseline** (the object that was closest to the pointer *exactly* at the moment of the word).
+- **Mutual disambiguation**: count the commands for which **pointing alone is wrong**, and of those the share that the **full fusion rescues**.
+- **A μ study**: vary the assumed offset $\hat\mu$ and show that the accuracy is highest at $\hat\mu \approx \mu_{\text{true}}$ and drops clearly at the naive assumption $\hat\mu = 0$ ("simultaneous").
+
+Produce plots (into `results/`, gitignored) and a test suite (a `__main__` runner, since there is no pytest).
+
+---
+
+## What should come out at the end (reference orders of magnitude)
+
+Your numbers may deviate (different parameters/seeds), but the **ranking and the story** have to hold:
+
+| Configuration | accuracy (reference) |
+|---|---|
+| pointing only ($P_{\text{point}}$) | ~0.48 — **ambiguous** (the decoy ≈ the target spatially) |
+| semantics only ($P_{\text{sem}}$) | ~0.36 — weak on its own |
+| pointing + semantics (without time) | ~0.69 |
+| pointing + time (without semantics) | ~0.83 — **time eliminates the decoy** |
+| **the full fusion** | **~0.89 — the maximum** |
+| naive (the nearest object @ $t_{\text{word}}$) | ~0.48 — it fails (the pointer has already moved on) |
+
+- **Mutual disambiguation**: in the reference, pointing alone is wrong for ~1560/3000 commands — of those the full fusion rescues **~86 %**. That is the quantitative proof that the temporal + semantic context resolves the spatial ambiguity.
+- **The μ study**: the best $\hat\mu \approx -0.2$ s (close to the true $-0.15$); $\hat\mu = 0$ loses ~9 percentage points.
+
+> **The big lesson of the module, shown on one system:** the three modality factors are **complementary, not redundant** — each resolves a *different* ambiguity (time → the decoy, semantics → the twin, space → the coarse position). That is why the full fusion beats every partial combination, and that is why "Put-that-there" is a *synergistic* interface: no modality is dispensable.
+
+## Setup & running
+
+```bash
+cd modules/18-multimodal-interfaces/projects/03-final
+# write your own implementation, then:
+/Users/.../.venv/bin/python test_putthatthere.py   # the test suite
+/Users/.../.venv/bin/python run.py                  # evaluation + plots
+```
+
+Only `numpy` + `matplotlib` are needed. Runtime a few seconds (pure CPU, no training).
+
+## Solution
+
+A complete reference is in [`solution/`](solution/): `putthatthere.py` (the generator + interpreter), `run.py` (the ablation, mutual disambiguation, the μ study, the plots), `test_putthatthere.py` (8 tests). **Build it yourself first!**
+
+## Looking back & ahead
+
+With this module 18 closes: you have worked through multimodal fusion from **inverse-variance perception** (P01) via **early/late fusion & mutual disambiguation** (P02) to the **complete synergistic interpreter** (P03). The pointing and reference mathematics here is direct preparatory work for **module 19 "3D User Interfaces"** (selection/manipulation in 3D space).
+
+---
+
+# P03 (final) — „Put-that-there": ein multimodaler Referenz-Interpreter (deutsche Fassung)
 
 **Modul 18 — Multimodal Interfaces** · Format: **Python-Projekt (freie Umsetzung, keine Code-Vorgabe)**
 
