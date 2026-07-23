@@ -1,9 +1,9 @@
-"""Testsuite fuer P03-final (Put-that-there). pytest fehlt -> __main__-Runner.
+"""Test suite for P03-final (Put-that-there). pytest is missing -> a __main__ runner.
     /Users/.../.venv/bin/python test_putthatthere.py
 """
 import numpy as np
 from putthatthere import (make_scene, make_command, resolve, resolve_naive_at_word,
-                         _object_evidence, TYPES)
+                          _object_evidence, TYPES)
 
 MU, SIG, TAU = -0.15, 0.035, 0.18
 
@@ -27,7 +27,7 @@ def test_scene_and_command_structure():
     assert sc["pos"].shape == (7, 2)
     cmd = make_command(sc, seed=2, mu_true=MU, sigma_point=SIG, tau_true=TAU)
     n = cmd["scene_pos"].shape[0]
-    assert n in (7, 8)                       # 8, falls Zwilling hinzugefuegt
+    assert n in (7, 8)                       # 8 if a twin was added
     assert 0 <= cmd["target"] < n
     assert cmd["decoy"] != cmd["target"]
     assert cmd["ptr_xy"].shape[0] == cmd["ptr_t"].shape[0]
@@ -43,13 +43,13 @@ def test_posterior_valid():
 
 
 def test_target_timing_matches_mu():
-    # Der Zeiger erreicht das Ziel um t_word + mu_true -> delta_target ~ mu_true
+    # The pointer reaches the target around t_word + mu_true -> delta_target ~ mu_true
     deltas = []
     for c in _pool(200):
         _, t_near = _object_evidence(c, c["target"])
         deltas.append(t_near - c["t_word"])
     med = np.median(deltas)
-    assert abs(med - MU) < 0.08, f"Median delta_target {med:.3f} weit von mu_true {MU}"
+    assert abs(med - MU) < 0.08, f"the median delta_target {med:.3f} is far from mu_true {MU}"
 
 
 def test_full_fusion_beats_all_ablations():
@@ -66,11 +66,12 @@ def test_full_fusion_beats_all_ablations():
 
 
 def test_temporal_kills_decoy():
-    # Zeigen allein ist mehrdeutig (Decoy nah); der Zeitfaktor hebt es klar an
+    # Pointing alone is ambiguous (the decoy is close); the temporal factor lifts it clearly
     cmds = _pool(500)
     point = _acc(cmds, use_sem=False, use_point=True, use_temp=False)
     no_sem = _acc(cmds, use_sem=False, use_point=True, use_temp=True)
-    assert no_sem > point + 0.20, f"Zeit sollte Zeigen deutlich verbessern ({point:.3f}->{no_sem:.3f})"
+    assert no_sem > point + 0.20, \
+        f"time should improve pointing clearly ({point:.3f}->{no_sem:.3f})"
 
 
 def test_mu_zero_worse_than_true():
@@ -79,14 +80,16 @@ def test_mu_zero_worse_than_true():
                         for c in cmds])
     acc_zero = np.mean([resolve(c, mu_hat=0.0, sigma_hat=SIG, tau_hat=TAU)[1] == c["target"]
                         for c in cmds])
-    assert acc_true > acc_zero + 0.03, f"mu=wahr {acc_true:.3f} sollte mu=0 {acc_zero:.3f} schlagen"
+    assert acc_true > acc_zero + 0.03, \
+        f"mu=true {acc_true:.3f} should beat mu=0 {acc_zero:.3f}"
 
 
 def test_naive_baseline_weaker():
     cmds = _pool(500)
     full = _acc(cmds)
     naive = np.mean([resolve_naive_at_word(c) == c["target"] for c in cmds])
-    assert full > naive + 0.20, f"Volle Fusion {full:.3f} sollte naiv {naive:.3f} klar schlagen"
+    assert full > naive + 0.20, \
+        f"the full fusion {full:.3f} should clearly beat the naive one {naive:.3f}"
 
 
 def test_mutual_disambiguation_positive():
@@ -112,4 +115,4 @@ if __name__ == "__main__":
             print(f"FAIL  {t.__name__}: {e}")
         except Exception as e:
             print(f"ERROR {t.__name__}: {type(e).__name__}: {e}")
-    print(f"\n{passed}/{len(tests)} Tests bestanden.")
+    print(f"\n{passed}/{len(tests)} tests passed.")
