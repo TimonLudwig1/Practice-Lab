@@ -1,9 +1,9 @@
-"""GCN vs. Heuristiken vs. MLP — unter ZWEI Evaluationsprotokollen.
+"""GCN vs. heuristics vs. MLP — under TWO evaluation protocols.
 
-Die eigentliche Frage dieses Projekts ist nicht "welches Modell ist besser?", sondern:
-**haengt die Antwort davon ab, wie ich messe?** (Spoiler: ja, und zwar dramatisch.)
+The actual question of this project is not "which model is better?", but:
+**does the answer depend on how I measure?** (Spoiler: yes, and dramatically so.)
 
-Aufruf:  python run.py      (~30 s auf der CPU)
+Call:  python run.py      (~30 s on the CPU)
 """
 from __future__ import annotations
 import time
@@ -14,146 +14,146 @@ import torch.nn as nn
 from sklearn.metrics import roc_auc_score
 
 from graph_data import LinkSplit
-from gcn import GCN, MLPOhneStruktur, normalisierte_adjazenz, kanten_score
+from gcn import GCN, MLPWithoutStructure, normalized_adjacency, edge_score
 
-EPOCHEN = 100
+EPOCHS = 100
 SEED = 0
 
 
-# ---------------------------- Heuristiken (aus Projekt 01) ----------------------------
+# ---------------------------- heuristics (from project 01) ----------------------------
 def _nb(H, u):
     return set(H[u]) if u in H else set()
 
 
-def heuristik_scores(split, paare, welche):
-    G, kn = split.G_train, split.knoten          # G_train: OHNE Testkanten!
+def heuristic_scores(split, pairs, which):
+    G, nd = split.G_train, split.nodes          # G_train: WITHOUT the test edges!
     out = []
-    for u, v in paare:
-        a, b = _nb(G, kn[u]), _nb(G, kn[v])
-        if welche == "Common Neighbors":
+    for u, v in pairs:
+        a, b = _nb(G, nd[u]), _nb(G, nd[v])
+        if which == "Common neighbors":
             out.append(len(a & b))
-        elif welche == "Adamic-Adar":
+        elif which == "Adamic-Adar":
             out.append(sum(1.0 / np.log(G.degree(w)) for w in a & b if G.degree(w) > 1))
-        elif welche == "Pref. Attachment":
+        elif which == "Pref. attachment":
             out.append(len(a) * len(b))
     return np.array(out, dtype=float)
 
 
-# ---------------------------- Training ----------------------------
-def trainiere(modell, A_hat, split, epochen=EPOCHEN, lr=0.01, verbose=True):
-    opt = torch.optim.Adam(modell.parameters(), lr=lr)
+# ---------------------------- training ----------------------------
+def train(model, A_hat, split, epochs=EPOCHS, lr=0.01, verbose=True):
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
     tp = torch.tensor(split.train_pos)
     rng = np.random.default_rng(SEED)
     t0 = time.time()
-    for ep in range(1, epochen + 1):
-        modell.train()
-        Z = modell(A_hat)
-        # frische Negativbeispiele je Epoche (Standard beim Link-Prediction-Training)
+    for ep in range(1, epochs + 1):
+        model.train()
+        Z = model(A_hat)
+        # fresh negative examples per epoch (standard in link prediction training)
         neg = torch.tensor(split.negative_uniform(len(split.train_pos),
                                                   seed=int(rng.integers(1 << 30))))
-        scores = torch.cat([kanten_score(Z, tp), kanten_score(Z, neg)])
-        ziele = torch.cat([torch.ones(len(tp)), torch.zeros(len(neg))])
-        loss = nn.functional.binary_cross_entropy_with_logits(scores, ziele)
+        scores = torch.cat([edge_score(Z, tp), edge_score(Z, neg)])
+        targets = torch.cat([torch.ones(len(tp)), torch.zeros(len(neg))])
+        loss = nn.functional.binary_cross_entropy_with_logits(scores, targets)
         opt.zero_grad(); loss.backward(); opt.step()
         if verbose and ep % 25 == 0:
-            print(f"    Epoche {ep:3d}  Loss {loss.item():.4f}  ({time.time()-t0:.0f}s)")
-    return modell
+            print(f"    epoch {ep:3d}  loss {loss.item():.4f}  ({time.time()-t0:.0f}s)")
+    return model
 
 
-def modell_auc(modell, A_hat, pos, neg):
-    modell.eval()
+def model_auc(model, A_hat, pos, neg):
+    model.eval()
     with torch.no_grad():
-        Z = modell(A_hat)
-        s = torch.cat([kanten_score(Z, torch.tensor(pos)),
-                       kanten_score(Z, torch.tensor(neg))]).numpy()
+        Z = model(A_hat)
+        s = torch.cat([edge_score(Z, torch.tensor(pos)),
+                       edge_score(Z, torch.tensor(neg))]).numpy()
     y = np.r_[np.ones(len(pos)), np.zeros(len(neg))]
     return roc_auc_score(y, s)
 
 
 def main():
-    split = LinkSplit(test_anteil=0.10, seed=SEED)
-    print("=== Daten ===")
-    print(split.uebersicht())
+    split = LinkSplit(test_fraction=0.10, seed=SEED)
+    print("=== Data ===")
+    print(split.overview())
 
-    A_hat = normalisierte_adjazenz(split.train_pos, split.n)
-    print(f"A_hat: sparse {tuple(A_hat.shape)}, {A_hat._nnz():,} Nicht-Null-Eintraege "
-          f"({100*A_hat._nnz()/split.n**2:.4f} % besetzt)")
-    print(f"(dicht waeren das {split.n**2*4/1e6:.0f} MB)")
+    A_hat = normalized_adjacency(split.train_pos, split.n)
+    print(f"A_hat: sparse {tuple(A_hat.shape)}, {A_hat._nnz():,} non-zero entries "
+          f"({100*A_hat._nnz()/split.n**2:.4f} % filled)")
+    print(f"(dense that would be {split.n**2*4/1e6:.0f} MB)")
 
-    # ---- zwei Testmengen: derselbe Test-Positivsatz, zwei Arten von Negativen ----
+    # ---- two test sets: the same positive test set, two kinds of negatives ----
     neg_uniform = split.negative_uniform(len(split.test_pos), seed=99)
-    neg_gematcht = split.negative_grad_gematcht(split.test_pos, seed=99)
-    print(f"\nNegativbeispiele: uniform {len(neg_uniform):,} | "
-          f"grad-gematcht {len(neg_gematcht):,}")
-    print("Median Gradprodukt d_u*d_v:")
-    print(f"  echte Kanten : {np.median(split.gradprodukt(split.test_pos)):>7.0f}")
-    print(f"  uniform      : {np.median(split.gradprodukt(neg_uniform)):>7.0f}  <- Blatt x Blatt!")
-    print(f"  grad-gematcht: {np.median(split.gradprodukt(neg_gematcht)):>7.0f}  <- vergleichbar")
+    neg_matched = split.negative_degree_matched(split.test_pos, seed=99)
+    print(f"\nNegative examples: uniform {len(neg_uniform):,} | "
+          f"degree-matched {len(neg_matched):,}")
+    print("Median degree product d_u*d_v:")
+    print(f"  real edges     : {np.median(split.degree_product(split.test_pos)):>7.0f}")
+    print(f"  uniform        : {np.median(split.degree_product(neg_uniform)):>7.0f}  <- leaf x leaf!")
+    print(f"  degree-matched : {np.median(split.degree_product(neg_matched)):>7.0f}  <- comparable")
 
-    ergebnisse = {}
+    results = {}
 
-    # ---- Heuristiken ----
-    for h in ("Common Neighbors", "Adamic-Adar", "Pref. Attachment"):
+    # ---- heuristics ----
+    for h in ("Common neighbors", "Adamic-Adar", "Pref. attachment"):
         r = {}
-        for tag, neg in (("uniform", neg_uniform), ("grad-gematcht", neg_gematcht)):
-            s = np.r_[heuristik_scores(split, split.test_pos, h),
-                      heuristik_scores(split, neg, h)]
+        for tag, neg in (("uniform", neg_uniform), ("degree-matched", neg_matched)):
+            s = np.r_[heuristic_scores(split, split.test_pos, h),
+                      heuristic_scores(split, neg, h)]
             y = np.r_[np.ones(len(split.test_pos)), np.zeros(len(neg))]
             r[tag] = roc_auc_score(y, s)
-        ergebnisse[h] = r
+        results[h] = r
 
-    # ---- MLP ohne Struktur (Kontrollgruppe) ----
-    print("\n=== MLP ohne Struktur (Kontrollgruppe, kein Message Passing) ===")
-    mlp = trainiere(MLPOhneStruktur(split.n, seed=SEED), None, split)
-    ergebnisse["MLP (ohne Graph)"] = {
-        "uniform": modell_auc(mlp, None, split.test_pos, neg_uniform),
-        "grad-gematcht": modell_auc(mlp, None, split.test_pos, neg_gematcht),
+    # ---- MLP without structure (the control group) ----
+    print("\n=== MLP without structure (control group, no message passing) ===")
+    mlp = train(MLPWithoutStructure(split.n, seed=SEED), None, split)
+    results["MLP (without graph)"] = {
+        "uniform": model_auc(mlp, None, split.test_pos, neg_uniform),
+        "degree-matched": model_auc(mlp, None, split.test_pos, neg_matched),
     }
 
     # ---- GCN ----
-    print("\n=== GCN (2 Schichten, from scratch) ===")
-    gcn = trainiere(GCN(split.n, seed=SEED), A_hat, split)
-    ergebnisse["GCN (2 Schichten)"] = {
-        "uniform": modell_auc(gcn, A_hat, split.test_pos, neg_uniform),
-        "grad-gematcht": modell_auc(gcn, A_hat, split.test_pos, neg_gematcht),
+    print("\n=== GCN (2 layers, from scratch) ===")
+    gcn = train(GCN(split.n, seed=SEED), A_hat, split)
+    results["GCN (2 layers)"] = {
+        "uniform": model_auc(gcn, A_hat, split.test_pos, neg_uniform),
+        "degree-matched": model_auc(gcn, A_hat, split.test_pos, neg_matched),
     }
 
-    # ---- Die Tabelle, um die es geht ----
+    # ---- the table this is all about ----
     print("\n" + "=" * 64)
-    print("ROC-AUC — dasselbe Modell, zwei Evaluationsprotokolle")
+    print("ROC-AUC — the same model, two evaluation protocols")
     print("=" * 64)
-    print(f"{'Verfahren':24s} {'uniform (naiv)':>16s} {'grad-gematcht':>16s}")
-    for name, r in ergebnisse.items():
-        print(f"{name:24s} {r['uniform']:16.4f} {r['grad-gematcht']:16.4f}")
+    print(f"{'Method':24s} {'uniform (naive)':>16s} {'degree-matched':>16s}")
+    for name, r in results.items():
+        print(f"{name:24s} {r['uniform']:16.4f} {r['degree-matched']:16.4f}")
 
-    bester_naiv = max(ergebnisse, key=lambda k: ergebnisse[k]["uniform"])
-    bester_ehrlich = max(ergebnisse, key=lambda k: ergebnisse[k]["grad-gematcht"])
-    print(f"\nSieger nach naiver Evaluation : {bester_naiv}")
-    print(f"Sieger nach ehrlicher Evaluation: {bester_ehrlich}")
-    if bester_naiv != bester_ehrlich:
-        print("\n>>> Das Evaluationsprotokoll DREHT die Rangfolge um. <<<")
-        print("    Wer uniform evaluiert, verwirft das GNN zugunsten der duemmsten Heuristik.")
+    best_naive = max(results, key=lambda k: results[k]["uniform"])
+    best_honest = max(results, key=lambda k: results[k]["degree-matched"])
+    print(f"\nWinner by the naive evaluation  : {best_naive}")
+    print(f"Winner by the honest evaluation : {best_honest}")
+    if best_naive != best_honest:
+        print("\n>>> The evaluation protocol REVERSES the ranking. <<<")
+        print("    Whoever evaluates uniformly discards the GNN in favour of the dumbest heuristic.")
 
-    # ---- Plot ----
+    # ---- plot ----
     try:
         import os
         import matplotlib.pyplot as plt
         os.makedirs("results", exist_ok=True)
-        namen = list(ergebnisse)
-        x = np.arange(len(namen)); b = 0.38
+        names = list(results)
+        x = np.arange(len(names)); b = 0.38
         fig, ax = plt.subplots(figsize=(9, 4.6))
-        ax.bar(x - b/2, [ergebnisse[n]["uniform"] for n in namen], b, label="uniform (naiv)")
-        ax.bar(x + b/2, [ergebnisse[n]["grad-gematcht"] for n in namen], b,
-               label="grad-gematcht (ehrlich)")
-        ax.axhline(0.5, ls="--", color="k", lw=1, label="Zufall")
-        ax.set_xticks(x); ax.set_xticklabels(namen, rotation=20, ha="right")
-        ax.set(ylabel="ROC-AUC", title="Link Prediction: das Messprotokoll entscheidet",
+        ax.bar(x - b/2, [results[n]["uniform"] for n in names], b, label="uniform (naive)")
+        ax.bar(x + b/2, [results[n]["degree-matched"] for n in names], b,
+               label="degree-matched (honest)")
+        ax.axhline(0.5, ls="--", color="k", lw=1, label="chance")
+        ax.set_xticks(x); ax.set_xticklabels(names, rotation=20, ha="right")
+        ax.set(ylabel="ROC-AUC", title="Link prediction: the measurement protocol decides",
                ylim=(0.3, 0.9))
         ax.legend(fontsize=8); ax.grid(alpha=0.3, axis="y")
         plt.tight_layout(); plt.savefig("results/link_prediction.png", dpi=110)
-        print("\nPlot gespeichert: results/link_prediction.png")
+        print("\nPlot saved: results/link_prediction.png")
     except Exception as e:
-        print("(kein Plot:", e, ")")
+        print("(no plot:", e, ")")
 
 
 if __name__ == "__main__":

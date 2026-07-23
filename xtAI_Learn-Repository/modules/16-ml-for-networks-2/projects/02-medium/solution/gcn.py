@@ -1,84 +1,84 @@
-"""Ein Graph Convolutional Network (Kipf & Welling 2017) — from scratch, ohne torch_geometric.
+"""A graph convolutional network (Kipf & Welling 2017) — from scratch, without torch_geometric.
 
-Der ganze Zauber sind zwei Zeilen Mathematik:
+The whole magic is two lines of mathematics:
 
-    A_hat = D_tilde^{-1/2} (A + I) D_tilde^{-1/2}          # einmal vorab berechnen
-    H^(k) = sigma( A_hat @ H^(k-1) @ W^(k) )               # eine Schicht
+    A_hat = D_tilde^{-1/2} (A + I) D_tilde^{-1/2}          # computed once in advance
+    H^(k) = sigma( A_hat @ H^(k-1) @ W^(k) )               # one layer
 
-Warum genau so (Skript 2.3):
-  * (A + I)   Self-Loops - sonst faellt der Knoten aus seiner EIGENEN Aktualisierung heraus.
-  * D^{-1/2} ... D^{-1/2}  symmetrische Normierung. Ohne sie summiert man Nachbarn: ein Hub mit
-    Grad 2312 bekaeme Aktivierungen ~1000x groesser als ein Blatt mit Grad 2. Symmetrisch
-    (statt zeilenweise D^{-1}A), weil das (a) A_hat symmetrisch laesst, (b) die Botschaft eines
-    Hubs daempft (Hubs sind uninformativ - dieselbe Intuition wie Adamic-Adar/IDF) und (c) die
-    Eigenwerte in [-1, 1] haelt => stabile Tiefe.
+Why exactly like that (script 2.3):
+  * (A + I)   self-loops - otherwise the node drops out of its OWN update.
+  * D^{-1/2} ... D^{-1/2}  symmetric normalization. Without it you are summing neighbours: a hub
+    of degree 2312 would get activations ~1000x larger than a leaf of degree 2. Symmetric
+    (instead of row-wise D^{-1}A), because that (a) leaves A_hat symmetric, (b) damps the message
+    of a hub (hubs are uninformative - the same intuition as Adamic-Adar/IDF) and (c) keeps the
+    eigenvalues in [-1, 1] => stable depth.
 
-SPARSE ist hier nicht optional: eine dichte 10670x10670-Matrix waere ~455 MB, aber 99.96 %
-davon sind Null. torch.sparse.mm loest das.
+SPARSE is not optional here: a dense 10670x10670 matrix would be ~455 MB, but 99.96 % of it are
+zeros. torch.sparse.mm solves that.
 """
 from __future__ import annotations
 import torch
 import torch.nn as nn
 
 
-def normalisierte_adjazenz(kanten, n: int) -> torch.Tensor:
-    """Berechnet A_hat = D^{-1/2}(A+I)D^{-1/2} als sparse COO-Tensor.
+def normalized_adjacency(edges, n: int) -> torch.Tensor:
+    """Computes A_hat = D^{-1/2}(A+I)D^{-1/2} as a sparse COO tensor.
 
-    kanten: Liste von (u, v)-Indexpaaren (ungerichtet, jede Kante EINMAL).
+    edges: a list of (u, v) index pairs (undirected, every edge listed ONCE).
     """
-    zeilen = [u for u, _ in kanten] + [v for _, v in kanten] + list(range(n))
-    spalten = [v for _, v in kanten] + [u for u, _ in kanten] + list(range(n))
-    z = torch.tensor(zeilen, dtype=torch.long)
-    s = torch.tensor(spalten, dtype=torch.long)
-    werte = torch.ones(len(zeilen))
+    rows = [u for u, _ in edges] + [v for _, v in edges] + list(range(n))
+    cols = [v for _, v in edges] + [u for u, _ in edges] + list(range(n))
+    r = torch.tensor(rows, dtype=torch.long)
+    c = torch.tensor(cols, dtype=torch.long)
+    values = torch.ones(len(rows))
 
-    grad = torch.zeros(n).scatter_add_(0, z, werte)          # Grad inkl. Self-Loop
-    d_inv_sqrt = grad.pow(-0.5)
-    d_inv_sqrt[torch.isinf(d_inv_sqrt)] = 0.0                 # isolierte Knoten abfangen
+    degree = torch.zeros(n).scatter_add_(0, r, values)        # degree incl. the self-loop
+    d_inv_sqrt = degree.pow(-0.5)
+    d_inv_sqrt[torch.isinf(d_inv_sqrt)] = 0.0                 # catch isolated nodes
 
-    norm_werte = d_inv_sqrt[z] * d_inv_sqrt[s]                # 1/sqrt(d_u) * 1/sqrt(d_v)
-    A = torch.sparse_coo_tensor(torch.stack([z, s]), norm_werte, (n, n))
+    norm_values = d_inv_sqrt[r] * d_inv_sqrt[c]               # 1/sqrt(d_u) * 1/sqrt(d_v)
+    A = torch.sparse_coo_tensor(torch.stack([r, c]), norm_values, (n, n))
     return A.coalesce()
 
 
 class GCN(nn.Module):
-    """2-schichtiges GCN. Erzeugt fuer jeden Knoten ein Embedding.
+    """A 2-layer GCN. Produces one embedding per node.
 
-    Der Graph hat keine Knoten-Features (eine reine Topologie!). Deshalb lernen wir die
-    Eingangs-Repraesentation selbst: eine Embedding-Tabelle als H^(0). Damit ist das Modell
-    - wie GCN generell - **transduktiv** (Skript 2.3): fuer einen neuen Knoten gaebe es keine
-    Zeile in der Tabelle. Genau dieses Problem loest GraphSAGE.
+    The graph has no node features (it is pure topology!). That is why we learn the input
+    representation ourselves: an embedding table as H^(0). This makes the model - as GCN
+    generally is - **transductive** (script 2.3): for a new node there would be no row in the
+    table. That is exactly the problem GraphSAGE solves.
 
-    Warum nur 2 Schichten? Over-Smoothing (Skript 2.4) - und im Small-World-Graphen
-    (mittlerer Pfad ~3.7) sieht man mit 2 Hops ohnehin schon einen grossen Teil des Netzes.
+    Why only 2 layers? Over-smoothing (script 2.4) - and in a small-world graph (mean path ~3.7)
+    two hops already see a large part of the network anyway.
     """
 
-    def __init__(self, n_knoten: int, dim: int = 64, seed: int = 0):
+    def __init__(self, n_nodes: int, dim: int = 64, seed: int = 0):
         super().__init__()
         torch.manual_seed(seed)
-        self.emb = nn.Embedding(n_knoten, dim)        # H^(0), gelernt
+        self.emb = nn.Embedding(n_nodes, dim)         # H^(0), learned
         nn.init.normal_(self.emb.weight, std=0.1)
         self.W1 = nn.Linear(dim, dim)
         self.W2 = nn.Linear(dim, dim)
 
     def forward(self, A_hat: torch.Tensor) -> torch.Tensor:
-        H = torch.sparse.mm(A_hat, self.emb.weight)   # Schicht 1: 1 Hop
+        H = torch.sparse.mm(A_hat, self.emb.weight)   # layer 1: 1 hop
         H = torch.relu(self.W1(H))
-        H = torch.sparse.mm(A_hat, H)                 # Schicht 2: 2 Hops
+        H = torch.sparse.mm(A_hat, H)                 # layer 2: 2 hops
         return self.W2(H)
 
 
-class MLPOhneStruktur(nn.Module):
-    """Kontrollgruppe: identisch zum GCN, aber OHNE Message Passing (kein A_hat).
+class MLPWithoutStructure(nn.Module):
+    """The control group: identical to the GCN, but WITHOUT message passing (no A_hat).
 
-    Wenn dieses Modell genauso gut ist, bringt die Topologie nichts - und das ganze GNN
-    waere ueberfluessiger Aufwand. Genau dafuer ist eine Kontrollgruppe da.
+    If this model is just as good, the topology contributes nothing - and the whole GNN would be
+    superfluous effort. That is exactly what a control group is for.
     """
 
-    def __init__(self, n_knoten: int, dim: int = 64, seed: int = 0):
+    def __init__(self, n_nodes: int, dim: int = 64, seed: int = 0):
         super().__init__()
         torch.manual_seed(seed)
-        self.emb = nn.Embedding(n_knoten, dim)
+        self.emb = nn.Embedding(n_nodes, dim)
         nn.init.normal_(self.emb.weight, std=0.1)
         self.W1 = nn.Linear(dim, dim)
         self.W2 = nn.Linear(dim, dim)
@@ -88,9 +88,9 @@ class MLPOhneStruktur(nn.Module):
         return self.W2(H)
 
 
-def kanten_score(Z: torch.Tensor, paare: torch.Tensor) -> torch.Tensor:
-    """Score einer Kante = Skalarprodukt der beiden Knoten-Embeddings.
+def edge_score(Z: torch.Tensor, pairs: torch.Tensor) -> torch.Tensor:
+    """The score of an edge = the dot product of the two node embeddings.
 
-    Hoher Score <=> die beiden Knoten 'passen zusammen' <=> Kante wahrscheinlich.
+    A high score <=> the two nodes 'fit together' <=> an edge is likely.
     """
-    return (Z[paare[:, 0]] * Z[paare[:, 1]]).sum(dim=1)
+    return (Z[pairs[:, 0]] * Z[pairs[:, 1]]).sum(dim=1)

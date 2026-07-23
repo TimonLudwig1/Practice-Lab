@@ -1,110 +1,112 @@
-"""Ein Graph Convolutional Network (Kipf & Welling 2017) — from scratch, ohne torch_geometric.
+"""A graph convolutional network (Kipf & Welling 2017) — from scratch, without torch_geometric.
 
->>> DEINE AUFGABE <<<  Vier TODOs. Der ganze Zauber sind zwei Zeilen Mathematik:
+>>> YOUR TASK <<<  Fill in the four functions/methods marked with TODO.
 
-    A_hat = D_tilde^{-1/2} (A + I) D_tilde^{-1/2}          # einmal vorab berechnen
-    H^(k) = sigma( A_hat @ H^(k-1) @ W^(k) )               # eine Schicht
+The whole magic is two lines of mathematics:
 
-Warum genau so (Skript 2.3 — verstehe das, bevor du tippst):
-  * (A + I)   Self-Loops - sonst faellt der Knoten aus seiner EIGENEN Aktualisierung heraus.
-  * D^{-1/2} ... D^{-1/2}  symmetrische Normierung. Ohne sie summiert man Nachbarn: ein Hub mit
-    Grad 2312 bekaeme Aktivierungen ~1000x groesser als ein Blatt mit Grad 2. Symmetrisch
-    (statt zeilenweise D^{-1}A), weil das (a) A_hat symmetrisch laesst, (b) die Botschaft eines
-    Hubs daempft (Hubs sind uninformativ - dieselbe Intuition wie Adamic-Adar/IDF) und (c) die
-    Eigenwerte in [-1, 1] haelt => stabile Tiefe.
+    A_hat = D_tilde^{-1/2} (A + I) D_tilde^{-1/2}          # computed once in advance
+    H^(k) = sigma( A_hat @ H^(k-1) @ W^(k) )               # one layer
 
-SPARSE ist hier nicht optional: eine dichte 10670x10670-Matrix waere ~455 MB, aber 99.96 %
-davon sind Null. Nutze torch.sparse_coo_tensor / torch.sparse.mm.
+Why exactly like that (script 2.3):
+  * (A + I)   self-loops - otherwise the node drops out of its OWN update.
+  * D^{-1/2} ... D^{-1/2}  symmetric normalization. Without it you are summing neighbours: a hub
+    of degree 2312 would get activations ~1000x larger than a leaf of degree 2. Symmetric
+    (instead of row-wise D^{-1}A), because that (a) leaves A_hat symmetric, (b) damps the message
+    of a hub (hubs are uninformative - the same intuition as Adamic-Adar/IDF) and (c) keeps the
+    eigenvalues in [-1, 1] => stable depth.
 
-Musterloesung: solution/gcn.py — erst selbst versuchen!
+SPARSE is not optional here: a dense 10670x10670 matrix would be ~455 MB, but 99.96 % of it are
+zeros. torch.sparse.mm solves that.
+
+Reference solution: solution/gcn.py — try it yourself first!
 """
 from __future__ import annotations
 import torch
 import torch.nn as nn
 
 
-def normalisierte_adjazenz(kanten, n: int) -> torch.Tensor:
-    """Berechne A_hat = D^{-1/2}(A+I)D^{-1/2} als SPARSE COO-Tensor.
+def normalized_adjacency(edges, n: int) -> torch.Tensor:
+    """Compute A_hat = D^{-1/2}(A+I)D^{-1/2} as a SPARSE COO tensor.
 
-    kanten: Liste von (u, v)-Indexpaaren (ungerichtet, jede Kante EINMAL aufgefuehrt).
+    edges: a list of (u, v) index pairs (undirected, every edge listed ONCE).
 
-    Bauplan:
-      1. Index-Listen aufbauen. Weil der Graph ungerichtet ist, braucht jede Kante BEIDE
-         Richtungen: zeilen = [u...] + [v...] + [0..n-1]   (das letzte Stueck = Self-Loops!)
-         spalten = [v...] + [u...] + [0..n-1]
-      2. grad = torch.zeros(n).scatter_add_(0, zeilen, werte)   # Grad inkl. Self-Loop
-      3. d_inv_sqrt = grad.pow(-0.5);  Inf abfangen (isolierte Knoten!) -> 0
-      4. norm_werte[i] = d_inv_sqrt[zeilen[i]] * d_inv_sqrt[spalten[i]]
-      5. torch.sparse_coo_tensor(torch.stack([zeilen, spalten]), norm_werte, (n, n)).coalesce()
+    Blueprint:
+      1. Build the index lists. Because the graph is undirected, every edge needs BOTH
+         directions: rows = [u...] + [v...] + [0..n-1]   (the last piece = the self-loops!)
+         cols = [v...] + [u...] + [0..n-1]
+      2. degree = torch.zeros(n).scatter_add_(0, rows, values)   # degree incl. the self-loop
+      3. d_inv_sqrt = degree.pow(-0.5);  catch Inf (isolated nodes!) -> 0
+      4. norm_values[i] = d_inv_sqrt[rows[i]] * d_inv_sqrt[cols[i]]
+      5. torch.sparse_coo_tensor(torch.stack([rows, cols]), norm_values, (n, n)).coalesce()
 
-    Selbstcheck (die Tests pruefen genau das):
-      - A_hat ist symmetrisch
-      - die Diagonale ist > 0 (Self-Loops!)
-      - fuer den Pfad 0-1-2 gilt A_hat[0,1] = 1/sqrt(2*3)
-      - alle Eigenwerte liegen in [-1, 1]
+    Self-check (the tests check exactly this):
+      - A_hat is symmetric
+      - the diagonal is > 0 (self-loops!)
+      - for the path 0-1-2 it holds that A_hat[0,1] = 1/sqrt(2*3)
+      - all eigenvalues lie in [-1, 1]
     """
     # TODO
     raise NotImplementedError
 
 
 class GCN(nn.Module):
-    """2-schichtiges GCN. Erzeugt fuer jeden Knoten ein Embedding.
+    """A 2-layer GCN. Produces one embedding per node.
 
-    Der Graph hat KEINE Knoten-Features (reine Topologie). Deshalb lernen wir die
-    Eingangs-Repraesentation selbst: eine nn.Embedding-Tabelle als H^(0). Damit ist das Modell
-    - wie GCN generell - **transduktiv** (Skript 2.3).
+    The graph has NO node features (pure topology). That is why we learn the input
+    representation ourselves: an nn.Embedding table as H^(0). This makes the model - as GCN
+    generally is - **transductive** (script 2.3).
 
-    Warum nur 2 Schichten? Over-Smoothing (Skript 2.4).
+    Why only 2 layers? Over-smoothing (script 2.4).
     """
 
-    def __init__(self, n_knoten: int, dim: int = 64, seed: int = 0):
+    def __init__(self, n_nodes: int, dim: int = 64, seed: int = 0):
         super().__init__()
         torch.manual_seed(seed)
-        self.emb = nn.Embedding(n_knoten, dim)        # H^(0), gelernt
+        self.emb = nn.Embedding(n_nodes, dim)         # H^(0), learned
         nn.init.normal_(self.emb.weight, std=0.1)
         self.W1 = nn.Linear(dim, dim)
         self.W2 = nn.Linear(dim, dim)
 
     def forward(self, A_hat: torch.Tensor) -> torch.Tensor:
-        """Zwei GCN-Schichten.
+        """Two GCN layers.
 
-        Schicht 1:  H = relu( W1( A_hat @ emb ) )     # 1 Hop
-        Schicht 2:  Z = W2( A_hat @ H )               # 2 Hops
-        Tipp: torch.sparse.mm(A_hat, X) fuer sparse @ dense.
+        Layer 1:  H = relu( W1( A_hat @ emb ) )     # 1 hop
+        Layer 2:  Z = W2( A_hat @ H )               # 2 hops
+        Hint: torch.sparse.mm(A_hat, X) for sparse @ dense.
         """
         # TODO
         raise NotImplementedError
 
 
-class MLPOhneStruktur(nn.Module):
-    """Kontrollgruppe: identisch zum GCN, aber OHNE Message Passing (A_hat wird ignoriert).
+class MLPWithoutStructure(nn.Module):
+    """The control group: identical to the GCN, but WITHOUT message passing (A_hat is ignored).
 
-    Wenn dieses Modell genauso gut ist, bringt die Topologie nichts - und das ganze GNN waere
-    ueberfluessiger Aufwand. Genau dafuer ist eine Kontrollgruppe da.
+    If this model is just as good, the topology contributes nothing - and the whole GNN would be
+    superfluous effort. That is exactly what a control group is for.
     """
 
-    def __init__(self, n_knoten: int, dim: int = 64, seed: int = 0):
+    def __init__(self, n_nodes: int, dim: int = 64, seed: int = 0):
         super().__init__()
         torch.manual_seed(seed)
-        self.emb = nn.Embedding(n_knoten, dim)
+        self.emb = nn.Embedding(n_nodes, dim)
         nn.init.normal_(self.emb.weight, std=0.1)
         self.W1 = nn.Linear(dim, dim)
         self.W2 = nn.Linear(dim, dim)
 
     def forward(self, A_hat=None):
-        """Wie GCN.forward, aber OHNE jede A_hat-Multiplikation."""
+        """Like GCN.forward, but WITHOUT any A_hat multiplication."""
         # TODO
         raise NotImplementedError
 
 
-def kanten_score(Z: torch.Tensor, paare: torch.Tensor) -> torch.Tensor:
-    """Score einer Kante = Skalarprodukt der beiden Knoten-Embeddings.
+def edge_score(Z: torch.Tensor, pairs: torch.Tensor) -> torch.Tensor:
+    """The score of an edge = the dot product of the two node embeddings.
 
-    Z:     (n, dim) Knoten-Embeddings
-    paare: (k, 2) Long-Tensor von Knotenpaaren
-    Rueckgabe: (k,) Scores. Hoch <=> die beiden passen zusammen <=> Kante wahrscheinlich.
+    Z:     (n, dim) node embeddings
+    pairs: (k, 2) long tensor of node pairs
+    Returns: (k,) scores. High <=> the two fit together <=> an edge is likely.
 
-    Tipp: (Z[paare[:,0]] * Z[paare[:,1]]).sum(dim=1)   - zeilenweises Skalarprodukt.
+    Hint: (Z[pairs[:,0]] * Z[pairs[:,1]]).sum(dim=1)   - the row-wise dot product.
     """
     # TODO
     raise NotImplementedError
