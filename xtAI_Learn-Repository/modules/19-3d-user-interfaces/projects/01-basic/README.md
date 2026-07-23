@@ -1,4 +1,65 @@
-# P01 (basic) — Homogene Transformationen & Ray-Casting-Selektion
+# P01 (basic) — homogeneous transformations & ray-casting selection
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The notebook itself is English only.
+
+**Module 19 — 3D User Interfaces** · Format: **Jupyter notebook**
+
+## Goal
+
+You build the two geometric foundations of every 3D interface from scratch:
+
+1. **Homogeneous 4×4 transformations** — translation, rotation, scaling as chainable matrices; the transformation chain and its closed-form inverse. You see concretely *why* homogeneous coordinates are needed.
+2. **Ray-casting selection** — the ray-sphere intersection mathematics (derived from the quadratic equation) and choosing the *nearest* object hit in a 3D scene.
+
+## Why this format?
+
+A **notebook**, because 3D geometry lives off numbers *and* visualization side by side: you want to see the transformed points and the ray pointing at the object it hit in a 3D plot.
+
+## Why synthetic data?
+
+This is about **laws of geometry**, not about a dataset. A hand-built mini scene of spheres allows every computation (the transformed point, the intersection distance $t$) to be checked against a target value you can follow by hand.
+
+## Prior knowledge
+
+Linear algebra (matrix × vector, the dot product). **Chapters 3 & 5** of the [module 19 script](../../README.md). The rotation mathematics from module 17 (Rodrigues/quaternion → rotation matrix) reappears.
+
+## Assignment (step by step)
+
+Open `transforms_raycasting.ipynb`. Most cells are given; at the `# TODO` places you fill in the core building blocks:
+
+- **Part A** — `translation` and `scaling` as 4×4 matrices. Chain scale→rotate→translate and observe that the order counts.
+- **Part B** — `rigid_inverse` with the closed-form formula $M^{-1}=\begin{psmallmatrix}\mathbf R^\top & -\mathbf R^\top\mathbf t\\0&1\end{psmallmatrix}$ (no `np.linalg.inv`).
+- **Part C** — `ray_sphere`: the ray-sphere intersection equation (the discriminant, the nearer positive intersection).
+- **Part D** — `select`: iterate over the scene and choose the object with the smallest $t>0$. The plot is given.
+
+## What comes out at the end (expected values)
+
+- Part A: the point $(1,0,0)$ → **$(1,4,3)$** after scaling by 2 / 90° about z / a translation by $(1,2,3)$.
+- Part B: the deviation from `np.linalg.inv` is ~$10^{-16}$, $MM^{-1}=I$.
+- Part C: a ray along $+x$ hits the sphere around $(5,0,0)$, $R=1$ at **$t=4$**; a ray along $+y$ misses it (`None`).
+- Part D: the ray directed almost along $+x$ selects **A** (at $t\approx2.6$) — the *nearest* object, although further ones behind it would also be hit. A 3D plot with the ray, the hit point and the object marked in green.
+
+## Setup
+
+```bash
+cd modules/19-3d-user-interfaces/projects/01-basic
+/Users/.../.venv/bin/python -m jupyter lab   # open transforms_raycasting.ipynb
+```
+
+Only `numpy` + `matplotlib` (both in the `.venv`). Runtime a few seconds.
+
+## Solution
+
+The complete, executed solution is in [`solution/transforms_raycasting_solution.ipynb`](solution/transforms_raycasting_solution.ipynb) — **try it yourself first!**
+
+## What comes next
+
+- **P02 (medium)**: reality — hand tremor makes the pointing noisy; the angular Fitts' law (small distant targets are hard) and the Go-Go reach extension.
+- **P03 (final)**: a complete comparison of selection techniques under clutter with ISO throughput.
+
+---
+
+# P01 (basic) — Homogene Transformationen & Ray-Casting-Selektion (deutsche Fassung)
 
 **Modul 19 — 3D User Interfaces** · Format: **Jupyter-Notebook**
 

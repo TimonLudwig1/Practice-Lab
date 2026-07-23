@@ -1,4 +1,352 @@
-# Modul 19 — 3D User Interfaces
+# Module 19 — 3D User Interfaces
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The projects themselves are English only.
+
+> **What is this about?** As soon as content lies in **three-dimensional space** — in VR/AR, in a CAD program, in a game — the interaction familiar from the 2D desktop (mouse, windows, menus) is no longer enough. A **3D user interface (3DUI)** is an interface through which a human **selects and manipulates objects in 3D space, moves within it and orients themselves**. This module covers the *principles* and the *mathematics* of that interaction: how are the coordinate systems related? How does a virtual pointing ray hit an object? How do you reach a distant object with a short arm? And why is pointing in 3D *fundamentally harder* than in 2D?
+>
+> **Prior knowledge**: linear algebra (matrices, vectors, the dot product), some 3D geometry. From this repo the following build directly into it: **module 17** (Core XR — rotation mathematics/quaternions, Fitts' law, tracking, cybersickness) and **module 18** (multimodal — reference resolution, pointing ambiguity, user study methodology). Module 17 is a **mandatory preceding module**; much of what follows is its direct continuation.
+
+> **Note on the scope.** As with modules 15–18 no official module description is available; I scoped the content myself, closely along the authoritative reference (Bowman, LaViola, Kruijff, Poupyrev: *3D User Interfaces — Theory and Practice*) and consistently with the XR block of this repo. **Again without concrete hardware** (no VR headset, no tracked controller): the teachable, transferable core is the **transformation mathematics, the interaction techniques as algorithms, the pointing precision models (Fitts in 3D) and the evaluation methodology**. You learn to hold a controller in minutes; understanding *why* ray-casting breaks down with distance and *how* Go-Go extends the arm non-linearly is the master-level competence. The projects simulate pointing and selection realistically with pure geometry/statistics on the CPU.
+
+---
+
+## Contents
+
+1. [Learning objectives](#learning-objectives)
+2. [Basics](#basics)
+3. [Building up (intermediate)](#building-up-intermediate)
+4. [Advanced topics](#advanced-topics)
+5. [Summary / cheat sheet](#summary--cheat-sheet)
+6. [Self-test](#self-test)
+7. [Literature & sources](#literature--sources)
+
+---
+
+## Learning objectives
+
+After this module you should be able to …
+
+- name and distinguish the **four universal 3D interaction tasks** after Bowman: **selection, manipulation, travel, wayfinding** — plus system control.
+- fully master **coordinate systems and homogeneous transformations**: the $4\times4$ matrix, why translation can only be written as a matrix in homogeneous form, the **transformation chain** object→world→camera→image, and how to invert it.
+- derive and implement the **ray-object intersection mathematics**: ray-sphere, ray-AABB (the slab method), ray-triangle (Möller-Trumbore).
+- understand the most important **selection and manipulation techniques** as algorithms: ray-casting, cone/bubble, virtual hand, **Go-Go** (the non-linear arm extension — with its formula), HOMER, as well as **isomorphic vs. "magic" (non-isomorphic)** techniques and **DOF separation**.
+- explain why **pointing in 3D is harder** than in 2D (**angular Fitts' law**, the Heisenberg effect, missing physical constraints, depth perception) and how control-display gain helps.
+- place the **travel metaphors** (walking, steering, target-based/teleport, manipulation-based) and their coupling to **cybersickness** (cf. module 17).
+- **design and evaluate** a 3D selection experiment soundly (ISO 9241-9 throughput, Fitts in 3D, docking, within-subject statistics as in module 17).
+
+---
+
+## Basics
+
+### 1. Why is 3D interaction hard?
+
+The desktop spoiled humans for 40 years with **2D, WIMP** (windows, icons, menus, pointer) and hard physical constraints (the mouse lies on the table). In 3D space all of that falls away. Four fundamental difficulties:
+
+1. **Six degrees of freedom (6 DoF).** An object in space has three positional and three orientational degrees of freedom. A menu has two. The human has to control six simultaneously — more than perception can cleanly separate.
+2. **No physical constraints / no passive haptics.** On the table the mouse stops at the edge; in the air there is no stop, no support, no feedback when "touching" a virtual object. The hand tires ("gorilla arm").
+3. **Precision.** Without support the hand trembles (tremor); when clicking, the pointer slips (the **Heisenberg effect** of 3D interaction, section 13).
+4. **Depth perception.** How far away is the object? Humans **systematically underestimate distances in VR** (often 70–80 % of the real distance), which distorts grasping and moving.
+
+That is why 3D interaction needs *its own* techniques — you cannot simply "lift the mouse into the air".
+
+### 2. The four universal interaction tasks (Bowman)
+
+Almost every 3D interaction can be decomposed into four **canonical tasks**. This taxonomy structures the whole module:
+
+| Task | Question | Example techniques |
+|---|---|---|
+| **Selection** | *Which* object do I mean? | ray-casting, virtual hand, Go-Go, bubble/cone |
+| **Manipulation** | *move/rotate/scale* an object | virtual hand, HOMER, scaled-world grab, widgets |
+| **Travel** (motor locomotion) | How do I *move* my viewpoint? | walking, steering, teleport, grab-the-world |
+| **Wayfinding** (cognitive orientation) | *Where* am I, how do I *get there*? | maps, landmarks, a compass, trail markers |
+
+In addition **system control** (choosing commands/modes — 3D menus, gestures, speech; this is where module 18 applies) and **symbolic input** (text in 3D — notoriously hard).
+
+> **Remember the travel/wayfinding distinction:** *travel* is the **motor** component (the moving itself), *wayfinding* the **cognitive** one (knowing where to go). Both together = *navigation*. A good 3DUI supports both separately.
+
+### 3. Coordinate systems and homogeneous transformations
+
+The mathematical foundation. A 3D object exists in several **frames of reference** simultaneously, and interaction means constantly converting between them:
+
+```
+ object        world          camera/eye      image/screen
+ coordinates → coordinates  → coordinates   → coordinates
+   (model)      (world)        (view)         (projection)
+      M_model       M_view         M_proj
+```
+
+A point is transformed through the chain: $\mathbf{p}_{\text{screen}} = M_{\text{proj}}\,M_{\text{view}}\,M_{\text{model}}\,\mathbf{p}_{\text{object}}$.
+
+**Homogeneous coordinates.** The trick that holds it all together: you extend a 3D point $\mathbf{p}=(x,y,z)$ by a fourth coordinate $w=1$: $\tilde{\mathbf{p}} = (x,y,z,1)^\top$. The reason is purely pragmatic but profound: **translation is not a linear map** (it does not fix the origin) and *cannot* be written as a $3\times3$ matrix. In homogeneous coordinates it can after all — as a $4\times4$ matrix:
+
+$$T(\mathbf{t}) = \begin{pmatrix} 1 & 0 & 0 & t_x \\ 0 & 1 & 0 & t_y \\ 0 & 0 & 1 & t_z \\ 0 & 0 & 0 & 1 \end{pmatrix}, \quad
+R = \begin{pmatrix} & & & 0 \\ & \mathbf{R}_{3\times3} & & 0 \\ & & & 0 \\ 0 & 0 & 0 & 1 \end{pmatrix}, \quad
+S(\mathbf{s}) = \begin{pmatrix} s_x & & & 0 \\ & s_y & & 0 \\ & & s_z & 0 \\ 0 & 0 & 0 & 1 \end{pmatrix}$$
+
+Now **rotation, translation and scaling are all $4\times4$ matrices** and can be **chained by matrix multiplication** — that is the entire reason for homogeneous coordinates. A rigid transformation (rigid body, rotation + translation) is
+
+$$M = \begin{pmatrix} \mathbf{R} & \mathbf{t} \\ \mathbf{0}^\top & 1 \end{pmatrix}, \qquad
+  M^{-1} = \begin{pmatrix} \mathbf{R}^\top & -\mathbf{R}^\top\mathbf{t} \\ \mathbf{0}^\top & 1 \end{pmatrix}.$$
+
+The inverse uses $\mathbf{R}^{-1}=\mathbf{R}^\top$ (rotation matrices are orthogonal, cf. module 17) — you never have to invert numerically. **The order is decisive** (matrix multiplication is not commutative, as already with the rotations in module 17): $T\,R$ (first rotate, then translate) $\neq R\,T$.
+
+> **Careful, a convention:** it is applied from right to left onto the column vector: $M\mathbf{p} = T(R(S\mathbf{p}))$ means "first scale, then rotate, then translate". The $\mathbf{R}$ here can be built directly from a quaternion (module 17) — 3DUIs almost always store orientations as quaternions and convert to a matrix only for rendering.
+
+### 4. Depth perception (depth cues)
+
+For a human to point and grasp in 3D space, they have to **estimate distance**. The brain uses many **depth cues** for that, which you have to know because VR systems deliver them to differing degrees:
+
+- **Occlusion**: the strongest cue — what occludes is nearer. Always correct in VR.
+- **Perspective / relative size**: distant things appear smaller; parallel lines converge.
+- **Stereopsis** (binocular disparity): the two eye images differ — the main advantage of a VR headset, but it only works up close (< ~10 m).
+- **Motion parallax**: during head movement, near things move faster than distant ones — needs good head tracking (module 17).
+- **Accommodation/convergence**: focus and eye position — the source of the **vergence-accommodation conflict** (VAC) from module 17.
+
+**The consequence:** VR delivers stereopsis and parallax well, but the VAC and other missing cues lead to a systematic **underestimation of distance**. For a 3DUI that means: objects appear nearer than they are → grasping techniques have to compensate for that (see Go-Go, section 6).
+
+---
+
+## Building up (intermediate)
+
+### 5. Selection I: ray-casting and the ray-object intersection mathematics
+
+By far the most common selection technique: a **virtual ray** goes out from the controller (or the hand); the first object hit is selected. A ray is parametric
+
+$$\mathbf{r}(t) = \mathbf{o} + t\,\mathbf{d}, \quad t \ge 0,$$
+
+with origin $\mathbf{o}$ and a **normalized** direction $\mathbf{d}$ ($\|\mathbf{d}\|=1$, then $t$ is the Euclidean distance). Selection = the **nearest intersection** over all objects. The mathematics per object type:
+
+**Ray-sphere** (the object as a bounding sphere, centre $\mathbf{c}$, radius $R$). Substitute $\mathbf{r}(t)$ into $\|\mathbf{p}-\mathbf{c}\|^2 = R^2$. With $\mathbf{m}=\mathbf{o}-\mathbf{c}$:
+
+$$\|\mathbf{m}+t\mathbf{d}\|^2 = R^2 \;\Longrightarrow\; t^2\underbrace{(\mathbf{d}\cdot\mathbf{d})}_{=1} + 2t(\mathbf{m}\cdot\mathbf{d}) + (\mathbf{m}\cdot\mathbf{m}-R^2)=0.$$
+
+A quadratic equation $t^2 + 2bt + c = 0$ with $b=\mathbf{m}\cdot\mathbf{d}$, $c=\mathbf{m}\cdot\mathbf{m}-R^2$. The discriminant is $\Delta = b^2 - c$. If $\Delta<0$: no hit. Otherwise $t = -b - \sqrt{\Delta}$ (the nearer, front intersection); if that one is $<0$ and the other $>0$, the origin is *inside* the sphere.
+
+**Ray-AABB** (an axis-aligned bounding box, the slab method). For every axis $i\in\{x,y,z\}$ the box is a "slab" $[\min_i, \max_i]$. The ray enters at $t_{i,1}=(\min_i - o_i)/d_i$ and exits at $t_{i,2}=(\max_i-o_i)/d_i$ (mind the sign of $d_i$ → swap). The ray hits the box iff the **maximum of the entries $\le$ the minimum of the exits**:
+
+$$t_{\text{enter}} = \max_i \min(t_{i,1}, t_{i,2}), \quad t_{\text{exit}} = \min_i \max(t_{i,1}, t_{i,2}), \quad \text{hit} \iff t_{\text{enter}} \le t_{\text{exit}} \wedge t_{\text{exit}}\ge 0.$$
+
+**Ray-triangle (Möller-Trumbore)** — for real mesh geometry. A triangle with corners $\mathbf{v}_0,\mathbf{v}_1,\mathbf{v}_2$; a point in it is $\mathbf{v}_0 + u\,\mathbf{e}_1 + v\,\mathbf{e}_2$ with $\mathbf{e}_1=\mathbf{v}_1-\mathbf{v}_0$, $\mathbf{e}_2=\mathbf{v}_2-\mathbf{v}_0$ and **barycentric** coordinates $u,v\ge0$, $u+v\le1$. Equating this with $\mathbf{r}(t)$ gives a $3\times3$ system that is solved without matrix inversion via scalar triple products:
+
+$$\mathbf{p} = \mathbf{d}\times\mathbf{e}_2,\quad \det = \mathbf{e}_1\cdot\mathbf{p}, \quad \mathbf{s}=\mathbf{o}-\mathbf{v}_0,\quad
+u = \frac{\mathbf{s}\cdot\mathbf{p}}{\det},\quad \mathbf{q}=\mathbf{s}\times\mathbf{e}_1,\quad v=\frac{\mathbf{d}\cdot\mathbf{q}}{\det},\quad t=\frac{\mathbf{e}_2\cdot\mathbf{q}}{\det}.$$
+
+A hit iff $u\ge0,\ v\ge0,\ u+v\le1,\ t>0$ (and $|\det|$ not ~0, otherwise the ray is parallel to the triangle). This is the standard algorithm of every ray tracer and selection system.
+
+**Why ray-casting is so popular** — and where it fails: it allows **distant** objects to be selected effortlessly (the ray is arbitrarily long). But: at **distance** an object subtends a tiny angle, and even minimal hand tremor misses it (section 12, angular Fitts). Under **occlusion/density** it is unclear which of several objects lying behind or next to each other is meant — that is a **disambiguation problem** as in module 18. This is exactly where cone/bubble techniques come in.
+
+### 6. Selection II: virtual hand and Go-Go (non-linear reach extension)
+
+**Virtual hand.** The most direct technique: a virtual hand follows the real one **isomorphically** (1:1); you select by **touching** (a collision hand ↔ object). Intuitive and precise — but the reach is **limited to the arm's length**. You can only grasp what is within arm's reach.
+
+**Go-Go** (Poupyrev et al. 1996) — the most elegant solution to the reach problem. The idea: the virtual hand follows the real one **non-linearly**. Within a threshold $D$ (typically ~2/3 of the arm's length) the mapping is 1:1 (precise near interaction); *beyond* $D$ the virtual reach grows **quadratically**, so that small real arm extensions produce large virtual reaches. Let $r_r$ be the real hand distance from the body and $r_v$ the virtual one:
+
+$$r_v = \begin{cases} r_r & r_r < D \\[4pt] r_r + k\,(r_r - D)^2 & r_r \ge D \end{cases}$$
+
+with a gain coefficient $k$ (controlling how fast the reach grows). The function is **continuous and continuously differentiable** at $r_r=D$ (value $D$, derivative $1$) — no jump, no kink in the velocity, which makes it feel "natural". Go-Go thus keeps the **precision** of the virtual hand up close and gains the **reach** of ray-casting at a distance. The **basic** and **medium** projects implement this function.
+
+> Go-Go is the prototype of a **"magic" (non-isomorphic)** technique: it deliberately breaks with 1:1 reality in order to achieve better usability. That is a core principle of 3D interaction — *isomorphism* (fidelity to reality) is *not* always optimal.
+
+### 7. Selection III: volume techniques (cone/bubble) against ambiguity
+
+When ray-casting fails at small/dense/distant targets, a **selection volume** instead of a line helps:
+
+- **Cone/flashlight**: a **cone** instead of a ray; all objects in the cone are candidates. The object chosen is the one with the **smallest angular distance to the cone axis**. This makes hitting small/distant targets easier — but in **dense** scenes many objects are in the cone → a new ambiguity.
+- **Bubble cursor** (Grossman & Balakrishnan, originally 2D, 3D variants exist): a cursor with a **dynamic radius** that adapts so that **exactly one** target is enclosed — it always fully encompasses the *nearest* object. This effectively makes every target "as large as its Voronoi region" → drastically better Fitts performance in sparsely populated scenes.
+
+The choice between a point and a volume technique is a **precision vs. ambiguity trade-off** that the **final project** measures empirically: ray-casting is precise but unusable for small distant targets; cone/bubble grab those easily but over-select in a crowd. The disambiguation "which of the candidate objects?" is conceptually the same problem as reference resolution in module 18 (there with time + semantics, here with angle + distance).
+
+### 8. Manipulation: DOF, isomorphic vs. magic, HOMER, DOF separation
+
+Selection is often followed by **manipulation** (moving, rotating, scaling). The core concepts:
+
+- **Isomorphic 6-DoF manipulation**: the virtual hand transfers translation + rotation 1:1 onto the object. Natural, but again limited in reach and precision.
+- **HOMER** (*hand-centered object manipulation extending ray-casting*): selects by ray-casting (a large reach), then **the virtual hand jumps to the object** and manipulates it hand-centred. It combines the reach of ray-casting with virtual-hand manipulation.
+- **Scaled-world grab**: scales the world on grabbing so that the distant object comes into reach — mathematically elegant, but it can disorient.
+- **DOF separation**: often you do *not* want to control all 6 DoF simultaneously (e.g. move a picture only *along the wall*). Techniques **constrain** DoF, **snap** to grids/edges or separate translation from rotation via widgets/handles. This compensates for the human weakness of guiding many DoF precisely at the same time.
+
+> **Perceptual structure (Jacob et al.):** degrees of freedom should be grouped the way a human *perceives* them. Position (x,y,z) is **integral** (you move the hand as a whole), position-vs-colour would be **separable**. A manipulation technique that separates integral DoF or couples separable ones feels wrong. The design rule: **the DOF structure of the task = the DOF structure of the technique.**
+
+### 9. Travel & wayfinding
+
+**Travel metaphors** (the motor locomotion):
+
+- **Physical walking / real walking**: the most immersive, the least prone to sickness — but limited by the real room (redirected walking as a trick).
+- **Steering**: continuous direction input — *gaze-directed* (the direction of view) or *pointing-directed* (the direction of the hand). Simple, but continuous visual movement without bodily movement → **vection → cybersickness** (cf. module 17, the sensory conflict theory).
+- **Target-based / teleport**: you choose a target and are **immediately transported there**. The de facto standard in VR, **because it minimizes cybersickness** (no continuous vection) — at the cost of spatial understanding.
+- **Manipulation-based** ("grab the world"): you grab the world and pull yourself through it.
+
+**Wayfinding support** (the cognitive orientation): **landmarks**, **maps** (you-are-here, with the delicate question of orientation — track-up vs. north-up), a **compass/trails/breadcrumbs**, good **sight lines**. The goal is building a mental **cognitive map**.
+
+---
+
+## Advanced topics
+
+### 10. Fitts' law in 3D: why pointing breaks down with distance
+
+In module 17 we introduced Fitts' law for 2D pointing: the movement time
+
+$$MT = a + b\,\underbrace{\log_2\!\Big(\tfrac{D}{W}+1\Big)}_{\text{index of difficulty }ID}$$
+
+with target distance $D$ and target width $W$. In 3D — especially with **ray-casting** — the relevant quantity is **not the linear but the *angular* extent**. A target of (transverse) width $W$ at distance $L$ from the eye/controller subtends the angle
+
+$$\theta_W \approx 2\arctan\!\Big(\frac{W}{2L}\Big) \approx \frac{W}{L} \quad (\text{for } W \ll L),$$
+
+and the pointer has to sweep over an **angle** $\theta_D$. The **angular Fitts' law** replaces distance/width by angles:
+
+$$MT = a + b\,\log_2\!\Big(\frac{\theta_D}{\theta_W}+1\Big).$$
+
+> **The decisive consequence:** $\theta_W \approx W/L$ **shrinks with the distance $L$**. An object twice as far away is *angularly* half as large → $ID$ rises → selection takes longer and becomes more error-prone. **Ray-casting precision degrades linearly with the target distance** — that is the hard, quantitative reason why distant small targets are so hard to hit in VR, and why Go-Go (bringing the target "closer") or bubble (enlarging the effective $\theta_W$) help. The **medium project** measures exactly this angular Fitts relation.
+
+### 11. Control-display gain and adaptive gain (PRISM)
+
+**Control-display (C/D) gain** is the ratio of display movement to control movement. A gain $>1$ (a small hand movement → a large pointer movement) gives **reach/speed** and costs **precision**; a gain $<1$ the other way round. A fixed gain is a compromise. **Adaptive methods** such as **PRISM** (Frees et al.) lower the gain during *slow* hand movement (precise aiming) and raise it during fast movement (large-scale moving) — they use the hand velocity as an indicator of intent. That is the continuous generalization of the Go-Go idea.
+
+### 12. The Heisenberg effect of 3D interaction
+
+A subtle, practically relevant effect: when **actuating the selection button** (pressing the trigger) the hand wobbles — the pointer jumps away from the target at the moment of the click. The smaller/more distant the target (a small $\theta_W$), the more fatal. Countermeasures: **freeze** the pointer state shortly **before** the click, filter click events temporally, or confirm via a **different modality** (speech instead of the trigger — module 18 again). This is the 3D analogue of the wobble during a mouse click, only much stronger without the stabilizing table support.
+
+### 13. Ray-casting precision as a stochastic model
+
+For the evaluation one models the pointing precision as **angular noise**: the real pointing direction scatters in a Gaussian way around the intended one, with standard deviation $\sigma_\theta$ (hand tremor + tracking noise + Heisenberg). A target with angular radius $\theta_W/2$ at distance $L$ is hit if the angular deviation is smaller:
+
+$$P(\text{hit}) = P\!\big(|\epsilon_\theta| < \tfrac{\theta_W}{2}\big) = P\!\big(|\epsilon_\theta| < \tfrac{W}{2L}\big), \quad \epsilon_\theta \sim \mathcal{N}(0,\sigma_\theta^2).$$
+
+This couples directly to the inverse-variance thinking from module 18: precision is $1/\sigma_\theta^2$, and everything that lowers $\sigma_\theta$ (support, stabilization, C/D gain, prediction as in module 17) increases the hit probability. The **projects** build exactly this model.
+
+### 14. Evaluation: ISO 9241-9 and throughput in 3D
+
+The standard for assessing pointing devices/techniques is **ISO 9241-9**, whose core is the **throughput** (in bits/s):
+
+$$TP = \frac{ID_e}{MT}, \qquad ID_e = \log_2\!\Big(\frac{D_e}{W_e}+1\Big),$$
+
+with the **effective** width $W_e = 4.133\,\sigma_x$ (from the spread of the actual click positions — the "effective" width corrects for the accuracy the user really used, so that ~96 % of the clicks lie in the target) and the effective distance $D_e$. Throughput combines **speed and accuracy into one number** and makes techniques comparable. Typical tasks: **reciprocal tapping** (back and forth between two targets), **docking** (bringing an object into a target pose — this tests manipulation including rotation). The statistical analysis (within-subject, counterbalancing, effect sizes, Wilcoxon/ANOVA) follows exactly the methodology from **module 17** — the **final project** applies it to a comparison of selection techniques.
+
+---
+
+## Summary / cheat sheet
+
+**The four tasks (Bowman)**: selection · manipulation · travel (motor) · wayfinding (cognitive) · [+ system control].
+
+**Homogeneous transformations**
+- A homogeneous point: $\tilde{\mathbf p}=(x,y,z,1)$. The reason: translation becomes writable as a $4\times4$ matrix → everything is chainable.
+- The chain: $\mathbf p_{\text{screen}} = M_{\text{proj}} M_{\text{view}} M_{\text{model}}\,\mathbf p_{\text{obj}}$. The order counts (not commutative).
+- The rigid-body inverse: $M^{-1}=\begin{psmallmatrix}\mathbf R^\top & -\mathbf R^\top\mathbf t\\ 0 & 1\end{psmallmatrix}$ (it uses $\mathbf R^{-1}=\mathbf R^\top$).
+
+**The ray $\mathbf r(t)=\mathbf o+t\mathbf d$ ($\|\mathbf d\|=1$), intersection**
+| Object | The core |
+|---|---|
+| Sphere | $t^2+2bt+c=0$, $b=\mathbf m\cdot\mathbf d$, $c=\|\mathbf m\|^2-R^2$, $\mathbf m=\mathbf o-\mathbf c$; $t=-b-\sqrt{b^2-c}$ |
+| AABB | Slabs: a hit $\iff \max_i\min(t_{i1},t_{i2}) \le \min_i\max(t_{i1},t_{i2})$ |
+| Triangle | Möller-Trumbore: $u,v$ barycentric $\ge0$, $u+v\le1$, $t>0$ |
+
+**Selection techniques**: ray-casting (reach, but weak in angular precision) · virtual hand (precise, short reach) · **Go-Go** $r_v=r_r+k(r_r-D)^2$ for $r_r\ge D$ (both) · cone/bubble (against small/sparse targets, but ambiguity in a crowd).
+
+**Fitts in 3D**: angular, $ID=\log_2(\theta_D/\theta_W+1)$ with $\theta_W\approx W/L$ → **precision falls with the distance $L$**.
+
+**Throughput (ISO 9241-9)**: $TP=ID_e/MT$, $W_e=4.133\,\sigma_x$ (the effective width from the click spread).
+
+**Travel & sickness**: teleport minimizes vection/sickness (module 17); steering is simple but prone to sickness; real walking is the best but limited by the room.
+
+**Design rules**: a "magic" (non-isomorphic) technique often beats the faithful one; the DOF structure of the technique = the DOF structure of the task; handle the Heisenberg effect on clicking.
+
+---
+
+## Self-test
+
+<details>
+<summary><b>1.</b> Why do you need homogeneous ($4\times4$) coordinates — do $3\times3$ rotation matrices not suffice?</summary>
+
+Because **translation is not a linear map** (it does not map the origin onto itself) and therefore *cannot* be written as a $3\times3$ matrix. In homogeneous coordinates (a fourth component $w=1$) translation becomes a $4\times4$ matrix with the displacement vector in the last column. With that, **rotation, translation and scaling are all matrices** and can be chained by multiplication into **one** transformation chain — that is the entire purpose.
+</details>
+
+<details>
+<summary><b>2.</b> Name the four universal 3D interaction tasks and the difference between travel and wayfinding.</summary>
+
+**Selection, manipulation, travel, wayfinding** (+ system control). **Travel** is the *motor* locomotion (the moving of the viewpoint itself), **wayfinding** the *cognitive* orientation (knowing where you are and how to get to the goal). Together they form *navigation*.
+</details>
+
+<details>
+<summary><b>3.</b> Derive the ray-sphere intersection equation. When is there no hit?</summary>
+
+Substitute the ray $\mathbf r(t)=\mathbf o+t\mathbf d$ ($\|\mathbf d\|=1$) into the sphere equation $\|\mathbf p-\mathbf c\|^2=R^2$. With $\mathbf m=\mathbf o-\mathbf c$: $\|\mathbf m+t\mathbf d\|^2=R^2 \Rightarrow t^2 + 2t(\mathbf m\cdot\mathbf d) + (\|\mathbf m\|^2-R^2)=0$. That is $t^2+2bt+c=0$ with $b=\mathbf m\cdot\mathbf d$, $c=\|\mathbf m\|^2-R^2$. The discriminant is $\Delta=b^2-c$. **No hit if $\Delta<0$** (the ray misses the sphere). Otherwise the nearer intersection is $t=-b-\sqrt\Delta$.
+</details>
+
+<details>
+<summary><b>4.</b> Write down the Go-Go function and explain which problem it solves and why its form (quadratic, with a threshold) makes sense.</summary>
+
+$$r_v = \begin{cases} r_r & r_r<D\\ r_r + k(r_r-D)^2 & r_r\ge D\end{cases}$$
+
+It solves the **reach problem** of the virtual hand: up close ($r_r<D$) the mapping stays **1:1** → full precision; beyond the threshold $D$ the virtual reach grows **quadratically** → small real arm extensions reach distant objects. The quadratic form is **continuous and differentiable with derivative 1** at $r_r=D$ (no jump, no kink in the velocity) → it feels natural. Go-Go thus unites near precision and far reach and is an example of a "magic" (non-isomorphic) technique.
+</details>
+
+<details>
+<summary><b>5.</b> Why does ray-casting get worse with increasing target distance? Use the angular Fitts' law.</summary>
+
+Because the quantity relevant for pointing is the **angular** radius: a target of width $W$ at distance $L$ subtends only $\theta_W\approx W/L$. That **shrinks with $L$** — double the distance = half the angular size. In the angular Fitts' law $ID=\log_2(\theta_D/\theta_W+1)$ the index of difficulty therefore rises, the movement time grows and (at a fixed angular noise $\sigma_\theta$) the hit probability $P(|\epsilon_\theta|<\theta_W/2)$ falls. The conclusion: ray-casting precision falls with distance.
+</details>
+
+<details>
+<summary><b>6.</b> What is the Heisenberg effect of 3D interaction, and how do you counter it?</summary>
+
+When **pressing the selection button** the hand wobbles, so that the pointer jumps away from the target at the moment of the click — particularly bad for small/distant (angularly tiny) targets. Countermeasures: **freeze the pointer state shortly before the click**, filter clicks temporally, or move the confirmation into a **different modality** (e.g. a speech command instead of the trigger — module 18).
+</details>
+
+<details>
+<summary><b>7.</b> Why is teleport travel so widespread in VR, and what is the price?</summary>
+
+Because teleport (target-based) produces **no continuous visual self-motion** → no **vection** → minimal **cybersickness** (the sensory conflict theory, module 17). The price is **worse spatial understanding / wayfinding**: through the "jumping" the user builds a less coherent cognitive map and can judge the distance/direction of the path less well.
+</details>
+
+<details>
+<summary><b>8.</b> What is the "effective width" $W_e$ in the ISO 9241-9 throughput, and why is it used instead of the target width $W$?</summary>
+
+$W_e = 4.133\,\sigma_x$ is computed from the **spread of the actual click positions**. It captures the **accuracy the user really used**: if somebody aims sloppily (a wide spread), $W_e$ rises; if they aim more precisely than necessary, it falls. The factor 4.133 normalizes so that ~96 % of the clicks fall into the effective target. This **factors out the speed-accuracy trade-off** — the throughput $TP=ID_e/MT$ assesses techniques fairly, no matter whether a user acts fast-and-imprecise or slow-and-precise.
+</details>
+
+<details>
+<summary><b>9.</b> When is a bubble cursor / a cone technique superior to ray-casting, and when not?</summary>
+
+**Superior** for **small, distant or isolated** targets: the bubble cursor enlarges the effective target to its Voronoi region, the cone technique lowers the required angular precision → both make hitting dramatically easier (better Fitts performance). **Not superior** in **dense** scenes: then many objects lie in the cone/radius and a **disambiguation problem** arises — which object is meant? Ray-casting is more precise there. It is a precision vs. ambiguity trade-off.
+</details>
+
+<details>
+<summary><b>10.</b> What does the principle "the DOF structure of the technique = the DOF structure of the task" say?</summary>
+
+Degrees of freedom should be **grouped** in the technique the way a human **perceives and controls** them in the task (integral vs. separable, after Jacob et al.). Position (x,y,z) is *integral* — you move the hand as a whole; separating such DoF (e.g. having to set each axis individually) feels wrong. Conversely you should not artificially couple *separable* parts of a task. In practice that means: choose constraints/widgets/snapping so that they match the natural DoF perception of the task.
+</details>
+
+---
+
+## Literature & sources
+
+**Textbooks**
+- **LaViola, Kruijff, McMahan, Bowman & Poupyrev, *3D User Interfaces: Theory and Practice* (2nd ed., 2017).** *The* standard work — the taxonomy of the four tasks, all techniques, evaluation. Mandatory. *Friendly from beginner to advanced.*
+- **Foley/van Dam or a similar computer graphics textbook** for homogeneous transformations and ray-object intersection; alternatively **Marschner & Shirley, *Fundamentals of Computer Graphics*** (the chapters on transformations, ray tracing). *Beginner-friendly.*
+- **Ericson, *Real-Time Collision Detection*** — the authoritative reference for ray-sphere/AABB/triangle tests. *In depth.*
+
+**Key papers (freely findable)**
+- **Poupyrev, Billinghurst, Weghorst & Ichikawa, "The Go-Go Interaction Technique"**, *UIST 1996*. The reach extension. *Short, worth reading.*
+- **Bowman & Hodges, "An Evaluation of Techniques for Grabbing and Manipulating Remote Objects" (HOMER)**, *I3D 1997*. *In depth.*
+- **Grossman & Balakrishnan, "The Bubble Cursor"**, *CHI 2005*. A dynamic cursor radius, Fitts-optimal. *Beginner-friendly.*
+- **Möller & Trumbore, "Fast, Minimum Storage Ray-Triangle Intersection"**, *Journal of Graphics Tools 1997*. The standard algorithm. *In depth, but compact.*
+- **Frees, Kessler & Kay, "PRISM Interaction for Enhancing Control in Immersive Virtual Environments"**, *ACM TOCHI 2007*. Adaptive C/D gain. *In depth.*
+- **MacKenzie, "Fitts' Law as a Research and Design Tool in HCI"**, *HCI 1992* — the reference for Fitts/throughput (also for ISO 9241-9). *Beginner-friendly.*
+
+**Freely available courses / materials**
+- **Scratchapixel** (scratchapixel.com) — excellent, free tutorials on transformations and ray-object intersection with complete derivations. *Free, beginner-friendly.*
+- Various **VR/3DUI lectures** (e.g. by Doug Bowman / Virginia Tech) with freely available slides. *Free, in depth.*
+
+**To try out**
+- The **three projects of this module** build transformation chains + ray-casting (basic), the angular Fitts model + Go-Go (medium) and a complete comparison of selection techniques under clutter with ISO throughput (final) — the best deepening is to implement them.
+
+---
+
+> **The next module:** module 20 "3D Point Cloud Processing" — the processing of 3D point clouds (registration/ICP, segmentation, feature descriptors, PointNet). The 3D geometry and transformation mathematics from this module (section 3) is the direct foundation.
+
+---
+
+# Modul 19 — 3D User Interfaces (deutsche Fassung)
 
 > **Worum geht es?** Sobald Inhalte im **dreidimensionalen Raum** liegen — in VR/AR, in einem CAD-Programm, in einem Spiel —, reicht die aus dem 2D-Desktop gewohnte Interaktion (Maus, Fenster, Menü) nicht mehr. Ein **3D User Interface (3DUI)** ist eine Schnittstelle, über die der Mensch Objekte im 3D-Raum **auswählt, manipuliert, sich darin bewegt und orientiert**. Dieses Modul behandelt die *Prinzipien* und die *Mathematik* dieser Interaktion: Wie hängen die Koordinatensysteme zusammen? Wie trifft ein virtueller Zeigestrahl ein Objekt? Wie erreicht man mit einem kurzen Arm ein weit entferntes Objekt? Und warum ist Zeigen in 3D *fundamental schwerer* als in 2D?
 >

@@ -1,4 +1,103 @@
-# P03 (final) — Vergleichende 3D-Selektionsstudie unter Clutter
+# P03 (final) — a comparative 3D selection study under clutter
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Module 19 — 3D User Interfaces** · Format: **Python project (free implementation, no given code)**
+
+> The final project. **No given code** — you design and build the study yourself out of the tools from projects P01 (ray-object intersection) and P02 (the angular pointing model). The reference solution is in [`solution/`](solution/); **try it yourself first**. This README is the specification.
+
+## What it is about
+
+You carry out a **controlled evaluation study** comparing three selection techniques — **ray-casting**, **cone/flashlight** and the **bubble cursor** (script, ch. 5–7) — over various **target distances** and **scene densities**. The goal is the central insight of the module, empirically supported: **there is no universally best 3D selection technique** — the choice is a **trade-off between precision, reach/capture and robustness against clutter**, and this trade-off is the same disambiguation problem as reference resolution in module 18.
+
+## Learning objective
+
+You apply the entire module 19 toolbox: ray-object intersection (P01), the angular pointing model and Fitts (P02), and a sound **evaluation methodology** (ISO 9241-9 throughput + within-subject statistics as in module 17).
+
+## Prior knowledge
+
+The module 19 [script](../../README.md) completely, especially **ch. 5–7 (selection techniques), 10 (angular Fitts), 14 (ISO throughput)**. P01 (`ray_sphere`), P02 (angular size, Fitts). The statistical methodology from module 17 (Wilcoxon, effect size, multiplicity correction).
+
+---
+
+## Assignment (the specification)
+
+### 1. The scene generator (disclosed, reproducible)
+
+Build a seed-reproducible generator. A scene consists of:
+- a **target object** at distance $L$ (a sphere, radius $r$),
+- $N$ **distractors** that **angularly surround** the target (up to a spread angle), some of them **nearer** to the viewer (→ **occlusion** for ray-casting).
+
+Why **synthetic**: only this way do you know the *ground truth* (which object is the target) and can set the density, distance and occlusion *independently* — with real VR logs none of these factors could be isolated.
+
+### 2. The motor model
+
+The pointer is a ray from the origin. The **intended** direction points at the target; the **real** direction has **angular Gaussian noise** $\sigma_\theta$ (hand tremor + tracking + Heisenberg, script ch. 12–13). Implement the noisy direction as a small 2D deflection in the tangent plane.
+
+### 3. The three techniques
+
+- **Ray-casting**: select the object **intersected** by the (noisy) ray with the **smallest $t$** (the nearest hit, via ray-sphere from P01); if nothing is hit → a mis-selection.
+- **Cone**: among all objects in the cone (half angle $\alpha$) the one with the **smallest angle to the cone axis**.
+- **Bubble**: the object with the **smallest angle to the surface** ($\text{the angle to the centre} - \text{the angular radius}$) — it always captures the angularly nearest one.
+
+### 4. Evaluation (three experiments)
+
+- **Experiment A — accuracy over the conditions**: measure the selection accuracy (many trials) in at least four conditions spanning *isolated/near*, *sparse/far*, *dense/near*, *dense/far*. Plus optionally a **distance sweep** (a sparse scene, $L=1\dots16$ m).
+- **Experiment B — time & throughput**: for **isolated** targets, compute the selection time via the **angular Fitts' law** (from P02) with a technique-specific **effective capture width** $W_{\text{eff}}$ (ray-casting: the target's angular diameter; cone: $2\alpha$; bubble: a large Voronoi width). Report $MT$ **and** the throughput $TP=ID/MT$.
+- **Experiment C — statistics**: simulate $\sim$16 "participants" (seeds), within-subject over the techniques. Compare pairwise with the **Wilcoxon signed-rank** test, **rank-biserial** as the effect size and the **Holm-Bonferroni** correction (from scratch, since statsmodels is missing).
+
+The plots go to `results/` (gitignored), the test suite as a `__main__` runner.
+
+---
+
+## What should come out at the end (reference orders of magnitude)
+
+Your numbers may vary with the parameters/seeds; the **story** has to hold:
+
+**Experiment A** (accuracy):
+
+| Condition | raycast | cone | bubble | the best |
+|---|---|---|---|---|
+| ISOLATED-NEAR | 0.96 | 0.95 | 0.97 | all good |
+| SPARSE-FAR | **0.14** | 0.80 | 0.79 | cone/bubble |
+| DENSE-NEAR | 0.26 | **0.51** | 0.46 | cone |
+| DENSE-FAR | 0.10 | **0.30** | 0.28 | cone |
+
+The distance sweep (sparse): ray-casting falls from ~0.72 ($L=1$) to **~0.04** ($L=16$); cone/bubble stay flat at ~0.87.
+
+**Experiment B** (isolated targets): bubble is the **fastest** ($MT\approx0.31$ s vs. ray-casting $0.73$ s, ×2.4), because the large capture area lowers the $ID$ — but the **throughput** is *higher* for ray-casting ($\approx4.0$ vs. $2.6$ bit/s), because throughput rewards precision.
+
+**Experiment C**: in SPARSE-FAR, cone/bubble beat ray-casting **highly significantly** (rank-biserial $=1.0$, Holm $p\approx0.001$); cone vs. bubble is n.s. In DENSE-NEAR, cone is **significantly better** than bubble ($p\approx0.0004$) — bubble **over-selects** the nearest neighbour.
+
+> **The big lesson.** No technique wins everywhere:
+> - **Ray-casting** is precise, but usable only for **near, large, isolated** targets — it collapses with **distance** (angular shrinkage, $\theta_W\approx W/L$) and with **occlusion/overlap**.
+> - **Bubble** is **the fastest and most accurate** in sparse scenes (capture), but **over-selects** in **clutter** (it grabs the nearest neighbour).
+> - **Cone** is the **most robust all-rounder**.
+>
+> Selecting in a crowd is a **disambiguation problem** — the same as multimodal reference resolution in module 18, only with angle/distance instead of time/semantics as the cues. Whoever chooses a technique implicitly chooses a position in the triangle **precision — speed — robustness**.
+
+## Setup & running
+
+```bash
+cd modules/19-3d-user-interfaces/projects/03-final
+# write your own implementation, then:
+/Users/.../.venv/bin/python test_selection3d.py   # the test suite
+/Users/.../.venv/bin/python run.py                 # 3 experiments + plots
+```
+
+Only `numpy`, `scipy` (for `wilcoxon`), `matplotlib`. Runtime ~3 s (pure geometry/statistics, no training).
+
+## Solution
+
+A complete reference is in [`solution/`](solution/): `selection3d.py` (the generator + techniques + throughput), `stats_tools.py` (rank-biserial, Holm from scratch), `run.py` (the three experiments + plots), `test_selection3d.py` (8 tests).
+
+## Looking back & ahead
+
+With this module 19 closes: from the **transformations + ray-casting** (P01) via the **angular pointing model + Go-Go** (P02) to the **comparative selection study** (P03). The 3D geometry and transformation mathematics is the direct foundation for **module 20 "3D Point Cloud Processing"** (registration/ICP, segmentation on point clouds).
+
+---
+
+# P03 (final) — Vergleichende 3D-Selektionsstudie unter Clutter (deutsche Fassung)
 
 **Modul 19 — 3D User Interfaces** · Format: **Python-Projekt (freie Umsetzung, keine Code-Vorgabe)**
 

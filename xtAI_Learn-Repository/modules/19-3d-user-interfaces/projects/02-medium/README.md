@@ -1,4 +1,66 @@
-# P02 (medium) — Zeige-Präzision & Reichweite: angulares Fitts' Law und Go-Go
+# P02 (medium) — pointing precision & reach: the angular Fitts' law and Go-Go
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Module 19 — 3D User Interfaces** · Format: **Python module + test suite**
+
+## Goal
+
+You model two selection techniques **mechanistically** (not via assumed curves) and prove the central statements of the script quantitatively:
+
+1. **Ray-casting precision falls with distance.** A target (radius $r$) at distance $L$ subtends only the angular radius $\theta_r\approx\arctan(r/L)$ — which **shrinks with $L$**. At a fixed angular pointing noise $\sigma_\theta$ the hit rate collapses (the angular Fitts' law, script ch. 10).
+2. **Go-Go trades reach for precision.** The non-linear mapping $r_v = r_r + k(r_r-D)^2$ (for $r_r\ge D$) extends the arm dramatically — but the **C/D gain** $g=\mathrm{d}r_v/\mathrm{d}r_r$ also amplifies the hand noise beyond $D$ ($\sigma_v = g\,\sigma_r$), so that precision falls in the extended range. The pure **virtual hand** ($k=0$) cannot reach anything beyond the arm's length at all.
+3. **The angular Fitts' law** as a characterization: $ID=\log_2(\theta_D/\theta_W+1)$ rises with distance, the movement time grows — shown by a regression on simulated trials.
+
+## Why this format?
+
+A **Python module with a test suite** — the physics of the techniques (hit probabilities, the Go-Go function) can thus be captured as tested functions that can be varied systematically over parameters (distance, $k$, $\sigma$).
+
+## Why synthetic data?
+
+The statements are **models about noise and geometry**. Only with controlled parameters can you isolate *why* ray-casting falls apart with distance (angular shrinkage) and Go-Go becomes imprecise in the far range (gain amplification). Everything is reproducible (a fixed seed in the simulations).
+
+## Prior knowledge
+
+**P01** of this module, **chapters 6 (Go-Go) & 10 (angular Fitts)** of the [script](../../README.md), Fitts' law from module 17, the basics of the Gaussian/Rayleigh distributions.
+
+## Assignment
+
+Open `selection.py`. The gain, the inverse, the Fitts fit and the experiment/test scripts are given — you implement the **three core functions** (`# TODO` / `NotImplementedError`):
+
+1. **`p_hit_raycasting(r, L, sigma_theta)`** — the Rayleigh hit probability $1-\exp(-\theta_r^2/2\sigma_\theta^2)$ with $\theta_r=\arctan(r/L)$.
+2. **`go_go(r_r, D, k)`** — the piecewise Go-Go function (`np.where`).
+3. **`p_hit_gogo(r, L, D, k, sigma_r, arm_length)`** — three steps: the real hand distance via `go_go_inverse`, a reachability check against the arm's length, the hit probability with gain-amplified noise.
+
+Then:
+
+```bash
+cd modules/19-3d-user-interfaces/projects/02-medium
+/Users/.../.venv/bin/python test_selection.py   # 7 tests -> all PASS
+/Users/.../.venv/bin/python run.py               # 3 experiments + plots
+```
+
+## What comes out at the end (expected values)
+
+**Ray-casting vs. distance** ($r=0.1$ m, $\sigma_\theta=1°$): P(hit) falls from ~1.0 at $L=1$ m via 0.64 at 4 m to **0.06 at 16 m** — double the distance halves the angular size.
+
+**Go-Go** ($D=0.45$, $k=60$, arm $0.7$ m): the maximum reach is **4.45 m (×6.4 the arm)**. The hit rate at $r=0.08$ m: near (≤0.45 m) ~1.0, then falling — 0.62 at 1 m, 0.29 at 2 m, **0.16 at 3.5 m** (the gain grows 1→27). The virtual hand ($k=0$): **0.0 beyond 0.7 m**.
+
+**Angular Fitts**: the fit recovers $a,b$ ($R^2\approx0.96$); $ID$ rises with $L$ from ~1.9 to ~5.4 bit, $MT$ from 0.52 to 1.24 s.
+
+> **The lesson.** There is **no universally best** selection technique: ray-casting reaches arbitrarily far but loses angular precision; Go-Go is exact up close and reaches far, but is shaky in the extended range; the virtual hand is precise but short. The choice depends on **the target distance and size** — which is exactly what the final project measures in a full comparative study.
+
+## Solution
+
+A complete reference is in [`solution/`](solution/). Try it yourself first!
+
+## What comes next
+
+**P03 (final)**: a complete comparison of selection techniques (ray-casting vs. cone/bubble) **under clutter and occlusion**, with ISO 9241-9 throughput and statistics. No given code.
+
+---
+
+# P02 (medium) — Zeige-Präzision & Reichweite: angulares Fitts' Law und Go-Go (deutsche Fassung)
 
 **Modul 19 — 3D User Interfaces** · Format: **Python-Modul + Testsuite**
 
