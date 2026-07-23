@@ -1,25 +1,28 @@
-"""Vergleichende 3D-Selektionsstudie: Ray-Casting vs Cone vs Bubble unter Clutter.
-(Referenzloesung P03-final)  Modul 19 — 3D User Interfaces.
+"""A comparative 3D selection study: ray-casting vs cone vs bubble under clutter.
+(Reference solution P03-final)  Module 19 — 3D User Interfaces.
 
-Szene: ein Zielobjekt in Distanz L plus N Distraktoren, die es angular umgeben (variable
-Dichte). Der Zeiger (Strahl vom Ursprung) hat angulares Motor-Rauschen sigma_theta. Drei
-Selektionstechniken:
+The scene: a target object at distance L plus N distractors angularly surrounding it (a variable
+density). The pointer (a ray from the origin) has angular motor noise sigma_theta. Three
+selection techniques:
 
-  RAY-CASTING : selektiere das vom Strahl GESCHNITTENE Objekt mit kleinstem t (naechster Treffer);
-                nichts getroffen -> Fehlselektion. Praezise, aber bei kleinen/fernen Zielen
-                verfehlt der verrauschte Strahl, und vordere Distraktoren verdecken.
-  CONE        : unter allen Objekten im Kegel (Halbwinkel alpha) das mit kleinstem Winkel zur
-                Achse. Erleichtert kleine/ferne Ziele, waehlt aber im Gedraenge den falschen.
-  BUBBLE      : das Objekt mit kleinstem Winkel zur OBERFLAECHE (angle_to_center - angular_radius);
-                faengt immer das angular naechste ein -> top bei duenn, ueber-selektiert bei dicht.
+  RAY-CASTING : select the object INTERSECTED by the ray with the smallest t (the nearest hit);
+                nothing hit -> a mis-selection. Precise, but for small/distant targets the noisy
+                ray misses, and distractors in front occlude.
+  CONE        : among all objects in the cone (half angle alpha) the one with the smallest angle
+                to the axis. It makes small/distant targets easier, but picks the wrong one in a
+                crowd.
+  BUBBLE      : the object with the smallest angle to the SURFACE (angle_to_center - angular_radius);
+                it always captures the angularly nearest one -> best when sparse, over-selects
+                when dense.
 
-Alles rein geometrisch, CPU-Millisekunden. Generator offengelegt und mit Seed reproduzierbar.
+Everything is purely geometric, CPU milliseconds. The generator is disclosed and reproducible
+with a seed.
 """
 import numpy as np
 
 
 # ==========================================================================
-# Geometrie-Helfer
+# Geometry helpers
 # ==========================================================================
 def _unit(v):
     v = np.asarray(v, float)
@@ -27,13 +30,13 @@ def _unit(v):
 
 
 def angle_between(u, v):
-    """Winkel (rad) zwischen zwei Vektoren."""
+    """The angle (rad) between two vectors."""
     c = np.dot(_unit(u), _unit(v))
     return np.arccos(np.clip(c, -1.0, 1.0))
 
 
 def ray_sphere_t(o, d, c, R):
-    """Distanz t>0 zum vorderen Schnittpunkt Strahl(o,d)/Kugel(c,R), sonst None. (wie P01)"""
+    """The distance t>0 to the front intersection of ray(o,d)/sphere(c,R), else None. (as in P01)"""
     m = o - c
     b = m @ d
     cc = m @ m - R * R
@@ -48,29 +51,29 @@ def ray_sphere_t(o, d, c, R):
 
 
 # ==========================================================================
-# Szenen-Generator
+# The scene generator
 # ==========================================================================
 def make_trial(rng, L_target=4.0, n_distractors=6, spread_deg=6.0, r=0.12,
                occlude_frac=0.4):
-    """Erzeugt eine Szene. Objekt 0 ist das Ziel (Distanz L_target); die Distraktoren
-    liegen angular um das Ziel (bis spread_deg), teils NAeHER (Verdeckung).
+    """Produces a scene. Object 0 is the target (distance L_target); the distractors lie
+    angularly around the target (up to spread_deg), some of them NEARER (occlusion).
 
-    Rueckgabe: pos (n,3), radii (n,), target_idx=0, target_dir (3,).
+    Returns: pos (n,3), radii (n,), target_idx=0, target_dir (3,).
     """
-    # Ziel-Richtung: vorwaerts (+x) mit leichter zufaelliger Neigung
+    # the target direction: forwards (+x) with a slight random tilt
     base = _unit([1.0, rng.uniform(-0.2, 0.2), rng.uniform(-0.2, 0.2)])
     target_pos = L_target * base
     pos = [target_pos]
     radii = [r]
-    # zwei orthonormale Tangentenrichtungen zu base
+    # two orthonormal tangent directions to base
     tmp = np.array([0.0, 1.0, 0.0]) if abs(base[1]) < 0.9 else np.array([0.0, 0.0, 1.0])
     e1 = _unit(np.cross(base, tmp))
     e2 = _unit(np.cross(base, e1))
     for _ in range(n_distractors):
-        ang = np.deg2rad(rng.uniform(0.3, spread_deg))     # angulare Naehe zum Ziel
+        ang = np.deg2rad(rng.uniform(0.3, spread_deg))     # the angular proximity to the target
         phi = rng.uniform(0, 2 * np.pi)
         offset_dir = _unit(base + np.tan(ang) * (np.cos(phi) * e1 + np.sin(phi) * e2))
-        # Distanz: mit Wahrsch. occlude_frac naeher (verdeckend), sonst um L_target herum
+        # the distance: with probability occlude_frac nearer (occluding), else around L_target
         if rng.random() < occlude_frac:
             L = L_target * rng.uniform(0.4, 0.9)
         else:
@@ -81,7 +84,7 @@ def make_trial(rng, L_target=4.0, n_distractors=6, spread_deg=6.0, r=0.12,
 
 
 def noisy_ray_dir(target_dir, sigma_theta, rng):
-    """Verrauschte Zeigerichtung: intendierte Richtung + 2D-Gauss-Winkelfehler."""
+    """The noisy pointing direction: the intended direction + a 2D Gaussian angular error."""
     base = _unit(target_dir)
     tmp = np.array([0.0, 1.0, 0.0]) if abs(base[1]) < 0.9 else np.array([0.0, 0.0, 1.0])
     e1 = _unit(np.cross(base, tmp))
@@ -91,7 +94,7 @@ def noisy_ray_dir(target_dir, sigma_theta, rng):
 
 
 # ==========================================================================
-# Selektionstechniken  (o = Ursprung, hier (0,0,0))
+# The selection techniques  (o = the origin, here (0,0,0))
 # ==========================================================================
 def select_raycast(pos, radii, o, d):
     best_i, best_t = None, np.inf
@@ -118,7 +121,7 @@ def select_bubble(pos, radii, o, d):
         dist = np.linalg.norm(pos[i] - o)
         ang = angle_between(d, pos[i] - o)
         ang_radius = np.arctan2(radii[i], dist)
-        gap = ang - ang_radius            # Winkel zur Oberflaeche (kann negativ = Strahl trifft)
+        gap = ang - ang_radius            # the angle to the surface (can be negative = the ray hits)
         if gap < best_gap:
             best_i, best_gap = i, gap
     return best_i
@@ -134,12 +137,13 @@ def run_technique(name, pos, radii, o, d):
 
 
 # ==========================================================================
-# ISO 9241-9 Throughput  (isolierte Ziele, reciprocal tapping)
+# ISO 9241-9 throughput  (isolated targets, reciprocal tapping)
 # ==========================================================================
 def throughput(amplitude_deg, hit_offsets_rad, movement_times):
-    """Effektiver Throughput (bits/s) nach ISO 9241-9.
+    """The effective throughput (bits/s) after ISO 9241-9.
 
-    hit_offsets_rad: angulare Abweichungen der Klicks vom Zielzentrum (1D, entlang Bewegungsachse).
+    hit_offsets_rad: the angular deviations of the clicks from the target centre (1D, along the
+    movement axis).
     W_e = 4.133 * std(hit_offsets); D_e = amplitude; ID_e = log2(D_e/W_e + 1); TP = ID_e / mean(MT).
     """
     A = np.deg2rad(amplitude_deg)

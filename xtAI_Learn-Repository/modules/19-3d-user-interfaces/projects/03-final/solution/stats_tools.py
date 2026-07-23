@@ -1,12 +1,14 @@
-"""Statistik-Bausteine (from scratch, da statsmodels/pingouin fehlen).  P03-final Modul 19.
-Wilcoxon nutzen wir aus scipy.stats; Effektstaerke und Multiplizitaetskorrektur selbst.
+"""Statistical building blocks (from scratch, since statsmodels/pingouin are missing).
+P03-final module 19.
+We use Wilcoxon from scipy.stats; the effect size and the multiplicity correction ourselves.
 """
 import numpy as np
 
 
 def rank_biserial_from_diffs(diffs):
-    """Rank-biserial-Korrelation als Effektstaerke fuer den Wilcoxon-Signed-Rank-Test.
-    r = (W+ - W-) / (W+ + W-), berechnet aus den Rangsummen der positiven/negativen Differenzen."""
+    """The rank-biserial correlation as the effect size for the Wilcoxon signed-rank test.
+    r = (W+ - W-) / (W+ + W-), computed from the rank sums of the positive/negative
+    differences."""
     diffs = np.asarray(diffs, float)
     nz = diffs[diffs != 0]
     if nz.size == 0:
@@ -18,7 +20,7 @@ def rank_biserial_from_diffs(diffs):
 
 
 def _rankdata(a):
-    """Durchschnittsraenge (ties -> Mittelrang), wie scipy.stats.rankdata."""
+    """Average ranks (ties -> the mid-rank), like scipy.stats.rankdata."""
     a = np.asarray(a, float)
     order = np.argsort(a, kind="mergesort")
     ranks = np.empty(a.size, float)
@@ -35,7 +37,7 @@ def _rankdata(a):
 
 
 def holm_bonferroni(pvals):
-    """Holm-Bonferroni-korrigierte p-Werte (Reihenfolge wie Eingabe)."""
+    """Holm-Bonferroni corrected p-values (in the order of the input)."""
     p = np.asarray(pvals, float)
     m = p.size
     order = np.argsort(p)
