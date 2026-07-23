@@ -1,8 +1,8 @@
-"""Inverse Kinematik: analytisch und numerisch (J^T / Pseudoinverse / DLS).
-(Referenzloesung P02-medium)   Modul 21 — Robotics 1.
+"""Inverse kinematics: analytic and numerical (J^T / pseudoinverse / DLS).
+(Reference solution P02-medium)   Module 21 — Robotics 1.
 
-Planarer Arm mit n Drehgelenken, Gliedlaengen l_1..l_n. Die Winkel addieren sich entlang der
-Kette (Skript Kap. 4), daher mit den kumulierten Winkeln c_i = q_1+...+q_i:
+Planar arm with n revolute joints, link lengths l_1..l_n. The angles add up along the
+chain (script ch. 4), so with the cumulative angles c_i = q_1+...+q_i:
 
     x = sum_i l_i cos(c_i),      y = sum_i l_i sin(c_i)
 
@@ -13,17 +13,17 @@ import numpy as np
 
 
 # ==========================================================================
-# Vorwaertskinematik + Jacobi (allgemein, n Glieder)
+# Forward kinematics + Jacobian (general, n links)
 # ==========================================================================
 def fk(q, lengths):
-    """Endeffektor-Position (2,) des planaren Arms."""
+    """End effector position (2,) of the planar arm."""
     c = np.cumsum(np.asarray(q, float))
     L = np.asarray(lengths, float)
     return np.array([np.sum(L * np.cos(c)), np.sum(L * np.sin(c))])
 
 
 def joints(q, lengths):
-    """Alle Gelenkpositionen (n+1, 2) inkl. Basis — fuer Plots."""
+    """All joint positions (n+1, 2) incl. the base — for plots."""
     c = np.cumsum(np.asarray(q, float))
     L = np.asarray(lengths, float)
     xs = np.concatenate([[0.0], np.cumsum(L * np.cos(c))])
@@ -32,7 +32,7 @@ def joints(q, lengths):
 
 
 def jacobian(q, lengths):
-    """Positions-Jacobi (2, n): J[:,k] = Ableitung der EE-Position nach q_k."""
+    """Position Jacobian (2, n): J[:,k] = derivative of the EE position w.r.t. q_k."""
     c = np.cumsum(np.asarray(q, float))
     L = np.asarray(lengths, float)
     n = len(L)
@@ -44,45 +44,45 @@ def jacobian(q, lengths):
 
 
 # ==========================================================================
-# Analytische IK fuer den 2-Gelenk-Arm
+# Analytic IK for the 2-joint arm
 # ==========================================================================
 def analytic_ik_2link(target, lengths):
-    """Alle exakten Loesungen (Ellbogen oben/unten). Leere Liste, wenn unerreichbar.
+    """All exact solutions (elbow up/down). Empty list if unreachable.
 
-    Kosinussatz:  cos q2 = (r^2 - l1^2 - l2^2) / (2 l1 l2),   q2 = +- arccos(.)
-                  q1 = atan2(y,x) - atan2(l2 sin q2, l1 + l2 cos q2)
-    Erreichbar nur fuer |l1-l2| <= r <= l1+l2.
+    Law of cosines:  cos q2 = (r^2 - l1^2 - l2^2) / (2 l1 l2),   q2 = +- arccos(.)
+                     q1 = atan2(y,x) - atan2(l2 sin q2, l1 + l2 cos q2)
+    Reachable only for |l1-l2| <= r <= l1+l2.
     """
     x, y = target
     l1, l2 = lengths
     r = np.hypot(x, y)
     if r > l1 + l2 + 1e-12 or r < abs(l1 - l2) - 1e-12:
-        return []                                   # ausserhalb des Arbeitsraums
+        return []                                   # outside the workspace
     cq2 = (r**2 - l1**2 - l2**2) / (2 * l1 * l2)
-    cq2 = np.clip(cq2, -1.0, 1.0)                   # Rundungsfehler abfangen
+    cq2 = np.clip(cq2, -1.0, 1.0)                   # catch rounding errors
     sols = []
     for sign in (+1.0, -1.0):
         q2 = sign * np.arccos(cq2)
         q1 = np.arctan2(y, x) - np.arctan2(l2 * np.sin(q2), l1 + l2 * np.cos(q2))
         sols.append(np.array([q1, q2]))
-    # Bei q2=0 oder pi fallen beide Loesungen zusammen -> Duplikat entfernen
+    # at q2=0 or pi both solutions coincide -> remove the duplicate
     if len(sols) == 2 and np.allclose(sols[0], sols[1], atol=1e-9):
         sols = [sols[0]]
     return sols
 
 
 # ==========================================================================
-# Numerische IK: J^T / Pseudoinverse / Damped Least Squares
+# Numerical IK: J^T / pseudoinverse / damped least squares
 # ==========================================================================
 def numeric_ik(target, lengths, q0, method="dls", lam=0.1, max_iter=200, tol=1e-6,
                max_step=None):
-    """Iterative IK. Gibt (q, history_err, converged, max_step_norm) zurueck.
+    """Iterative IK. Returns (q, history_err, converged, max_step_norm).
 
     method:
-      'transpose' : dq = alpha J^T e   mit optimaler Schrittweite alpha
-                    (alpha = <e, JJ^T e> / <JJ^T e, JJ^T e>)  -> Gradientenabstieg
-      'pinv'      : dq = J^+ e         -> schnell, EXPLODIERT nahe Singularitaeten
-      'dls'       : dq = J^T (J J^T + lam^2 I)^-1 e  -> immer wohldefiniert
+      'transpose' : dq = alpha J^T e   with the optimal step size alpha
+                    (alpha = <e, JJ^T e> / <JJ^T e, JJ^T e>)  -> gradient descent
+      'pinv'      : dq = J^+ e         -> fast, EXPLODES near singularities
+      'dls'       : dq = J^T (J J^T + lam^2 I)^-1 e  -> always well defined
     """
     q = np.array(q0, float)
     target = np.asarray(target, float)
@@ -108,9 +108,9 @@ def numeric_ik(target, lengths, q0, method="dls", lam=0.1, max_iter=200, tol=1e-
             A = J @ J.T + (lam**2) * np.eye(2)
             dq = J.T @ np.linalg.solve(A, e)
         else:
-            raise ValueError(f"unbekannte Methode: {method}")
+            raise ValueError(f"unknown method: {method}")
         max_step_norm = max(max_step_norm, float(np.linalg.norm(dq)))
-        if max_step is not None:                    # optionale Schrittbegrenzung
+        if max_step is not None:                    # optional step limiting
             nrm = np.linalg.norm(dq)
             if nrm > max_step:
                 dq = dq * (max_step / nrm)
@@ -119,8 +119,8 @@ def numeric_ik(target, lengths, q0, method="dls", lam=0.1, max_iter=200, tol=1e-
 
 
 def nullspace_step(q, lengths, z):
-    """Nullraum-Projektion (I - J^+ J) z: Gelenkbewegung, die den Endeffektor NICHT bewegt.
-    Nur bei redundanten Armen (n > 2) ungleich null."""
+    """Null-space projection (I - J^+ J) z: a joint motion that does NOT move the end effector.
+    Non-zero only for redundant arms (n > 2)."""
     J = jacobian(q, lengths)
     n = len(q)
     return (np.eye(n) - np.linalg.pinv(J) @ J) @ np.asarray(z, float)

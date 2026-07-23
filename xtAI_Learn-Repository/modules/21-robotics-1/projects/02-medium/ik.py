@@ -1,31 +1,31 @@
-"""Inverse Kinematik: analytisch und numerisch (J^T / Pseudoinverse / DLS).
+"""Inverse kinematics: analytic and numerical (J^T / pseudoinverse / DLS).
 
-Modul 21 — Robotics 1.
+Module 21 — Robotics 1.
 
->>> DEINE AUFGABE <<<
-Vorwaertskinematik und Jacobi sind vorgegeben (aus P01). Implementiere die drei mit `# TODO`
-markierten Funktionen: `analytic_ik_2link`, die Update-Regeln in `numeric_ik` und
-`nullspace_step`. Loesung in solution/.
+>>> YOUR TASK <<<
+Forward kinematics and the Jacobian are given (from P01). Implement the three functions marked
+with `# TODO`: `analytic_ik_2link`, the update rules in `numeric_ik` and `nullspace_step`.
+The solution is in solution/.
 
-Planarer Arm mit n Drehgelenken; die Winkel addieren sich entlang der Kette, daher mit den
-kumulierten Winkeln c_i = q_1+...+q_i:
+Planar arm with n revolute joints; the angles add up along the chain, so with the cumulative
+angles c_i = q_1+...+q_i:
     x = sum_i l_i cos(c_i),   y = sum_i l_i sin(c_i)
 """
 import numpy as np
 
 
 # ==========================================================================
-# Vorwaertskinematik + Jacobi   [vorgegeben, aus P01]
+# Forward kinematics + Jacobian   [given, from P01]
 # ==========================================================================
 def fk(q, lengths):
-    """Endeffektor-Position (2,) des planaren Arms."""
+    """End effector position (2,) of the planar arm."""
     c = np.cumsum(np.asarray(q, float))
     L = np.asarray(lengths, float)
     return np.array([np.sum(L * np.cos(c)), np.sum(L * np.sin(c))])
 
 
 def joints(q, lengths):
-    """Alle Gelenkpositionen (n+1, 2) inkl. Basis — fuer Plots."""
+    """All joint positions (n+1, 2) incl. the base — for plots."""
     c = np.cumsum(np.asarray(q, float))
     L = np.asarray(lengths, float)
     xs = np.concatenate([[0.0], np.cumsum(L * np.cos(c))])
@@ -34,7 +34,7 @@ def joints(q, lengths):
 
 
 def jacobian(q, lengths):
-    """Positions-Jacobi (2, n): J[:,k] = Ableitung der EE-Position nach q_k."""
+    """Position Jacobian (2, n): J[:,k] = derivative of the EE position w.r.t. q_k."""
     c = np.cumsum(np.asarray(q, float))
     L = np.asarray(lengths, float)
     J = np.zeros((2, len(L)))
@@ -45,36 +45,36 @@ def jacobian(q, lengths):
 
 
 # ==========================================================================
-# Analytische IK fuer den 2-Gelenk-Arm   >>> DU BIST DRAN <<<
+# Analytic IK for the 2-joint arm   >>> YOUR TURN <<<
 # ==========================================================================
 def analytic_ik_2link(target, lengths):
-    """Alle exakten Loesungen (Ellbogen oben/unten) als Liste von (2,)-Arrays.
-    Leere Liste, wenn das Ziel ausserhalb des Arbeitsraums liegt.
+    """All exact solutions (elbow up/down) as a list of (2,) arrays.
+    Empty list if the target lies outside the workspace.
 
-    Schritte (Skript Kap. 6a):
-      1. r = hypot(x, y). Erreichbar nur fuer |l1-l2| <= r <= l1+l2 -> sonst [] zurueckgeben.
-      2. cos q2 = (r^2 - l1^2 - l2^2) / (2 l1 l2)   (auf [-1,1] clippen gegen Rundungsfehler!)
-      3. Fuer BEIDE Vorzeichen: q2 = +- arccos(...)
-         und  q1 = atan2(y, x) - atan2(l2 sin q2, l1 + l2 cos q2).
-         (atan2 statt atan — sonst stimmt der Quadrant nicht!)
-      4. Bei q2 = 0 oder pi fallen beide Loesungen zusammen -> Duplikat entfernen.
+    Steps (script ch. 6a):
+      1. r = hypot(x, y). Reachable only for |l1-l2| <= r <= l1+l2 -> otherwise return [].
+      2. cos q2 = (r^2 - l1^2 - l2^2) / (2 l1 l2)   (clip to [-1,1] against rounding errors!)
+      3. For BOTH signs: q2 = +- arccos(...)
+         and  q1 = atan2(y, x) - atan2(l2 sin q2, l1 + l2 cos q2).
+         (atan2 instead of atan — otherwise the quadrant is wrong!)
+      4. At q2 = 0 or pi both solutions coincide -> remove the duplicate.
     """
-    # TODO: implementiere die 4 Schritte
+    # TODO: implement the 4 steps
     raise NotImplementedError
 
 
 # ==========================================================================
-# Numerische IK   >>> DU BIST DRAN (die drei Update-Regeln) <<<
+# Numerical IK   >>> YOUR TURN (the three update rules) <<<
 # ==========================================================================
 def numeric_ik(target, lengths, q0, method="dls", lam=0.1, max_iter=200, tol=1e-6,
                max_step=None):
-    """Iterative IK. Gibt (q, history_err, converged, max_step_norm) zurueck.
+    """Iterative IK. Returns (q, history_err, converged, max_step_norm).
 
-    Update-Regeln (Skript Kap. 6b) — mit e = target - fk(q) und J = jacobian(q):
-      'transpose' : dq = alpha * J^T e,  optimale Schrittweite
-                    alpha = <e, J J^T e> / <J J^T e, J J^T e>   (gegen 0-Division sichern)
+    Update rules (script ch. 6b) — with e = target - fk(q) and J = jacobian(q):
+      'transpose' : dq = alpha * J^T e,  the optimal step size
+                    alpha = <e, J J^T e> / <J J^T e, J J^T e>   (guard against 0-division)
       'pinv'      : dq = J^+ e            (np.linalg.pinv)
-      'dls'       : dq = J^T (J J^T + lam^2 I)^-1 e   (np.linalg.solve statt inv!)
+      'dls'       : dq = J^T (J J^T + lam^2 I)^-1 e   (np.linalg.solve instead of inv!)
     """
     q = np.array(q0, float)
     target = np.asarray(target, float)
@@ -89,7 +89,7 @@ def numeric_ik(target, lengths, q0, method="dls", lam=0.1, max_iter=200, tol=1e-
             converged = True
             break
         J = jacobian(q, lengths)
-        # TODO: berechne dq je nach `method` (die drei Regeln oben)
+        # TODO: compute dq depending on `method` (the three rules above)
         raise NotImplementedError
         max_step_norm = max(max_step_norm, float(np.linalg.norm(dq)))
         if max_step is not None:
@@ -101,11 +101,11 @@ def numeric_ik(target, lengths, q0, method="dls", lam=0.1, max_iter=200, tol=1e-
 
 
 def nullspace_step(q, lengths, z):
-    """Nullraum-Projektion: eine Gelenkbewegung, die den Endeffektor NICHT bewegt.
-    >>> DU BIST DRAN <<<
+    """Null-space projection: a joint motion that does NOT move the end effector.
+    >>> YOUR TURN <<<
 
-    Formel (Skript Kap. 6c):  dq = (I - J^+ J) z
-    Nur bei redundanten Armen (n > 2) ungleich null.
+    Formula (script ch. 6c):  dq = (I - J^+ J) z
+    Non-zero only for redundant arms (n > 2).
     """
-    # TODO: implementiere die Nullraum-Projektion
+    # TODO: implement the null-space projection
     raise NotImplementedError

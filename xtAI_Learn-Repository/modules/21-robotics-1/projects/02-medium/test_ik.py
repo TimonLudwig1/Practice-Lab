@@ -1,4 +1,4 @@
-"""Testsuite P02-medium (IK). pytest fehlt -> __main__-Runner.
+"""Test suite P02-medium (IK). pytest is missing -> __main__ runner.
     /Users/.../.venv/bin/python test_ik.py
 """
 import numpy as np
@@ -13,7 +13,7 @@ def test_fk_matches_closed_form():
     closed = np.array([np.cos(q[0]) + np.cos(q[0]+q[1]),
                        np.sin(q[0]) + np.sin(q[0]+q[1])])
     assert np.allclose(fk(q, L2), closed, atol=1e-12)
-    # gestreckt -> (2,0)
+    # stretched -> (2,0)
     assert np.allclose(fk([0.0, 0.0], L2), [2.0, 0.0], atol=1e-12)
 
 
@@ -31,7 +31,7 @@ def test_jacobian_matches_numeric():
 def test_jacobian_determinant_2link():
     q = np.array([0.3, 1.234])
     assert abs(np.linalg.det(jacobian(q, L2)) - L2[0]*L2[1]*np.sin(q[1])) < 1e-12
-    # Singularitaet bei q2 = 0 und pi
+    # singularity at q2 = 0 and pi
     for q2 in [0.0, np.pi]:
         assert abs(np.linalg.det(jacobian([0.4, q2], L2))) < 1e-12
 
@@ -39,21 +39,21 @@ def test_jacobian_determinant_2link():
 def test_analytic_ik_reaches_target():
     for tgt in [(1.0, 1.0), (1.5, 0.3), (-0.5, 1.2), (0.2, -1.6)]:
         sols = analytic_ik_2link(tgt, L2)
-        assert len(sols) >= 1, f"{tgt} sollte erreichbar sein"
+        assert len(sols) >= 1, f"{tgt} should be reachable"
         for s in sols:
             assert np.allclose(fk(s, L2), tgt, atol=1e-9)
 
 
 def test_analytic_ik_two_solutions_and_unreachable():
-    # generisches Ziel -> genau zwei Loesungen mit entgegengesetztem q2
+    # generic target -> exactly two solutions with opposite q2
     sols = analytic_ik_2link((1.0, 1.0), L2)
     assert len(sols) == 2
     assert np.sign(sols[0][1]) == -np.sign(sols[1][1])
-    # Grenze des Arbeitsraums (gestreckt) -> nur eine Loesung
+    # workspace boundary (stretched) -> only one solution
     assert len(analytic_ik_2link((0.0, 2.0), L2)) == 1
-    # ausserhalb -> keine
+    # outside -> none
     assert analytic_ik_2link((2.5, 0.0), L2) == []
-    assert analytic_ik_2link((0.0, 0.0), [1.2, 0.5]) == []   # innerhalb des Lochs
+    assert analytic_ik_2link((0.0, 0.0), [1.2, 0.5]) == []   # inside the hole
 
 
 def test_numeric_ik_converges():
@@ -67,7 +67,7 @@ def test_numeric_ik_converges():
         if conv:
             ok += 1
             assert np.linalg.norm(tgt - fk(q, L2)) < 1e-5
-    assert ok >= 40, f"DLS sollte meist konvergieren, war {ok}/50"
+    assert ok >= 40, f"DLS should converge most of the time, was {ok}/50"
 
 
 def test_pinv_explodes_dls_bounded_near_singularity():
@@ -75,8 +75,8 @@ def test_pinv_explodes_dls_bounded_near_singularity():
     _, _, _, ms_p = numeric_ik(tgt, L2, np.array([0.2, 1e-4]), method="pinv", max_iter=100)
     _, _, _, ms_d = numeric_ik(tgt, L2, np.array([0.2, 1e-4]), method="dls", lam=0.1,
                                max_iter=100)
-    assert ms_p > 1000, f"pinv sollte nahe Singularitaet explodieren (war {ms_p:.1f})"
-    assert ms_d < 50, f"DLS sollte beschraenkt bleiben (war {ms_d:.1f})"
+    assert ms_p > 1000, f"pinv should explode near the singularity (was {ms_p:.1f})"
+    assert ms_d < 50, f"DLS should stay bounded (was {ms_d:.1f})"
 
 
 def test_nullspace_does_not_move_endeffector():
@@ -90,7 +90,7 @@ def test_nullspace_does_not_move_endeffector():
             continue
         dq = 0.01 * dq / n
         assert np.linalg.norm(fk(q + dq, L3) - x0) < 1e-4
-    # nicht-redundanter Arm (n=m=2): Nullraum ist trivial
+    # non-redundant arm (n=m=2): the null space is trivial
     assert np.linalg.norm(nullspace_step(np.array([0.3, 0.8]), L2, np.array([1.0, 1.0]))) < 1e-9
 
 
@@ -104,4 +104,4 @@ if __name__ == "__main__":
             print(f"FAIL  {t.__name__}: {e}")
         except Exception as e:
             print(f"ERROR {t.__name__}: {type(e).__name__}: {e}")
-    print(f"\n{passed}/{len(tests)} Tests bestanden.")
+    print(f"\n{passed}/{len(tests)} tests passed.")
