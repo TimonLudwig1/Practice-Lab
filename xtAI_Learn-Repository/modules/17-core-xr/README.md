@@ -1,4 +1,620 @@
-# Modul 17 — Core XR: Principles of Interactive Systems
+# Module 17 — Core XR: Principles of Interactive Systems
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The projects themselves are English only.
+
+> **What is this about?** **XR** (extended reality — VR, AR, MR) is the attempt to fool a human
+> into believing they are somewhere else. The astonishing thing about it: whether that succeeds is
+> hardly decided by the graphics. It is decided by **milliseconds** and by **mathematics** — by
+> the question of whether the image reacts fast and correctly enough to a head movement. If it is
+> 20 ms too late, the user gets sick. This module covers the **principles** behind that:
+> perception, **tracking** and rotation mathematics, **motion-to-photon latency**, interaction
+> techniques, **cybersickness** — and how to evaluate interactive systems **empirically**, because
+> the only authority that judges XR is a human being.
+
+**Helpful prior knowledge:** linear algebra (matrices, vectors, change of basis), trigonometry,
+some statistics.
+
+**Modules you should have done first:**
+- **Modules 02/03 (data science)** — for the evaluation part: EDA, hypothesis tests, bootstrap.
+  Section 5.2 ties in directly with the A/B test logic from module 03.
+- Otherwise **none**. This module starts a new field (block F) and does not build on ML/RL.
+
+> **Note on how the content was scoped.** As with modules 15/16 no official module description was
+> available. I scope "Core XR: Principles of Interactive Systems" to the **principles** that hold
+> independently of the hardware and that you can genuinely *penetrate* without a VR headset:
+> **perception, tracking mathematics, latency, interaction, cybersickness, evaluation**.
+>
+> **Tooling decision:** in this environment there is **no VR hardware** and **no 3D engine**
+> (`open3d`, `trimesh`, `pygame` are missing). That is less of a problem than it sounds: the
+> intellectual core of XR is **mathematics and timing behaviour**, and both can be recomputed
+> exactly and **tested** with `numpy`/`scipy` — better, in fact, than in an engine, where
+> everything disappears behind ready-made functions. `scipy.spatial.transform.Rotation` (incl.
+> `Slerp`) is available; where an engine would be needed (rendering, shaders) I explain
+> **theoretically**. For practical work: **Unity + OpenXR** is the industry standard.
+
+---
+
+## Learning objectives
+
+After this module you can …
+
+- place XR in the **reality-virtuality continuum** (Milgram) and distinguish **immersion**
+  (technical) from **presence** (psychological) — including Slater's *place illusion* /
+  *plausibility illusion*;
+- name the relevant properties of the **human perceptual system** (FoV, resolution, the
+  **vergence-accommodation conflict**, the vestibular system, proprioception) and derive design
+  requirements from them;
+- classify **tracking**: 3 vs. **6 DoF**, outside-in vs. inside-out, SLAM, IMU sensors — and
+  explain why a gyroscope **drifts** and how **sensor fusion** repairs that;
+- handle **rotations** confidently: Euler angles and their **gimbal lock**, rotation matrices,
+  **quaternions** (with a derivation), **SLERP** — and justify why XR uses quaternions;
+- decompose the **motion-to-photon latency** into its links, compute its budget and explain the
+  countermeasures (**prediction**, **timewarp/reprojection**);
+- compare **interaction techniques** (ray-casting, Go-Go, locomotion) and apply **Fitts' law**;
+- explain **cybersickness** via the **sensory conflict theory** and justify countermeasures;
+- plan and evaluate a **user study** methodologically soundly: within-/between-subject,
+  established questionnaires (**IPQ, SSQ, SUS, NASA-TLX**), appropriate tests, **effect size**,
+  multiple comparisons.
+
+---
+
+## 1 · Basics — what makes XR
+
+### 1.1 The reality-virtuality continuum
+
+**Milgram & Kishino (1994)** arrange everything on one axis:
+
+```
+Real             Augmented        Augmented         Virtual
+environment ───  reality (AR) ─── virtuality  ───   environment (VR)
+   |                |                |                 |
+ nothing        virtual in       real in           everything
+ virtual        real             virtual           virtual
+        └──────── Mixed Reality (MR) ────────┘
+```
+
+**XR** is the umbrella term for all of it. The difference is not merely gradual — it changes the
+**requirements**: in **VR** you have to deliver the whole world, but nobody sees whether it stands
+*wrongly* relative to reality. In **AR** reality is the reference — the virtual has to be
+**registered** (stay in the right place), and even 1 mm of offset or 5 ms of delay is immediately
+noticeable, because the real object lies right next to it. **AR is therefore technically harder
+than VR.**
+
+### 1.2 Immersion ≠ presence
+
+The most important conceptual distinction of the module name (**Slater**):
+
+- **Immersion** is an **objective property of the technology**: FoV, resolution, latency, tracking
+  accuracy, the number of senses addressed. Measurable, readable from a data sheet.
+- **Presence** is the **subjective reaction of the human**: *the feeling of being there*. Not
+  measurable except through the user themselves (→ section 5).
+
+Slater decomposes presence further into two illusions that can collapse **independently** of each
+other:
+- **Place illusion (PI)** — "I am in this place." It arises from **sensorimotor contingency**: I
+  move my head and the world reacts **the way it would in reality**. PI depends almost entirely on
+  **tracking and latency** — not on the graphics.
+- **Plausibility illusion (Psi)** — "What is happening here is really happening." It arises when
+  the world **reacts to me** and behaves credibly.
+
+> **The central insight of the module:** a graphically primitive but perfectly tracked, low-latency
+> comic-book room produces **more presence** than a photorealistic scene that lags 50 ms behind.
+> **That is why this module is about mathematics and milliseconds, not about shaders.** PI
+> collapses immediately when sensorimotor contingency is violated — and the body notices that with
+> merciless reliability.
+
+### 1.3 The human as a system specification
+
+XR does not build for displays but for a **perceptual system**. Its key figures *are* the
+requirements:
+
+| Quantity | Human | typical headset | Consequence |
+|---|---|---|---|
+| **Field of view (FoV)** | ~200–220° horizontal (binocular ~114° overlapping) | ~90–110° | the "diving mask effect", weakens presence |
+| **Resolution** | ~60 pixels/degree (fovea) | ~15–35 pixels/degree | screen-door effect, blurry distance |
+| **Temporal resolution** | flicker visible up to ~60–90 Hz, latency noticeable from ~20 ms | 90–120 Hz | **the hard criterion** (section 3) |
+| **Stereo depth** | vergence + accommodation **coupled** | accommodation fixed at ~2 m | **the vergence-accommodation conflict** |
+
+**The vergence-accommodation conflict (VAC)** deserves its own explanation, because it is a
+**physically unsolvable** problem of conventional headsets:
+- **Vergence** = both eyes rotate inwards in order to fixate a near object.
+- **Accommodation** = the lens of the eye focuses.
+
+In reality the two are **firmly coupled** (what I fixate, I focus on). In a headset the display
+always sits at **the same** optical distance (~1.5–2 m), while the vergence follows the virtual
+object — even if it floats 30 cm in front of the nose. **The eyes converge on 30 cm but focus on
+2 m.** The brain receives contradictory depth signals → fatigue, headache, blurriness. Hence the
+design rule: **no important objects closer than ~50 cm**. Real solutions (light field displays,
+varifocal optics) are research.
+
+**The vestibular system & proprioception:** the inner ear measures **acceleration** and
+**rotation**, proprioception reports joint positions. Neither can be fooled — a display does not
+reach them. That is exactly where section 4.1 comes from.
+
+---
+
+## 2 · Tracking and the mathematics of orientation
+
+### 2.1 Degrees of freedom: 3 DoF vs. 6 DoF
+
+- **3 DoF**: **orientation** only (yaw, pitch, roll). Enough for 360° video. If you lean forward,
+  **nothing** happens — the world sticks to your head. That is a direct violation of sensorimotor
+  contingency (1.2) and a reliable nausea generator.
+- **6 DoF**: orientation **+ position** ($x,y,z$). Only with that can you lean around an object.
+  **6 DoF is the lower bound for genuine presence.**
+
+**How is tracking done?**
+- **Outside-in**: external base stations/cameras observe the headset (e.g. Lighthouse). Very
+  precise, but requires a setup, a limited volume, occlusion possible.
+- **Inside-out**: cameras **in** the headset observe the environment and solve **SLAM**
+  (*simultaneous localization and mapping*) — build a map and localize yourself in it at the same
+  time, a chicken-and-egg problem. No setup, arbitrary volume; in return dependent on light and
+  texture (a white wall = no features = loss of tracking). **The standard today.**
+
+**Sensors:** an **IMU** delivers a **gyroscope** (angular velocity, ~1000 Hz) and an
+**accelerometer** (acceleration incl. **gravity**). Cameras deliver ~30–60 Hz. That gives a natural
+division of labour — and section 2.4 follows from exactly that.
+
+### 2.2 Representing rotations — and why Euler angles fail
+
+An orientation in space has **3 degrees of freedom**. There are several representations:
+
+**Euler angles** $(\text{yaw},\text{pitch},\text{roll})$ — three rotations one after another.
+Intuitively readable, compact (3 numbers). Three problems:
+
+1. **The order is a convention, not nature.** "ZYX" ≠ "XYZ". Rotations **do not commute**:
+   $R_A R_B \neq R_B R_A$. (Project 01 shows: the same two 90° rotations applied to $\hat z$ yield
+   either $[0,-1,0]$ or $[1,0,0]$ depending on the order — different points.) Almost every XR
+   interface bug has its root here.
+2. **Gimbal lock** — the killer (see below).
+3. **Interpolation is broken.** Interpolating linearly between two Euler triples produces
+   wobbling, not the shortest rotation.
+
+> ### ⚠️ Gimbal lock — precisely formulated
+> If the **pitch is at ±90°** (looking straight up/down), the yaw and the roll axis **coincide**.
+> You lose one degree of freedom: **3 DoF → 2 DoF**.
+>
+> Concretely (convention ZYX, pitch = 90°) the rotation depends **only on the difference
+> $(\text{yaw}-\text{roll})$**. All of these combinations produce **exactly the same** rotation:
+>
+> | yaw | roll | yaw − roll | quaternion |
+> |---|---|---|---|
+> | 0° | 0° | 0 | $[0,\ 0.7071,\ 0,\ 0.7071]$ |
+> | 40° | 40° | 0 | $[0,\ 0.7071,\ 0,\ 0.7071]$ |
+> | 90° | 90° | 0 | $[0,\ 0.7071,\ 0,\ 0.7071]$ |
+>
+> The angular distance between them is **0.000000°** — they are not *similar* but **identical**. A
+> user who tilts their head all the way up can no longer control yaw and roll independently; the
+> back-conversion `as_euler` has to guess and folds everything into one angle.
+> *(A widespread misconception: "(yaw=0, roll=40) and (yaw=40, roll=0) are then equal." **Wrong** —
+> their differences differ by 80°, they lie 80° apart. It is the **difference** that survives, not
+> the individual value.)*
+>
+> **Rotation matrices** ($3\times3$, orthogonal, $\det=1$) have no gimbal lock, but need 9 numbers
+> for 3 DoF and drift numerically out of orthogonality.
+
+### 2.3 Quaternions — the solution
+
+A **quaternion** $q = w + x\,i + y\,j + z\,k$ with $i^2=j^2=k^2=ijk=-1$. For rotations one uses
+**unit quaternions** ($\|q\|=1$). The connection to intuition is the **axis-angle
+representation**: a rotation about the unit axis $\hat{\mathbf n}$ by the angle $\theta$:
+$$\boxed{\;q = \Big(\cos\tfrac{\theta}{2},\ \hat{\mathbf n}\sin\tfrac{\theta}{2}\Big)\;}$$
+
+A point $\mathbf v$ is rotated by $\mathbf v' = q\,\mathbf v\,q^{-1}$ (with $\mathbf v$ as a pure
+quaternion). Composition is simply **multiplication**: $q_{AB} = q_B q_A$.
+
+**Why XR uses them:**
+- **No gimbal lock** — the parametrization is regular everywhere.
+- **Compact** (4 numbers) and **numerically stable** — drift is corrected by plain
+  **normalization**, not by re-orthogonalization.
+- **Interpolable** — see SLERP.
+- **Cheap composition** (16 multiplications instead of 27 for matrices).
+
+**The curiosity you have to know:** $q$ and $-q$ describe **the same** rotation (the *double
+cover* $SU(2)\to SO(3)$; the $\theta/2$ above is the reason). The practical consequence: when
+interpolating you have to **check the sign** — otherwise the agent takes the **long way round**
+(359° instead of 1°). A classic bug.
+
+**SLERP** (*spherical linear interpolation*) interpolates on the unit sphere along the **great
+circle** — the shortest rotation with **constant angular velocity**:
+$$\text{Slerp}(q_0,q_1;t)=\frac{\sin\big((1-t)\Omega\big)}{\sin\Omega}\,q_0+\frac{\sin(t\Omega)}{\sin\Omega}\,q_1,
+\qquad \cos\Omega = q_0\!\cdot\! q_1$$
+Naive **LERP** (averaging component-wise + normalizing) runs along the **chord** instead of the arc
+→ the angular velocity **fluctuates**, too fast in the middle. Project 01 measures it: for a
+rotation 0°→170° SLERP has exactly constant steps (spread **0.000**), LERP does not (**5.659**).
+For small angles the difference is negligible — which is why LERP is quite common for network
+interpolation between dense frames.
+
+### 2.4 Sensor fusion: why a gyro alone drifts
+
+The two sensors of an IMU have **complementary** errors:
+
+| | Gyroscope | Accelerometer |
+|---|---|---|
+| measures | angular **velocity** | acceleration + **gravity** |
+| rate | fast (~1000 Hz) | fast |
+| short term | **precise, smooth** | **noisy** (every movement disturbs it) |
+| long term | **drifts away** | **drift-free** (gravity always points down) |
+
+**Why does the gyro drift?** You need the *angle* but have the *velocity* — so you **integrate**:
+$\theta_k=\theta_{k-1}+\omega_k\Delta t$. Every bias, however small, accumulates **without bound**
+in the process. A bias of only 0.5 °/s gives an error of **30°** after one minute. (Project 01
+measures: RMSE **16.98°**, final error **29.95°** — the virtual world tips away.)
+
+The accelerometer measures an absolute reference via **gravity** ("where is down?"), but is noisy
+(RMSE **3.01°**) and unusable during movement.
+
+**The complementary filter** combines both in one line — a high pass on the gyro, a low pass on
+the accel:
+$$\boxed{\;\theta_k = \alpha\big(\theta_{k-1}+\omega_k\Delta t\big) + (1-\alpha)\,\theta_{\text{accel},k}\;}$$
+with $\alpha$ close to 1 (e.g. 0.98). In the short term it follows the smooth gyro, in the long
+term the accel pulls it back to the truth. The result: RMSE **0.42°** — **better than either
+individual sensor**. A **Kalman filter** does the same thing optimally (with an estimated
+uncertainty and bias estimation); the complementary filter is its poor, astonishingly good
+relative. Adding a **magnetometer** additionally provides absolute **yaw** (a compass) — which the
+accel *cannot* provide, because a rotation about the gravity axis does not change gravity.
+
+---
+
+## 3 · Motion-to-photon: the millisecond budget
+
+### 3.1 The chain
+
+**Motion-to-photon latency** = the time from "the head moves" to "the matching photon hits the
+retina". It is **the** critical quantity of XR. The chain:
+
+```
+head moves
+   → IMU/camera measures       ~1-2 ms
+   → sensor fusion/pose        ~1 ms
+   → application/physics       ~2-5 ms
+   → rendering (GPU)           ~5-11 ms   (at 90 Hz = 11.1 ms per frame)
+   → transmission/scanout      ~3-11 ms
+   → display (pixel response)  ~1-5 ms
+   = motion-to-photon          ~15-40 ms
+```
+
+**The target: < 20 ms.** Above that the conflict between the vestibular system and the eyes
+becomes noticeable (section 4.1). From ~50 ms on it is unbearable for many. For comparison: a
+normal game on a monitor with 60 ms of latency bothers nobody — **because there no vestibular
+system contradicts it.**
+
+Note: at **90 Hz** a single frame alone is **11.1 ms**. So the budget is practically used up after
+*one* frame plus scanout — there is no room here for "we will optimize that later".
+
+### 3.2 The two countermeasures
+
+Because the chain cannot be shortened arbitrarily, you **cheat** — in two ways:
+
+**1. Prediction.** You do not render for *now* but for the moment at which the photon will appear:
+from the current angular velocity you extrapolate the pose forward by the latency $\Delta t$. With
+uniform movement that works astonishingly well. The price: at **changes of direction** the
+prediction is off → **overshoot**. That is why one predicts only ~20–40 ms ahead, no more.
+
+**2. Timewarp / reprojection (ASW).** The actual trick, and the reason why modern headsets are
+bearable: **after** the image has been rendered but **before** it is displayed, you fetch the
+**very latest** pose and **shift/warp the finished image** accordingly.
+- **Orientational timewarp** is practically free and very effective: a pure *rotation* can be
+  corrected on a finished image almost perfectly (you shift the image section).
+- **Positional** correction is harder: if the head moves **sideways**, the **occlusion** changes —
+  behind the foreground, information would have to appear that was never rendered (disocclusion).
+  You get artifacts or have to guess.
+- If the GPU is not enough for 90 Hz, you render at 45 Hz and **invent** every second image by
+  reprojection (*asynchronous spacewarp*) — visible through artifacts at moving edges, but better
+  than stuttering.
+
+> **Note:** timewarp does **not make the latency smaller** — it makes it **invisible for the
+> orientation**, the channel to which the vestibular system reacts most sensitively. It is a
+> perceptual trick, not a performance fix.
+
+---
+
+## 4 · Interaction and cybersickness
+
+### 4.1 Cybersickness: the sensory conflict theory
+
+**The symptom:** nausea, dizziness, sweating, eye strain, disorientation — for some people after
+minutes, still having an effect hours later.
+
+**The leading explanation (sensory conflict / Reason & Brady):** nausea arises when the senses
+deliver **contradictory** movement information:
+- **The eyes** say: "We are moving" (the world passes by → **vection**, the illusory self-motion).
+- **The vestibular system** says: "We are sitting still." It measures real acceleration — and that
+  is zero.
+
+The brain cannot resolve the contradiction. The (evolutionarily plausible) hypothesis: such a
+conflict naturally arises through **neurotoxins** → the brain infers poisoning → **vomiting**.
+**You get sick in VR because the brain believes you have been poisoned.** — Remarkably:
+**seasickness is the same conflict with the roles swapped** (the vestibular system reports
+movement, the eyes see stillness in the cabin).
+
+**The causes, sorted by effectiveness:**
+1. **Latency** — the world lags behind the head movement. The strongest, but also the most easily
+   solved lever (section 3).
+2. **Artificial locomotion** — movement by stick while the body stands still. The inherent
+   conflict.
+3. **Acceleration** — constant velocity is relatively harmless; **acceleration**, rotation and
+   stairs/ramps are not (the vestibular system measures precisely *acceleration*).
+4. **3 DoF instead of 6 DoF**, a wrong interpupillary distance (IPD), a low frame rate.
+
+**Countermeasures — and why they work:**
+- **Teleportation** instead of continuous movement: **no** optical flow → **no** conflict. The
+  gold standard for comfort, at the price that spatial understanding suffers.
+- **Snap turn** (jerky 30° jumps) instead of smooth turning — rotation is the worst case.
+- **Vignetting/tunnel vision** during movement: reduces the optical flow in the periphery (which is
+  where the sensitivity to vection sits).
+- **A static frame of reference** (a virtual cockpit, a nose, a grid): something that moves along
+  with the head and confirms "standstill".
+- **A high frame rate, low latency** — the basis without which everything else is irrelevant.
+
+> **An honest classification:** the sensory conflict theory explains a lot, but **not everything**
+> (for instance not well why susceptibility varies so **massively** between people — women report
+> symptoms more often in studies, which is partly attributed to IPD fit). A competing account is
+> the **postural instability theory** (Riccio & Stoffregen): nausea follows from a prolonged
+> inability to stabilize one's posture. Both are probably partial truths.
+
+### 4.2 Interaction techniques
+
+**Selection & manipulation:**
+- **Virtual hand** — grab directly. Natural, but only within arm's reach.
+- **Ray-casting** — a ray from the hand, a "laser pointer". Unlimited range; but the **angular
+  precision** limits it: at a distance, 1° of hand tremor means many centimetres of offset.
+- **Go-Go** — non-linear arm extension: 1:1 up to a threshold, above it the virtual arm grows
+  disproportionately. Combines naturalness with reach.
+- **Fitts' law** applies here too and quantifies the target acquisition time:
+  $$MT = a + b\log_2\!\Big(\frac{D}{W}+1\Big)$$
+  ($D$ = distance, $W$ = target width). The term $\log_2(D/W+1)$ is the **index of difficulty**.
+  The practical consequence: target size helps **logarithmically** — small targets are expensive,
+  and in 3D you use the **angular size**, not the metric one.
+
+**Locomotion** (see 4.1 for the comfort aspect): teleport · continuous (stick) · **room scale**
+(real walking — the best comfort, limited by the room) · **redirected walking** (the world is
+imperceptibly rotated so that the user walks in a circle but believes they are walking straight —
+astonishingly effective, but needs a lot of space).
+
+---
+
+## 5 · Evaluation: XR is an empirical discipline
+
+### 5.1 Why user studies at all?
+
+For "is the latency < 20 ms?" a measurement suffices. But the actual questions — *does this feel
+present? does anybody get sick? is it usable?* — can be answered **only on humans**. There is no
+offline metric for presence. **That is why XR research is at its core experimental psychology with
+technology.**
+
+**Established instruments** (take the validated ones, do not invent your own questionnaires):
+- **IPQ** (Igroup Presence Questionnaire) — presence.
+- **SSQ** (Simulator Sickness Questionnaire) — cybersickness, with the subscales *nausea*,
+  *oculomotor*, *disorientation*. **Important: collect it before *and* after** (the difference is
+  what counts).
+- **SUS** (System Usability Scale) — 10 items, score 0–100. *(Confusingly: in the presence
+  literature "SUS" also means the *Slater-Usoh-Steed* questionnaire. Mind the context.)*
+- **NASA-TLX** — subjective workload (mental, physical, temporal, performance, effort,
+  frustration).
+- **Objectively** alongside: task completion time, error rate, trajectories — and physiologically
+  (heart rate, skin conductance) as a sickness correlate.
+
+### 5.2 Study design
+
+- **Within-subject** (every person tests **all** conditions): fewer participants needed, controls
+  for individual differences — which in XR are **enormous** (susceptibility, VR experience).
+  **In XR usually the right choice.** The price: **order effects** (learning, fatigue, accumulated
+  nausea) → **counterbalancing** (e.g. a Latin square) is mandatory.
+- **Between-subject** (every person tests **one** condition): no order effects, but far more
+  participants needed. Necessary if one condition "spoils" the other (whoever has had 6 DoF once
+  rates 3 DoF differently).
+
+**Analysis** — this ties in directly with module 03:
+- **Mind the scale level:** questionnaire items are **ordinal** (Likert). For individual items
+  non-parametric tests are appropriate: **Wilcoxon signed-rank** (within), **Mann-Whitney U**
+  (between). For averaged subscales with many items one often argues for an interval scale →
+  a **paired t-test** / ANOVA. *Both are defensible — you just have to justify it.*
+- **Report the effect size, not only p.** A significant but tiny effect is irrelevant.
+  **Cohen's d** resp. $r=Z/\sqrt{N}$. Rule of thumb: $d\approx0.2$ small, $0.5$ medium, $0.8$
+  large.
+- **Correct for multiple comparisons.** Whoever tests IPQ, SSQ, SUS, TLX and time individually
+  performs 5+ tests — at $\alpha=0.05$ a false alarm is then almost guaranteed (**Bonferroni**:
+  $\alpha/m$; or Holm/FDR). *That is the same idea as the base rate discussion in module 15: many
+  tests × a small error rate = many false alarms.*
+- **Plan the sample size in advance** (a power analysis). N=8 only finds elephants. Typical XR
+  studies: N=20–40.
+- **Ethics:** cybersickness is a real burden. The possibility to stop without giving a reason,
+  informed consent, breaks, no driving home directly after a sickness study.
+
+---
+
+## 6 · Summary / cheat sheet
+
+**Concepts.** The reality-virtuality continuum (Milgram) · **immersion** = the technology
+(objective) · **presence** = the experience (subjective) · **place illusion** (tracking+latency!)
++ **plausibility illusion** (Slater).
+
+**The human.** FoV ~200° vs. a headset's ~110° · **VAC**: vergence follows the object,
+accommodation sticks at ~2 m → nothing closer than ~50 cm · the vestibular system **cannot be
+fooled**.
+
+**Tracking.** 3 DoF (orientation only) vs. **6 DoF** (+ position) · outside-in vs. **inside-out
+(SLAM)** · IMU = gyro (fast, **drifts**) + accel (noisy, **drift-free**).
+
+**Rotations.** Euler: intuitive, but **non-commutative** + **gimbal lock** (pitch ±90° ⟹ only
+(yaw−roll) survives, 3→2 DoF) · matrices: 9 numbers, they drift · **quaternions**:
+$q=(\cos\frac\theta2,\ \hat{\mathbf n}\sin\frac\theta2)$, $\mathbf v'=q\mathbf vq^{-1}$,
+$q\equiv-q$ (check the sign!) · **SLERP** = constant angular velocity, LERP is not.
+
+**Fusion.** $\theta_k=\alpha(\theta_{k-1}+\omega_k\Delta t)+(1-\alpha)\theta_{\text{accel},k}$
+⟹ better than either sensor alone.
+
+**Latency.** **Motion-to-photon < 20 ms** · 90 Hz ⟹ 11.1 ms per frame · **prediction**
+(extrapolate, overshoot at changes of direction) · **timewarp** (correct the finished image;
+rotation ~free, position ⟹ **disocclusion**).
+
+**Cybersickness.** **Sensory conflict**: the eyes see movement (**vection**), the vestibular
+system does not ⟹ the brain suspects poison. Levers: latency > artificial locomotion >
+**acceleration**. Countermeasures: teleport, snap turn, vignetting, a static frame of reference.
+
+**Interaction.** Virtual hand · **ray-casting** (angular precision!) · Go-Go · **Fitts**:
+$MT=a+b\log_2(D/W+1)$.
+
+**Evaluation.** **IPQ** (presence) · **SSQ** (sickness, before/after!) · SUS · NASA-TLX ·
+**within-subject + counterbalancing** · ordinal ⟹ **Wilcoxon/Mann-Whitney** · **effect size**
+(Cohen's d) · **Bonferroni** · plan the power in advance.
+
+---
+
+## 7 · Self-test
+
+<details>
+<summary><b>1.</b> Immersion vs. presence — and why is an ugly, fast system better than a beautiful, slow one?</summary>
+
+**Immersion** = an objective property of the technology (FoV, latency, tracking). **Presence** =
+the subjective feeling of being there. The **place illusion** arises from **sensorimotor
+contingency** — the world has to react to head movement *as it would in reality*. That depends on
+**tracking and latency**, not on the graphics. A low-latency comic-book room therefore produces
+more presence than a photorealistic scene with a 50 ms delay (which additionally makes you sick).
+</details>
+
+<details>
+<summary><b>2.</b> What is the vergence-accommodation conflict and what follows from it for design?</summary>
+
+**Vergence** (the eyes rotate inwards) follows the virtual object, **accommodation** (the lens
+focuses) sticks at the fixed display distance (~2 m). In reality both are coupled — in the headset
+they contradict each other ⟹ fatigue, headache. **Design rule: nothing important closer than
+~50 cm.** Real solutions (varifocal/light field optics) are research.
+</details>
+
+<details>
+<summary><b>3.</b> Explain gimbal lock precisely. Which combinations become indistinguishable?</summary>
+
+At **pitch = ±90°** the yaw and roll axes coincide ⟹ **3 DoF → 2 DoF**. Only the **difference**
+$(\text{yaw}-\text{roll})$ survives: (0°,0°), (40°,40°), (90°,90°) produce **exactly the same**
+rotation (a distance of 0.000000°). **Not** equal, by contrast, are (0°,40°) and (40°,0°) — their
+differences differ by 80°. Quaternions do not have this problem.
+</details>
+
+<details>
+<summary><b>4.</b> Why $\theta/2$ in the quaternion — and why is $q\equiv-q$ practically relevant?</summary>
+
+Because the rotation acts **twice** as $\mathbf v'=q\mathbf vq^{-1}$ (once $q$, once $q^{-1}$) —
+each half contributes $\theta/2$. The consequence is the **double cover**: $q$ and $-q$ are the
+same rotation. **Practically:** when interpolating you have to check the sign (if necessary
+$q_1 \to -q_1$), otherwise SLERP takes the **long way round** (359° instead of 1°).
+</details>
+
+<details>
+<summary><b>5.</b> SLERP vs. LERP — what is the difference, and when is LERP fine anyway?</summary>
+
+**SLERP** runs the **great circle** on the unit sphere ⟹ the shortest rotation with **constant
+angular velocity**. **LERP** (average + normalize) runs the **chord** ⟹ the angular velocity
+fluctuates (measured: a spread of the steps of 0.000 vs. 5.659 for 0°→170°). For **small** angles
+the error is negligible — which is why LERP between dense frames is common (it is cheaper).
+</details>
+
+<details>
+<summary><b>6.</b> Why does a gyroscope drift, and how does the complementary filter repair it?</summary>
+
+The gyro measures angular **velocity**; for the angle you have to **integrate** — and in doing so
+every **bias** accumulates without bound (0.5 °/s ⟹ 30° after one minute; measured RMSE 16.98°).
+The **accelerometer** delivers an absolute, drift-free but noisy reference via **gravity** (RMSE
+3.01°). The filter $\theta_k=\alpha(\theta_{k-1}+\omega_k\Delta t)+(1-\alpha)\theta_{\text{accel}}$
+takes the gyro in the short term and the accel in the long term ⟹ RMSE **0.42°**, better than
+both.
+</details>
+
+<details>
+<summary><b>7.</b> What is motion-to-photon latency, where is the limit, and why does 60 ms on a monitor not bother anyone?</summary>
+
+The time from the head movement to the matching photon on the retina; a chain of sensor → fusion →
+app → rendering → scanout → display. **The target is < 20 ms.** On a monitor 60 ms does not bother
+anyone because **no vestibular system contradicts it** there — in the headset the delay produces
+exactly the sensory conflict that makes you sick.
+</details>
+
+<details>
+<summary><b>8.</b> What does timewarp do — and why does it help more with rotation than with translation?</summary>
+
+It corrects the **finished rendered** image shortly before display using the **latest** pose. A
+pure **rotation** can be shifted afterwards almost perfectly (just a different image section). With
+**translation** the **occlusion** changes: behind foreground objects, information would have to
+appear that was never rendered (**disocclusion**) ⟹ artifacts/guessing. Timewarp does **not**
+lower the latency, it makes it **invisible** for the orientation.
+</details>
+
+<details>
+<summary><b>9.</b> Explain cybersickness via the sensory conflict theory. Why does teleportation help?</summary>
+
+The eyes report self-motion (**vection**), the vestibular system reports standstill. The
+contradiction resembles the pattern of a **poisoning** ⟹ nausea. **Teleportation** produces **no
+optical flow** ⟹ no conflict. Further levers: lower the latency, avoid **acceleration**, snap turn,
+vignetting, a static frame of reference. (Seasickness is the same conflict with the roles swapped.)
+</details>
+
+<details>
+<summary><b>10.</b> You compare 3 DoF vs. 6 DoF and measure IPQ, SSQ, SUS, TLX and time. Name three methodological obligations.</summary>
+
+Any three: **within-subject with counterbalancing** (order effects: learning, fatigue, accumulated
+nausea) · collect the **SSQ before and after** (the difference counts) · **ordinal** Likert items
+⟹ **Wilcoxon** instead of a t-test (or justify it) · report the **effect size**, not only p ·
+**correct for multiple comparisons** (5 tests ⟹ Bonferroni/Holm) · **plan the power in advance**
+(N=20–40) · **ethics** (stopping at any time).
+</details>
+
+---
+
+## 8 · Literature & sources
+
+**Standard works:**
+- 📗 **LaValle — *Virtual Reality*** (Cambridge; **free online**: lavalle.pl/vr/). *The* reference
+  for exactly this module: perception, tracking, rotation mathematics, latency — with mathematics,
+  but readable. **The best single source.** Chapters 3 (transformations), 9 (tracking),
+  12 (sickness).
+- 📗 **Jerald — *The VR Book: Human-Centered Design for VR***. Strong on perception, sickness and
+  interaction design. *Beginner-friendly.*
+- 📗 **Bowman et al. — *3D User Interfaces: Theory and Practice***. The standard work on
+  interaction techniques (→ deepened in module 19). *In depth.*
+
+**Key papers:**
+- 📄 **Milgram & Kishino (1994), *A Taxonomy of Mixed Reality Visual Displays*** — the continuum.
+- 📄 **Slater (2009), *Place Illusion and Plausibility Illusion*** (Phil. Trans. R. Soc.) — the
+  conceptual basis of 1.2. *Free, short, worth reading.*
+- 📄 **Reason & Brady (1975), *Motion Sickness*** — the sensory conflict theory.
+- 📄 **Riccio & Stoffregen (1991), *An Ecological Theory of Motion Sickness*** — the competing
+  postural instability theory.
+- 📄 **Shoemake (1985), *Animating Rotation with Quaternion Curves*** (SIGGRAPH) — **SLERP**.
+- 📄 **Van Waveren (2016), *The Asynchronous Time Warp for VR on Mobile Hardware***.
+- 📄 **Poupyrev et al. (1996), *The Go-Go Interaction Technique***.
+- 📄 **Razzaque et al. (2001), *Redirected Walking***.
+
+**Mathematics/practice:**
+- 🌐 **3Blue1Brown — *Visualizing quaternions*** (eater.net/quaternions) — interactive, excellent
+  if quaternions remain abstract. *Beginner-friendly, free.*
+- 🌐 **The scipy `spatial.transform.Rotation` docs** — the API of the projects.
+- 🌐 **The OpenXR specification** (khronos.org/openxr) — the open industry standard; the terms
+  (pose, space, predicted display time) appear there in exactly this form.
+- 🌐 **Unity XR Interaction Toolkit** / **the Oculus developer blog** (Carmack/Abrash on latency) —
+  for practical work.
+
+**Evaluation:**
+- 📄 **Kennedy et al. (1993), *Simulator Sickness Questionnaire (SSQ)***.
+- 📄 **Schubert et al. (2001), *The Experience of Presence: Factor Analytic Insights*** (IPQ;
+  igroup.org/pq/ipq — freely available, including the items).
+- 📄 **Hart & Staveland (1988), *NASA-TLX***; **Brooke (1996), *SUS***.
+- 📗 **For the craft:** *Field — Discovering Statistics* for choosing the test, or module 03 of
+  this repo.
+
+---
+
+## Next module
+
+**Module 18 — Multimodal Interfaces** extends interaction beyond the hands (speech, gaze,
+gestures, haptics) and asks how modalities are **fused**. **Module 19 — 3D User Interfaces** then
+systematically deepens the interaction techniques from 4.2. What you have learned here —
+**presence depends on latency and tracking**, quaternions, and that in the end a **human** in an
+experiment decides — carries through the entire XR block.
+
+---
+
+# Modul 17 — Core XR: Principles of Interactive Systems (deutsche Fassung)
 
 > **Worum geht es?** **XR** (Extended Reality — VR, AR, MR) ist der Versuch, einem Menschen
 > vorzugaukeln, er sei woanders. Das Erstaunliche daran: Ob das gelingt, entscheidet sich kaum

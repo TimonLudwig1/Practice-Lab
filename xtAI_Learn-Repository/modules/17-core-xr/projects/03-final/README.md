@@ -1,4 +1,135 @@
-# Projekt 03 (final) — Eine XR-Nutzerstudie auswerten: 3 DoF vs. 6 DoF
+# Project 03 (final) — evaluating an XR user study: 3 DoF vs. 6 DoF
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Format: Python project, _without any given code_.** No scaffold — you build the data generator,
+the statistical tools, the analysis and the tests yourself. It is the master-level examination
+piece of the module and closes the circle: XR is in the end an **empirical** discipline — presence
+and nausea are not decided by a benchmark but by a **human in an experiment** (script 5).
+
+---
+
+## The guiding idea
+
+Projects 01 and 02 were physics and mathematics — objectively measurable. This project covers the
+questions that can be answered **only on humans**: *does 6 DoF feel more present? does 3 DoF make
+people sicker? are you faster?* And it covers them the way a serious study has to — with the right
+tests, effect sizes and controls.
+
+> **The point is not the result** ("6 DoF is better" we know in advance), **but the methodology**:
+> evaluating a study so that the conclusions **hold**. That is exactly where countless HCI papers
+> fail.
+
+## The scenario
+
+A **within-subject study** (script 5.2): 24 participants solve the same task once with a
+**3 DoF** headset (orientation only) and once with **6 DoF** (+ position). Measured are:
+
+- **presence** (IPQ, 1–7, higher = better),
+- **sickness** (the SSQ delta before/after, higher = worse),
+- **task time** (seconds, lower = better),
+- **comfort** (1–7, higher = better).
+
+Because individual differences in XR are **enormous** (susceptibility, VR experience),
+within-subject is the right choice — everybody is their own control. The price: **order effects**,
+against which you have to **counterbalance** (half start with 3 DoF).
+
+### Why synthetic data — and why that is an advantage here
+
+A real study needs participants, weeks and an ethics committee. For learning the **analysis** a
+simulated dataset is even **better**: the "truth" (the real effects, the built-in order effects) is
+known, so you can check whether the statistics **recover** it, and what happens if you make
+mistakes. The generator is **fully disclosed** and made reproducible with a fixed seed.
+
+## Assignment (step by step)
+
+1. **`generate_study.py`** — the data generator. Within-subject, counterbalanced, with built-in
+   effects *and* two **order effects** (carryover nausea in the second session; a learning effect
+   for the time). Plus a variant **without** counterbalancing for the counter-check.
+2. **`stats_tools.py`** — the analysis functions, from scratch (pingouin/statsmodels are missing):
+   **Cohen's dz** (the parametric effect size), **rank-biserial r** (the effect size for the
+   Wilcoxon test), a paired comparison (t-test + Wilcoxon), **Bonferroni** and
+   **Holm-Bonferroni**, and an **order effect check**.
+3. **`run.py`** — the analysis in four steps (see below).
+4. **`test_*.py`** — tests: the effect sizes recomputed by hand, the corrections correct,
+   `paired_comparison` agreeing with scipy, the analysis **finding the built-in effects**, and the
+   counter-check showing the masking.
+
+### The four methodological obligations (script 5.2)
+
+1. **The right test.** Likert items (IPQ, comfort) are **ordinal** → **Wilcoxon signed-rank**, not
+   blindly the t-test. (Reporting both and justifying the choice is legitimate.)
+2. **The effect size, not only p.** A significant but tiny effect is irrelevant. Always add
+   **dz / rank-biserial**.
+3. **Correct for multiple comparisons.** Four outcomes = four tests → at $\alpha=0.05$ a chance hit
+   is almost to be expected. **Bonferroni** ($\alpha/m$) or Holm.
+4. **Check the counterbalancing** and demonstrate its point.
+
+## What should come out at the end
+
+**The comparisons** (N=24, Wilcoxon):
+
+| Outcome | 3 DoF | 6 DoF | Wilcoxon p | dz | r | after Bonferroni |
+|---|---|---|---|---|---|---|
+| Presence | 4.0 | 4.9 | 0.0001 | −1.19 | −0.90 | **sig** |
+| Sickness | 25.6 | 12.7 | <0.0001 | 1.12 | 0.87 | **sig** |
+| Task time | 38.1 | 29.3 | <0.0001 | 1.36 | 0.99 | **sig** |
+| **Comfort** | 4.5 | 5.0 | **0.027** | **−0.50** | −0.52 | **n.s.** ← it tips |
+
+**The three lessons that fall out of this:**
+
+1. **The effect size exposes the shaky finding.** Comfort is significant raw (p=0.027), but it is
+   the **only** outcome with a *small* effect size (dz 0.50 vs. > 1.1). It **tips under
+   Bonferroni** ($\alpha/4 = 0.0125$). Both — the correction *and* the effect size — point in the
+   same direction: **the comfort finding should not be trusted.** *(Holm, being less conservative,
+   keeps it narrowly — which is exactly why you always report the effect size alongside, not only
+   the significance. The decision depends on the correction; the effect size is the more stable
+   compass.)* This is the same idea as the **base-rate fallacy** from module 15: many tests × a
+   small error rate = many false alarms.
+
+2. **Counterbalancing was necessary — and that can be shown.** There *are* order effects: the
+   second session is sicker (carryover: 16.0 → 22.3) and faster (learning: 35.8 → 31.6). Because
+   counterbalancing was used, they average out across the conditions.
+
+3. **Without counterbalancing the result would be wrong.** The counter-check (everybody does 3 DoF
+   first, 6 DoF second): the measured sickness difference is only **5.0** instead of the true
+   **12** points — the carryover onto the second (6 DoF) session **masks half of the real effect.**
+   You would have wrongly classified 6 DoF as barely better. **A study design error that no amount
+   of good statistics can repair afterwards.**
+
+Runtime: **~1 s**.
+
+## Reference solution
+
+Complete and tested in [`solution/`](solution/) (generator, statistical tools, `run.py`,
+**17 tests**). **Try it yourself first!** The tests recompute the effect sizes by hand and check
+that the analysis recovers the *built-in truth* — including the masking without counterbalancing.
+
+```bash
+/.../xtAI_Learn-Repository/.venv/bin/python solution/test_study.py   # 17 tests, ~1 s
+/.../xtAI_Learn-Repository/.venv/bin/python solution/run.py          # analysis + plot, ~1 s
+```
+`numpy`, `pandas`, `scipy` (+ `matplotlib`). CPU, no hardware.
+
+## Extensions (for the especially motivated)
+
+- **A power analysis in advance** (script 5.2): how many participants would you need to find an
+  effect of dz = 0.5 with 80 % power? (For the paired t:
+  $N \approx (z_{1-\alpha/2}+z_{1-\beta})^2/d_z^2$.) Was N=24 sufficient for comfort?
+- **Non-parametric vs. parametric**: construct a case (one outlier participant) in which the t-test
+  and the Wilcoxon test draw **different** conclusions. Which one is more trustworthy here?
+- **A between-subject variant**: simulate the same study between-subject (everybody only one
+  condition). How many more participants do you need for the same power? Why?
+- **The SSQ subscales** (script 5.1): decompose sickness into *nausea*, *oculomotor*,
+  *disorientation* — now you have even more tests. How hard does Bonferroni hit?
+- **A Simpson-like trap**: build a subgroup (e.g. "VR-experienced") in which the effect is
+  reversed. Does it disappear in the overall mean?
+- **A bootstrap confidence interval** (module 03) for the mean difference instead of/in addition to
+  the p-value — the more modern way of reporting.
+
+---
+
+# Projekt 03 (final) — Eine XR-Nutzerstudie auswerten: 3 DoF vs. 6 DoF (deutsche Fassung)
 
 **Format: Python-Projekt, _ohne Code-Vorgabe_.** Kein Gerüst — du baust Datengenerator,
 Statistik-Werkzeuge, Auswertung und Tests selbst. Es ist die Master-Prüfungsleistung des Moduls
