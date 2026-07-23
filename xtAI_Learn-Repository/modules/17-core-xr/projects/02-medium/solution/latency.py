@@ -1,30 +1,30 @@
-"""Die Motion-to-Photon-Kette und ihre zwei Gegenmittel: Prediction und Timewarp.
+"""The motion-to-photon chain and its two countermeasures: prediction and timewarp.
 
-Zentrale Groesse (Skript 3): die Zeit von "Kopf bewegt sich" bis "passendes Photon trifft die
-Netzhaut". Zu gross (> ~20 ms) => das Bild hinkt der Bewegung hinterher => Cybersickness.
+The central quantity (script 3): the time from "the head moves" to "the matching photon hits the
+retina". Too large (> ~20 ms) => the image lags behind the movement => cybersickness.
 
-Was hier passiert: Zu jedem Zeitpunkt t ist die WAHRE Kopf-Orientierung `truth[t]`. Das Headset
-zeigt aber die Orientierung, die vor `latency` Millisekunden gemessen wurde. Der ANGEZEIGTE
-Fehler = |angezeigte Orientierung - wahre Orientierung JETZT|. Genau diesen Winkel spuert der
-Nutzer als "die Welt haengt nach".
+What happens here: at every point in time t the TRUE head orientation is `truth[t]`. But the
+headset displays the orientation that was measured `latency` milliseconds ago. The DISPLAYED
+error = |displayed orientation - true orientation NOW|. That is exactly the angle the user feels
+as "the world is lagging".
 """
 from __future__ import annotations
 import numpy as np
 
 
 def ms_to_steps(ms: float, fs: int) -> int:
-    """Millisekunden in Sample-Schritte umrechnen (bei Abtastrate fs)."""
+    """Convert milliseconds into sample steps (at the sampling rate fs)."""
     return int(round(ms / 1000.0 * fs))
 
 
 class LatencyBudget:
-    """Die Motion-to-Photon-Kette als Summe ihrer Glieder (Skript 3.1).
+    """The motion-to-photon chain as the sum of its links (script 3.1).
 
-    Prozente verschleiern, Millisekunden nicht: hier sieht man, dass bei 90 Hz allein EIN Frame
-    (11.1 ms) fast das gesamte 20-ms-Budget frisst.
+    Percentages obscure, milliseconds do not: here you see that at 90 Hz a single frame alone
+    (11.1 ms) eats almost the entire 20 ms budget.
     """
     def __init__(self, **stages_ms):
-        # z.B. sensor=1, fusion=1, app=4, render=11, scanout=3, display=2
+        # e.g. sensor=1, fusion=1, app=4, render=11, scanout=3, display=2
         self.stages = stages_ms
 
     @property
@@ -32,17 +32,17 @@ class LatencyBudget:
         return float(sum(self.stages.values()))
 
     def report(self) -> str:
-        zeilen = [f"  {name:12s} {ms:5.1f} ms" for name, ms in self.stages.items()]
-        zeilen.append(f"  {'= gesamt':12s} {self.total_ms:5.1f} ms")
-        bewertung = "OK (< 20 ms)" if self.total_ms < 20 else "ZU HOCH (>= 20 ms)"
-        zeilen.append(f"  Motion-to-Photon: {bewertung}")
-        return "\n".join(zeilen)
+        lines = [f"  {name:12s} {ms:5.1f} ms" for name, ms in self.stages.items()]
+        lines.append(f"  {'= total':12s} {self.total_ms:5.1f} ms")
+        verdict = "OK (< 20 ms)" if self.total_ms < 20 else "TOO HIGH (>= 20 ms)"
+        lines.append(f"  Motion-to-photon: {verdict}")
+        return "\n".join(lines)
 
 
 def displayed_pose(truth: np.ndarray, latency_ms: float, fs: int) -> np.ndarray:
-    """Was das Headset OHNE Gegenmittel anzeigt: die Pose von vor `latency_ms`.
+    """What the headset displays WITHOUT countermeasures: the pose from `latency_ms` ago.
 
-    Am Anfang (bevor genug Historie da ist) wird die aelteste Pose gehalten.
+    At the beginning (before there is enough history) the oldest pose is held.
     """
     lat = ms_to_steps(latency_ms, fs)
     idx = np.clip(np.arange(len(truth)) - lat, 0, len(truth) - 1)
@@ -51,11 +51,12 @@ def displayed_pose(truth: np.ndarray, latency_ms: float, fs: int) -> np.ndarray:
 
 def predicted_pose(truth: np.ndarray, velocity: np.ndarray, latency_ms: float,
                    horizon_ms: float, fs: int) -> np.ndarray:
-    """Prediction (Skript 3.2): statt der alten Pose zeige die um `horizon_ms` EXTRAPOLIERTE.
+    """Prediction (script 3.2): instead of the old pose, display the one EXTRAPOLATED by
+    `horizon_ms`.
 
-    pose_angezeigt = alte_pose + alte_geschwindigkeit * horizon
-    Ideal ist horizon = latency (man rendert genau fuer den Anzeige-Zeitpunkt). Zu grosser
-    horizon => Overshoot, v.a. an Richtungswechseln.
+    displayed_pose = old_pose + old_velocity * horizon
+    The ideal is horizon = latency (you render exactly for the moment of display). Too large a
+    horizon => overshoot, above all at changes of direction.
     """
     lat = ms_to_steps(latency_ms, fs)
     idx = np.clip(np.arange(len(truth)) - lat, 0, len(truth) - 1)
@@ -64,18 +65,19 @@ def predicted_pose(truth: np.ndarray, velocity: np.ndarray, latency_ms: float,
 
 def timewarped_pose(truth: np.ndarray, render_latency_ms: float,
                     warp_latency_ms: float, fs: int) -> np.ndarray:
-    """Orientational Timewarp (Skript 3.2): das fertig gerenderte Bild wird kurz vor der Anzeige
-    anhand der NEUESTEN Pose nachgeschoben.
+    """Orientational timewarp (script 3.2): the finished rendered image is shifted shortly before
+    display using the LATEST pose.
 
-    Fuer eine reine DREHUNG laesst sich das fertige Bild exakt nachkorrigieren (man verschiebt
-    nur den Bildausschnitt). Die effektive Latenz sinkt daher von der Render-Latenz auf die viel
-    kleinere Warp-Latenz (Sensor -> Scanout, ~1-3 ms). Der Bildinhalt (`render_latency`) ist bei
-    reiner Rotation egal — deshalb taucht er hier bewusst nicht in der Formel auf.
-    (Bei TRANSLATION waere das anders: dann fehlt verdeckte Information -> Disokklusion.)
+    For a pure ROTATION the finished image can be corrected exactly afterwards (you only shift the
+    image section). The effective latency therefore drops from the render latency to the much
+    smaller warp latency (sensor -> scanout, ~1-3 ms). The image content (`render_latency`) is
+    irrelevant for a pure rotation — which is why it deliberately does not appear in the formula
+    here. (With TRANSLATION it would be different: then occluded information is missing ->
+    disocclusion.)
     """
     return displayed_pose(truth, warp_latency_ms, fs)
 
 
 def angular_error(displayed: np.ndarray, truth: np.ndarray) -> np.ndarray:
-    """Der vom Nutzer gespuerte Fehler je Zeitpunkt: |angezeigt - wahr| (in Grad)."""
+    """The error the user feels at each point in time: |displayed - true| (in degrees)."""
     return np.abs(displayed - truth)
