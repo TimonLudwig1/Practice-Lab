@@ -1,4 +1,88 @@
-# P02 (medium) — Inverse Kinematik: analytisch, numerisch und die Singularitätsfalle
+# P02 (medium) — inverse kinematics: analytic, numerical and the singularity trap
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Module 21 — Robotics 1** · Format: **Python module + test suite**
+
+## Goal
+
+You invert the kinematics of P01 — from the pose to the joint angles — and get to know the central numerical trap of robotics:
+
+1. **Analytic IK** for the 2-joint arm (law of cosines) — with **both** solutions (elbow up/down), a correct reachability check and `atan2`.
+2. **Numerical IK** via the Jacobian in three variants: **transpose**, **pseudoinverse** and **damped least squares**.
+3. The **singularity trap**: why the pseudoinverse **explodes** near $\det\mathbf J = 0$ (joint jumps $\sim 1/\det\mathbf J$) and how DLS tames it — plus the $\lambda$ trade-off.
+4. **Redundancy**: with a 3-joint arm there is a **null space** — joint motions that do not move the end effector.
+
+## Why this format?
+
+A **Python module with a test suite**: the IK variants are clearly testable functions (the analytic solution must hit the target *exactly*, the Jacobian against the numerical derivative, null-space drift ≈ 0), and the experiments vary parameters systematically ($\lambda$, proximity to a singularity).
+
+## Why synthetic data?
+
+This is about **properties of algorithms**, not about measured data. A self-defined arm lets you **back-compute** every solution through the forward kinematics and check it exactly — and lets you set the proximity to a singularity *deliberately* (which would not be possible with real robot data).
+
+## Prior knowledge
+
+**P01** of this module (FK, Jacobian, singularities), **ch. 6** of the [script](../../README.md), pseudoinverse/least squares.
+
+## Task
+
+Open `ik.py`. FK, the joint positions and the Jacobian are given (from P01) — you implement the **three cores** (`# TODO` / `NotImplementedError`):
+
+1. **`analytic_ik_2link(target, lengths)`** — reachability check, law of cosines, **both** signs of $q_2$, $q_1$ via `atan2`, remove the duplicate at the boundary.
+2. **The three update rules in `numeric_ik`** — `transpose` (with the optimal step size), `pinv`, `dls`.
+3. **`nullspace_step(q, lengths, z)`** — the projection $(\mathbf I - \mathbf J^{+}\mathbf J)\,\mathbf z$.
+
+Then:
+
+```bash
+cd modules/21-robotics-1/projects/02-medium
+/Users/.../.venv/bin/python test_ik.py   # 8 tests -> all PASS
+/Users/.../.venv/bin/python run.py        # 4 experiments + plots
+```
+
+## What should come out (expected values)
+
+**Experiment 1 — analytic IK.** The target $(1,1)$ has **two** solutions: $q=(0°, +90°)$ and $q=(90°, -90°)$ — both hit exactly. The target $(0,2)$ (stretched, the workspace boundary) has **one**; $(2.5, 0)$ is **unreachable**.
+
+**Experiment 2 — comparison of methods** (200 random targets):
+
+| Method | success | iterations (median) | max &#124;Δq&#124; |
+|---|---|---|---|
+| transpose | 1.00 | 26 | 12 |
+| pinv | 0.87 | **7** | **1194** |
+| dls | 0.89 | 9 | 16 |
+
+The transpose is the most **robust** but slow (gradient descent). The pseudoinverse is the fastest — but pays for it with enormous individual steps.
+
+**Experiment 3 — the singularity trap.** If you start ever closer to the stretched arm ($q_2\to0$, i.e. $\det\mathbf J\to0$), the pseudoinverse steps scale **exactly like $1/\det\mathbf J$**:
+
+| $q_2^{\text{start}}$ | $\det\mathbf J$ | pinv max&#124;Δq&#124; | DLS max&#124;Δq&#124; |
+|---|---|---|---|
+| 0.5 | 0.479 | 4.4 | 3.7 |
+| 0.1 | 0.0998 | 26.5 | 4.4 |
+| 0.01 | 0.0100 | 274.7 | 2.7 |
+| 0.001 | 0.00100 | 2756 | 4.9 |
+| 0.0001 | 0.000100 | **27573** | **4.7** |
+
+Every order of magnitude closer to the singularity = **ten times larger** joint jumps for pinv; DLS stays at ~3–5. The $\lambda$ sweep shows the trade-off: a small $\lambda$ is accurate but jumpy, a large $\lambda$ is smooth but slow/less accurate.
+
+**Experiment 4 — redundancy.** With the 3-joint arm $\mathbf J$ is a $2\times3$ matrix with **null space dimension 1**. 200 random null-space steps move the end effector by at most $1.7\cdot10^{-5}$ — the joints move, the hand stands still.
+
+> **The lesson.** The pseudoinverse is mathematically "optimal" (the smallest joint change) and practically **dangerous**: it knows no bound on $\|\Delta\mathbf q\|$. The damping in DLS is not a cosmetic flaw but the condition for a real robot not to lash out into the singularity — you **deliberately trade accuracy for bounded joint velocities**.
+
+## Solution
+
+The complete reference is in [`solution/`](solution/). Try it yourself first!
+
+## What comes next
+
+**P03 (final)**: the full **sense-plan-act cycle** of a mobile robot — RRT planning, particle filter localisation and PID path following. No code given.
+
+---
+---
+
+# P02 (medium) — Inverse Kinematik: analytisch, numerisch und die Singularitätsfalle (deutsche Fassung)
 
 **Modul 21 — Robotics 1** · Format: **Python-Modul + Testsuite**
 

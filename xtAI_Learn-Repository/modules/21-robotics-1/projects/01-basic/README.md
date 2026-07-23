@@ -1,4 +1,71 @@
-# P01 (basic) — Vorwärtskinematik, Arbeitsraum und die Jacobi-Matrix
+# P01 (basic) — forward kinematics, workspace and the Jacobian matrix
+
+> **Language note.** English first, German version (*deutsche Fassung*) below the horizontal rule. The project code itself is English only.
+
+**Module 21 — Robotics 1** · Format: **Jupyter notebook**
+
+## Goal
+
+You build the kinematic foundation of every robot arm:
+
+1. The general **DH transformation matrix** (script ch. 4).
+2. The **kinematic chain** as a matrix product — verified against the closed-form formula derived by hand.
+3. The **workspace** by sampling (an annulus, with a hole for unequal link lengths).
+4. The **Jacobian matrix** analytically, cross-checked by a numerical derivative — and its **singularities** $\det\mathbf J = l_1l_2\sin q_2$.
+
+## Why this format?
+
+A **notebook**, because kinematics thrives on the interplay of formula, number and drawing: you want to see the workspace, draw the arm poses and view the manipulability over the configuration space as a heatmap.
+
+## Why synthetic data?
+
+This is about **laws of geometry**, not about a dataset. A self-defined arm (known link lengths) lets you check every computation against an analytically known target value — which is exactly what the notebook does throughout (chain vs. closed-form formula, analytic vs. numerical Jacobian, measured vs. theoretical reach).
+
+## Prior knowledge
+
+Homogeneous $4\times4$ transformations (**module 19**), partial derivatives, **ch. 3–5** of the [module 21 script](../../README.md).
+
+## Task (step by step)
+
+Open `kinematics.ipynb`. Much is given; at the `# TODO` spots you build the cores:
+
+- **Part A** — `dh_matrix(theta, d, a, alpha)`: the $4\times4$ DH matrix.
+- **Part B** — `fk_joints(q, lengths)`: multiply the chain out and collect the joint positions along the way. Verification against $x=l_1\cos q_1+l_2\cos(q_1{+}q_2)$ etc.
+- **Part C** (given) — sample and plot the workspace.
+- **Part D** — `jacobian_analytic(q, lengths)`: fill in the $2\times2$ Jacobian; automatic comparison with the numerical derivative, then the determinant and the singularities.
+- **Part E** (given) — draw the manipulability over the C-space + the arm poses.
+
+## What should come out (expected values)
+
+- **Part B**: `equal=True` for all test configurations; at $q=(0,0)$ the end effector sits at $(2,0)$.
+- **Part C**: for $l_1=l_2$ a full disc (radius 2); for $l_1=1.2, l_2=0.5$ an **annulus**: measured max reach **1.700** ($=l_1+l_2$), min **0.700** ($=|l_1-l_2|$).
+- **Part D**: `matching: True`; $\det\mathbf J = 0.891207$ **exactly** equal to $l_1l_2\sin q_2$; at $q_2=0$ and $q_2=\pi$ the $\det\mathbf J$ falls to ~$10^{-17}$ → **singular**.
+- **Part E**: the manipulability heatmap shows **vertical stripes** — $w$ depends only on $q_2$, consistent with $\det\mathbf J=l_1l_2\sin q_2$.
+
+> **The physical reading of the singularity:** in the stretched state the end effector can **no longer move radially outwards** — one direction of motion is lost. Nearby you need ever larger joint velocities for the same hand motion. That is exactly what blows up the naive pseudoinverse in P02.
+
+## Setup
+
+```bash
+cd modules/21-robotics-1/projects/01-basic
+/Users/.../.venv/bin/python -m jupyter lab   # kinematics.ipynb
+```
+
+Only `numpy` + `matplotlib`. Runtime a few seconds.
+
+## Solution
+
+The complete, executed solution is in [`solution/kinematics_solution.ipynb`](solution/kinematics_solution.ipynb) — **try it yourself first!**
+
+## What comes next
+
+- **P02 (medium)**: **inverse kinematics** — analytically (both elbow solutions) and numerically via the Jacobian, including **damped least squares** against the singularities of part D.
+- **P03 (final)**: the complete **sense-plan-act navigation** (RRT + particle filter + PID).
+
+---
+---
+
+# P01 (basic) — Vorwärtskinematik, Arbeitsraum und die Jacobi-Matrix (deutsche Fassung)
 
 **Modul 21 — Robotics 1** · Format: **Jupyter-Notebook**
 
