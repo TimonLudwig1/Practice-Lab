@@ -1,35 +1,35 @@
-"""Kernbausteine fuer P02 (medium) — early vs. late Fusion, Mutual Disambiguation,
-Korrelations-Falle.
+"""Core building blocks for P02 (medium) — early vs. late fusion, mutual disambiguation,
+the correlation trap.
 
-Modul 18 — Multimodal Interfaces.
+Module 18 — Multimodal Interfaces.
 
->>> DEINE AUFGABE <<<
-Die Datengenerierung und die Klassifikatoren sind vorgegeben. Implementiere die
-mit `# TODO` markierten FUSIONS-Funktionen. Der Rest (run.py, test_multimodal.py)
-laeuft dann durch. Vollstaendige Loesung in solution/.
+>>> YOUR TASK <<<
+The data generation and the classifiers are given. Implement the FUSION functions
+marked with `# TODO`. The rest (run.py, test_multimodal.py) then runs through.
+The complete solution is in solution/.
 
-Zwei Experimente:
-  (1) KOMPLEMENTARITAET: zwei Modalitaeten, jede allein mehrdeutig (~50 %),
-      zusammen fast perfekt. Zeigt early- vs. late-Fusion und Missing-Modality.
-  (2) REDUNDANZ + KORRELATIONS-FALLE: zwei Modalitaeten schaetzen dasselbe;
-      der Fusionsgewinn verschwindet, wenn ihr Rauschen korreliert ist.
+Two experiments:
+  (1) COMPLEMENTARITY: two modalities, each ambiguous on its own (~50 %),
+      almost perfect together. Shows early vs. late fusion and the missing modality.
+  (2) REDUNDANCY + THE CORRELATION TRAP: two modalities estimate the same thing;
+      the fusion gain disappears when their noise is correlated.
 """
 import numpy as np
 from sklearn.naive_bayes import GaussianNB
 
 
 # --------------------------------------------------------------------------
-# Datensatz 1 — Komplementaritaet (XOR-artig)   [vorgegeben]
+# Dataset 1 — complementarity (XOR-like)   [given]
 # --------------------------------------------------------------------------
 def make_complementary(n_per_class=600, sigma=1.0, seed=0):
-    """4 Klassen y in {0,1,2,3}. Bit1 = y>>1, Bit0 = y&1.
+    """4 classes y in {0,1,2,3}. Bit1 = y>>1, bit0 = y&1.
 
-    Modalitaet A ist NUR ueber Bit1 informativ (trennt {0,1} von {2,3}),
-    Modalitaet B ist NUR ueber Bit0 informativ (trennt {0,2} von {1,3}).
-    => Jede Modalitaet allein kann hoechstens 50 % erreichen. Zusammen sind
-       alle 4 Klassen trennbar.
+    Modality A is informative ONLY about bit1 (it separates {0,1} from {2,3}),
+    modality B is informative ONLY about bit0 (it separates {0,2} from {1,3}).
+    => Each modality alone can reach at most 50 %. Together all 4 classes are
+       separable.
 
-    Rueckgabe: XA (n,1), XB (n,1), y (n,).
+    Returns: XA (n,1), XB (n,1), y (n,).
     """
     rng = np.random.default_rng(seed)
     classes = np.repeat(np.arange(4), n_per_class)
@@ -44,17 +44,18 @@ def make_complementary(n_per_class=600, sigma=1.0, seed=0):
 
 
 # --------------------------------------------------------------------------
-# Datensatz 2 — Redundanz mit einstellbarer Rausch-Korrelation   [vorgegeben]
+# Dataset 2 — redundancy with an adjustable noise correlation   [given]
 # --------------------------------------------------------------------------
 def make_redundant(n=6000, sep=1.0, sigma=1.0, rho=0.0, seed=0):
-    """Binaere Klassifikation. Beide Modalitaeten messen dieselbe Klasse
-    c in {-sep, +sep}, jeweils plus Gauss-Rauschen mit Korrelation rho.
+    """Binary classification. Both modalities measure the same class
+    c in {-sep, +sep}, each plus Gaussian noise, correlated with rho.
 
       x_A = c + e_A,  x_B = c + e_B,  corr(e_A, e_B) = rho.
 
-    rho=0 -> unabhaengig -> Fusion hilft maximal; rho=1 -> Fusion bringt nichts.
+    rho=0  -> independent errors -> fusion helps maximally.
+    rho=1  -> identical noise -> fusion brings NOTHING.
 
-    Rueckgabe: XA (n,1), XB (n,1), y (n,) mit y in {0,1}.
+    Returns: XA (n,1), XB (n,1), y (n,) with y in {0,1}.
     """
     rng = np.random.default_rng(seed)
     y = rng.integers(0, 2, n)
@@ -67,52 +68,51 @@ def make_redundant(n=6000, sep=1.0, sigma=1.0, rho=0.0, seed=0):
 
 
 # --------------------------------------------------------------------------
-# Klassifikator je Modalitaet   [vorgegeben]
+# One classifier per modality   [given]
 # --------------------------------------------------------------------------
 def fit_modality(X, y):
-    """Trainiert einen probabilistischen Klassifikator (GaussianNB) auf EINER
-    Modalitaet."""
+    """Trains a probabilistic classifier (GaussianNB) on ONE modality."""
     return GaussianNB().fit(X, y)
 
 
 def predict_from_proba(proba):
-    """argmax je Zeile.   [vorgegeben]"""
+    """The argmax per row.   [given]"""
     return np.asarray(proba).argmax(axis=1)
 
 
 def accuracy(y_true, y_pred):
-    """[vorgegeben]"""
+    """[given]"""
     return float(np.mean(np.asarray(y_true) == np.asarray(y_pred)))
 
 
 # --------------------------------------------------------------------------
-# FUSION — der Kern   >>> HIER BIST DU DRAN <<<
+# FUSION — the core   >>> THIS IS YOUR PART <<<
 # --------------------------------------------------------------------------
 def late_fusion_proba(proba_list, prior):
-    """Late Fusion per Bayes-Produktregel unter bedingter Unabhaengigkeit:
+    """Late fusion via the Bayes product rule under conditional independence:
 
-        P(y | z_A, z_B, ...) proportional zu  prod_m P(y | z_m) / P(y)^(M-1)
+        P(y | z_A, z_B, ...) proportional to  prod_m P(y | z_m) / P(y)^(M-1)
 
-    - Multipliziere die Posterior-Matrizen aus proba_list elementweise.
-    - Teile den geteilten Prior heraus: er steckt M-mal drin, darf aber nur
-      EINMAL zaehlen -> durch prior^(M-1) teilen (M = Zahl der Modalitaeten).
-    - Normalisiere jede Zeile, sodass sie sich zu 1 summiert.
+    - Multiply the posterior matrices from proba_list element-wise.
+    - Divide out the shared prior: it is in there M times but may count only
+      ONCE -> divide by prior^(M-1) (M = the number of modalities).
+    - Normalize every row so that it sums to 1.
 
-    proba_list: Liste von (n, K)-Arrays.  prior: (K,)-Vektor P(y).
-    Rueckgabe:  (n, K) fusionierte, normalisierte Posterior.
+    proba_list: a list of (n, K) arrays.  prior: a (K,) vector P(y).
+    Returns:    the (n, K) fused, normalized posterior.
 
-    Tipp gegen numerische Probleme: mit np.maximum(..., 1e-300) gegen 0 sichern.
+    A hint against numerical problems: guard against 0 with np.maximum(..., 1e-300).
     """
-    # TODO: implementiere die Bayes-Produktfusion
+    # TODO: implement the Bayes product fusion
     raise NotImplementedError
 
 
 def early_fusion_fit_predict(XA_tr, XB_tr, y_tr, XA_te, XB_te):
-    """Early Fusion: konkateniere die Feature-Vektoren beider Modalitaeten
-    (np.hstack), trainiere EIN GaussianNB darauf und gib die Vorhersagen auf
-    den Testdaten zurueck.
+    """Early fusion: concatenate the feature vectors of both modalities
+    (np.hstack), train ONE GaussianNB on them and return the predictions on
+    the test data.
 
-    >>> HIER BIST DU DRAN <<<
+    >>> THIS IS YOUR PART <<<
     """
-    # TODO: implementiere early fusion (hstack der Features + ein Modell)
+    # TODO: implement early fusion (hstack the features + one model)
     raise NotImplementedError
