@@ -17,3 +17,27 @@ Formulate a single-product inventory problem as a Markov Decision Process, solve
 - A sensitivity analysis: how does the optimal policy shift when holding cost or demand rate changes?
 
 Relevant techniques (look them up yourself): Markov Decision Processes, Bellman equation, value iteration, policy iteration, base-stock/(s,S) policies, Monte Carlo policy evaluation.
+
+---
+
+# Deutsche Übersetzung
+
+# 12 — Dynamische Entscheidungen: Bestandssteuerung als MDP `[aus deinen Vorlesungen]`
+
+Schwierigkeit: 🟠 Mittel bis anspruchsvoll | Thema: Sequenzielle Entscheidungen und dynamische Programmierung
+
+## 🎯 Projektziel
+Formuliere ein Bestandsproblem für ein einzelnes Produkt als Markov-Entscheidungsprozess, löse es exakt mit dynamischer Programmierung und zeige in einer Simulation, dass die optimale Strategie sinnvolle Heuristiken übertrifft.
+
+## 📊 Datensatz und Bewertungsmetrik
+- **Datensatz:** Kein externer Datensatz; du definierst das System. Beispiel: Ein Geschäft verkauft ein Produkt. Jeden Tag wird der Bestand von 0 bis 20 beobachtet, eine Bestellmenge gewählt, die am nächsten Morgen bis zur Kapazitätsgrenze eintrifft, und anschließend eine zufällige Nachfrage, etwa Poisson(4), realisiert. Annahmen: Einkauf 2 € je Einheit, Verkauf 5 €, Lagerkosten 0,10 € je Einheit und Nacht sowie Kosten von beispielsweise 1 € je nicht erfüllter Einheit. Maximiere den langfristigen durchschnittlichen oder abgezinsten Gewinn.
+- **Bewertungsmetrik:** Mittlerer Tagesgewinn über mindestens 10.000 simulierte Tage mit Konfidenzintervallen und Vergleich mehrerer Strategien.
+
+## 🏁 Erfolgskriterien
+- Formale Beschreibung von Zustandsraum, Aktionsraum, Übergangswahrscheinlichkeiten und Belohnungsfunktion
+- Exakte DP-Lösung durch Wert- oder Strategieiteration mit Konvergenzprüfung
+- Mindestens zwei fair abgestimmte heuristische Baselines, beispielsweise Auffüllen bis S oder eine feste Bestellmenge
+- Simulationsvergleich der optimalen und heuristischen Strategien mit Konfidenzintervallen sowie Visualisierung der optimalen Aktion in Abhängigkeit vom Lagerbestand
+- Sensitivitätsanalyse dazu, wie sich die optimale Strategie bei veränderten Lagerkosten oder Nachfrageraten verschiebt
+
+Relevante Verfahren zum selbstständigen Nachschlagen: Markov-Entscheidungsprozesse, Bellman-Gleichung, Wertiteration, Strategieiteration, Base-Stock- und (s,S)-Strategien sowie Monte-Carlo-Strategiebewertung.

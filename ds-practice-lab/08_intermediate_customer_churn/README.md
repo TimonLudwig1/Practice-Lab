@@ -29,3 +29,39 @@ Known quirk: `TotalCharges` is read as a string and contains blanks — your fir
 - [sklearn ColumnTransformer](https://scikit-learn.org/stable/modules/generated/sklearn.compose.ColumnTransformer.html)
 - [sklearn: cross_val_score](https://scikit-learn.org/stable/modules/cross_validation.html)
 - Look up: *PR curve vs ROC curve for imbalanced data*, *cost-sensitive thresholding*
+
+---
+
+# Deutsche Übersetzung
+
+# 08 — Kundenabwanderung: Feature Engineering und Klassifikation 📞
+
+Schwierigkeit: 🟡 Mittel | Thema: Feature Engineering und Klassifikation tabellarischer Daten
+
+## 🎯 Projektziel
+Sage vorher, welche Telekommunikationskunden ihren Vertrag kündigen werden. Der Schwerpunkt liegt auf **Feature Engineering und einer sauberen Vorverarbeitungspipeline** – einem besonders wichtigen Teil des maschinellen Lernens mit tabellarischen Daten.
+
+## 📊 Beschreibung des Datensatzes
+**IBM Telco Customer Churn** enthält 7.043 Kunden und 20 Spalten zu Demografie, Vertrag, gebuchten Diensten sowie monatlichen und gesamten Kosten. Die Zielvariable `Churn` mit Yes oder No ist zu etwa 26 % positiv. Das Notebook lädt die CSV-Datei direkt aus IBMs GitHub; speichere eine Kopie unter `data/raw/`.
+
+Eine Besonderheit: `TotalCharges` wird als Text eingelesen und enthält leere Werte. Dies ist deine erste Bereinigungsaufgabe.
+
+## 💡 Empfohlenes Vorgehen
+1. Führe eine zielgerichtete EDA durch: Abwanderungsrate nach Vertragstyp, Vertragsdauer und Zahlungsmethode. Zwei oder drei aussagekräftige Matplotlib-Grafiken sind besser als zwanzig oberflächliche.
+2. Bereinige `TotalCharges` und kodiere die Zielvariable Yes/No als 1/0.
+3. Erstelle einen `ColumnTransformer`, der kategoriale Merkmale One-Hot-kodiert und numerische Merkmale skaliert. Verbinde ihn mit dem Modell in einer `Pipeline`, um Datenlecks zu vermeiden.
+4. Erzeuge zusätzliche Merkmale wie Gruppen der Vertragsdauer, Anzahl gebuchter Zusatzdienste, durchschnittliche Kosten pro Dienst oder Interaktionen aus monatlichem Vertrag und hohen Kosten. Miss den Nutzen jeder Idee per Kreuzvalidierung statt anhand einer einzigen Aufteilung.
+5. Vergleiche logistische Regression mit einem Baumensemble wie `RandomForestClassifier` oder `HistGradientBoostingClassifier`.
+6. Wegen der unausgeglichenen Klassen ist Accuracy irreführend. Bewerte mit ROC-AUC und PR-AUC und untersuche `class_weight="balanced"`.
+7. Übersetze das Modell in eine Geschäftsentscheidung: Ab welcher Wahrscheinlichkeit sollte ein Bindungsangebot ausgelöst werden, wenn es 10 € kostet und ein gehaltener Kunde 200 € wert ist?
+
+## 🏁 Erfolgskriterien
+- Pipeline ohne Datenleck, in der sämtliche Vorverarbeitung innerhalb von `Pipeline` und `ColumnTransformer` liegt
+- Mindestens drei erzeugte Merkmale mit gemessenem Einfluss durch Kreuzvalidierung
+- ROC-AUC von mindestens 0,84 auf einem zurückgehaltenen Testsatz
+- Eine aus den Kosten- und Nutzenangaben abgeleitete Schwellenwertempfehlung statt des Standardwerts 0,5
+
+## 🔗 Nützliche Quellen
+- [sklearn ColumnTransformer](https://scikit-learn.org/stable/modules/generated/sklearn.compose.ColumnTransformer.html)
+- [sklearn: cross_val_score](https://scikit-learn.org/stable/modules/cross_validation.html)
+- Suchbegriffe: *PR curve vs ROC curve for imbalanced data*, *cost-sensitive thresholding*

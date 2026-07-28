@@ -44,3 +44,54 @@ Use ≥6 consecutive months. Train on month *t*, serve/evaluate on *t+1*, …; l
 | Serving | Correct, versioned responses; p95 < 200 ms; containerized |
 | Monitoring | Drift detected on real months, not synthetic toys; sensible thresholds |
 | Engineering quality | Tests pass; modules typed/documented; honest limitations section |
+
+---
+
+# Deutsche Übersetzung
+
+# 19 — Projektauftrag: Produktives ML-System für die Dauer von Taxifahrten
+
+Schwierigkeit: ⚫ Fortgeschritten / Portfolio | Thema: MLOps und vollständige Pipeline
+
+---
+
+## Projektauftrag
+
+**Von:** CTO, UrbanRide Analytics
+**An:** ML Platform Engineer
+**Betreff:** Produktivsetzung des Modells für Fahrtdauern
+
+Unser Prototyp-Notebook prognostiziert die Dauer von Taxifahrten in New York. Deine Aufgabe ist nicht die Verbesserung des Modells, sondern der Aufbau des **Produktionssystems darum herum**: versioniertes Training, Bereitstellungs-API und Überwachung, die Drift erkennt, bevor Kunden sie bemerken. Bewertet wird das System und nicht der RMSE.
+
+## Geschäftlicher Kontext
+Der Dispositionsdienst nennt Kunden bei der Buchung eine erwartete Ankunftszeit. Abweichungen von mehr als etwa 25 % schädigen das Vertrauen. Fahrtmuster verändern sich durch Jahreszeiten, Veranstaltungen und Tarifänderungen, wodurch ältere Modelle unbemerkt schlechter werden. Dieses Problem soll das System lösen.
+
+## Daten
+Öffentliche NYC-TLC-Daten zu Yellow-Taxi-Fahrten als monatliche Parquet-Dateien:
+https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
+Verwende mindestens sechs aufeinanderfolgende Monate. Trainiere auf Monat *t* und stelle das Modell für *t+1* bereit beziehungsweise bewerte es dort. Spätere Monate bilden ein reales Driftszenario. Die Zielvariable ist die Fahrtdauer aus Abhol- und Absetzzeitpunkt; als Merkmale dürfen nur bei der Buchung bekannte Informationen dienen.
+
+## Technische Vorgaben
+- Python sowie Experimentverfolgung und Modellregister mit **MLflow**
+- Bereitstellung über einen **FastAPI**-Endpunkt `POST /predict`, der Dauer und Modellversion zurückgibt; lokale p95-Latenz unter 200 ms
+- Sämtliche Pipelineschritte von Einlesen über Validierung, Merkmalsbildung, Training und Bewertung bis Registrierung als CLI-Befehle; keine manuellen Notebook-Schritte im Produktionspfad
+- Datenvalidierung, die fehlerhafte oder unzulässige Datensätze unter Protokollierung des Grundes zurückweist
+- Containerisierte Bereitstellung mit Dockerfile
+- Unit-Tests für Merkmalslogik und Integrationstest gegen den laufenden Endpunkt
+
+## Liefergegenstände
+1. Repository mit der Pipeline als importierbare Module und CLI-Einstiegspunkte
+2. MLflow-Verfolgung aller Trainingsläufe mit Parametern, Metriken und Artefakten sowie im Code erzwungenem Kriterium für die Beförderung nach „Production“
+3. Laufender FastAPI-Dienst, der das registrierte Produktionsmodell lädt
+4. Monitoringbericht über Eingabedrift, beispielsweise PSI oder KS, und Qualitätsdrift der Vorhersagen über die zurückgehaltenen Monate, mit automatischem Alarm und dokumentierter Nachtrainierungsstrategie
+5. Ablauf eines Driftvorfalls: betroffenen Monat zeigen, Erkennung durch Monitoring, Nachtraining und nachgewiesene Erholung
+6. `README` mit Architekturdiagramm und Schnellstart über einen Befehl
+
+## Bewertungskriterien
+| Kriterium | Anforderung |
+|---|---|
+| Reproduzierbarkeit | Frischer Klon, dokumentierte Befehle und funktionierendes System |
+| Pipeline-Qualität | Kein Datenleck; Validierung weist fehlerhafte Datensätze nachweislich zurück |
+| Bereitstellung | Korrekte versionierte Antworten, p95 unter 200 ms und Containerisierung |
+| Monitoring | Drift in echten Monaten statt synthetischen Beispielen erkannt; sinnvolle Schwellenwerte |
+| Engineering-Qualität | Tests bestanden, Module typisiert und dokumentiert, ehrlicher Abschnitt zu Einschränkungen |

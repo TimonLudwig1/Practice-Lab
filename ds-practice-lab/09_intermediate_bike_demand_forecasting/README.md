@@ -29,3 +29,39 @@ Download: https://archive.ics.uci.edu/static/public/275/bike+sharing+dataset.zip
 - [TimeSeriesSplit docs](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.TimeSeriesSplit.html)
 - Look up: *seasonal naive forecast*, *lag features*, *data leakage in time series*
 - [Forecasting: Principles and Practice (free book)](https://otexts.com/fpp3/) — chapters 1, 5, 7
+
+---
+
+# Deutsche Übersetzung
+
+# 09 — Zeitreihen: Prognose der Fahrradnachfrage 🚲
+
+Schwierigkeit: 🟡 Mittel | Thema: Zeitreihenprognose
+
+## 🎯 Projektziel
+Prognostiziere die tägliche Nachfrage nach Leihfahrrädern und lerne die zentrale Regel der Zeitreihenanalyse: **Die zeitliche Reihenfolge muss bei Merkmalen, Validierung und Baselines berücksichtigt werden.**
+
+## 📊 Beschreibung des Datensatzes
+Der **UCI Bike Sharing Dataset** enthält 731 Tagesbeobachtungen aus den Jahren 2011 und 2012 zum Capital-Bikeshare-System in Washington, D.C. Neben der Anzahl der Ausleihen `cnt` gibt es Wetterwerte, Jahreszeit sowie Feiertags- und Arbeitstagsmerkmale.
+
+Download: https://archive.ics.uci.edu/static/public/275/bike+sharing+dataset.zip. Entpacke `day.csv` nach `data/raw/`; das Notebook erwartet die Datei dort.
+
+## 💡 Empfohlenes Vorgehen
+1. Führe eine EDA mit Zeit auf der x-Achse durch: vollständige Reihe, saisonale Muster, Wochentagsprofile und Wetter im Verhältnis zur Nachfrage. Übe `ax.plot` mit Datumsachsen und `fig.autofmt_xdate()`.
+2. Erstelle zuerst **naive Baselines**: den Wert des Vortags sowie den Wert von vor sieben Tagen. Jedes Modell muss diese einfachen Vorhersagen schlagen.
+3. Erzeuge verzögerte und rollierende Merkmale wie Lag 1, Lag 7 und den gleitenden 7-Tage-Mittelwert sowie Kalender- und Wettermerkmale. Prüfe sorgfältig, welche Informationen zum Vorhersagezeitpunkt tatsächlich verfügbar wären.
+4. Validiere mit einer **zeitbasierten Aufteilung** und niemals durch zufälliges Mischen. Verwende `sklearn.model_selection.TimeSeriesSplit` und verstehe, warum `train_test_split` hier Informationen aus der Zukunft verraten würde.
+5. Vergleiche lineare Regression mit einem Gradient-Boosting-Baum. Verwende MAE und MAPE als Metriken.
+6. Untersuche die Tage mit den größten Prognosefehlern und suche Gemeinsamkeiten, insbesondere Wetterereignisse und Feiertage Ende 2012.
+7. Als Erweiterung kannst du auf derselben Aufteilung ein klassisches statistisches Modell wie `statsmodels` SARIMAX testen.
+
+## 🏁 Erfolgskriterien
+- Beide naiven Baselines sind implementiert und dokumentiert.
+- Alle Merkmale sind nachweislich zum Prognosezeitpunkt verfügbar; begründe dies je Merkmalsgruppe in einem Satz.
+- Zeitbasierte Validierung; der abschließende MAE ist mindestens 15 % besser als die saisonal-naive Baseline.
+- Eine Abbildung von Prognose und tatsächlichen Werten im Testzeitraum sowie eine kurze Analyse der schlechtesten Tage.
+
+## 🔗 Nützliche Quellen
+- [Dokumentation zu TimeSeriesSplit](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.TimeSeriesSplit.html)
+- Suchbegriffe: *seasonal naive forecast*, *lag features*, *data leakage in time series*
+- [Forecasting: Principles and Practice](https://otexts.com/fpp3/), Kapitel 1, 5 und 7

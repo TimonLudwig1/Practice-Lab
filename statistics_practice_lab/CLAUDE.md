@@ -27,6 +27,7 @@ Jedes Projekt bekommt einen eigenen Ordner `projekte/<phase>_<nummer>_<kurzname>
 - `notebook.ipynb` (oder `main.py` + `README.md`, wenn ich Skripte bevorzuge)
 - ggf. `data/` mit generierten Daten + dem Generierungsskript `generate_data.py`
 - `NOTIZEN.md` — meine eigenen Erkenntnisse (lege die Datei mit Leitfragen an, ich fülle sie)
+- Jede readme soll zuerst auf englisch erklären und darunter eine deutsche version haben. Keine emojis.
 
 Das Notebook folgt immer diesem Aufbau:
 1. **Fragestellung** — Was wollen wir wissen, in einem Satz?
@@ -67,7 +68,7 @@ Das Notebook folgt immer diesem Aufbau:
 - **Drei Ebenen jeder Erklärung:** (1) Intuition/Analogie, (2) Simulation/Bild, (3) Formel. In dieser Reihenfolge.
 - **Präzise Sprache vorleben und einfordern:** "Die Daten sind mit H0 gut vereinbar" statt "H0 ist bewiesen". "Wir können einen Effekt dieser Größe nicht ausschließen" statt "es gibt keinen Effekt". Korrigiere mich freundlich, aber konsequent.
 - **Verbinde nach vorn und hinten:** Nenne bei jedem Projekt 1–2 Verbindungen zu früheren Projekten ("Das ist derselbe Standardfehler wie in 4.2") und zur ML-Praxis ("Cross-Validation ist im Kern die Stichprobenverteilungs-Idee aus Phase 4").
-- **Deutsch als Arbeitssprache**, Fachbegriffe beim ersten Auftreten mit englischem Pendant in Klammern (wichtig für Papers/Doku später). Code, Variablennamen und Docstrings auf Englisch.
+- **Englisch als Arbeitssprache**, Theorie, readmes oder sonstige textdatein zuerst auf englisch und eine deutsche übersetzung unten drunter. Code ausschließlich auf englisch. Code, Variablennamen und Docstrings auf Englisch.
 
 ## Projektübergreifende Organisation
 

@@ -44,3 +44,54 @@ https://www.kaggle.com/datasets/ravirajsinh45/real-life-industrial-dataset-of-ca
 | CPU throughput | ≥ 10 img/s |
 | Code quality | Modules, not notebook spaghetti; runs end-to-end with one command |
 | Analysis quality | Threshold tied to € costs; failure cases examined honestly |
+
+---
+
+# Deutsche Übersetzung
+
+# 18 — Projektauftrag: Automatisierte Erkennung von Gussfehlern
+
+Schwierigkeit: ⚫ Fortgeschritten / Portfolio | Thema: Computer Vision mit TensorFlow
+
+---
+
+## Projektauftrag
+
+**Von:** Leitung Qualitätssicherung, MetalCast GmbH
+**An:** Data-Science-Team
+**Betreff:** Pilotprojekt zur automatisierten Sichtprüfung gegossener Pumpenlaufräder
+
+Wir fertigen Laufräder für Tauchpumpen. Derzeit wird jedes Gussteil manuell geprüft. Bei Ermüdung übersehen Prüfer Fehler; laut Audit gelangen 4–7 % der Fehler durch die Kontrolle. Zugleich entstehen wöchentlich etwa 40 Arbeitsstunden Aufwand. Die Pilotstudie soll klären, ob eine Kamera mit Modell die erste Prüfung übernehmen kann und Menschen nur markierte oder unsichere Teile kontrollieren müssen.
+
+## Geschäftlicher Kontext
+- Ein fehlerhaft ausgeliefertes Laufrad verursacht Garantie- und Reputationskosten von ungefähr 300 € je Einheit.
+- Eine falsche Zurückweisung verursacht eine unnötige manuelle Nachprüfung von ungefähr 2 € je Einheit.
+- Produktionsvolumen: etwa 6.000 Einheiten pro Woche.
+- Der empfohlene Betriebspunkt des Modells muss anhand dieser Kosten begründet werden.
+
+## Daten
+Kaggle-Datensatz „casting product image data for quality inspection“ mit etwa 7.300 Graustufenbildern von 300×300 Pixeln. Die Laufräder sind als `ok_front` oder `def_front` beschriftet; eine Trainings-/Testaufteilung ist vorgegeben.
+https://www.kaggle.com/datasets/ravirajsinh45/real-life-industrial-dataset-of-casting-product
+
+## Technische Vorgaben
+- TensorFlow/Keras
+- Inferenz auf der CPU mit mindestens zehn Bildern pro Sekunde; messen und dokumentieren
+- Die vorgegebene Testaufteilung ist der Abnahmesatz und darf **einmal** mit dem endgültig gewählten Modell ausgewertet werden.
+- Reproduzierbares Training mit dokumentierten festen Seeds und einem Trainingsskript, das mit einem Befehl ausgeführt wird
+
+## Liefergegenstände
+1. Trainingspipeline als Python-Module für Laden und Augmentieren der Daten, Modell, Training und Bewertung sowie ein kurzes Notebook zur Ergebnisdarstellung
+2. Vergleich zweier Modellfamilien: kompaktes selbst trainiertes CNN und Transfer Learning mit vortrainiertem Backbone
+3. Aus den Kosten abgeleiteter optimaler Entscheidungsschwellenwert mit dargestellter Kostenkurve
+4. Fehlergalerie aller falsch negativen Fälle des Abnahmesatzes mit Diskussion
+5. Einseitige Management-Zusammenfassung mit erwarteter wöchentlicher Einsparung, Durchschlupfrate im Vergleich zur manuellen Prüfung und Go-/No-Go-Empfehlung
+6. Gespeichertes Modellartefakt und gemessener CPU-Durchsatz
+
+## Bewertungskriterien
+| Kriterium | Anforderung |
+|---|---|
+| Recall für Defekte im Abnahmesatz | ≥ 0,99 |
+| Precision bei diesem Recall | ≥ 0,95 |
+| CPU-Durchsatz | ≥ 10 Bilder/s |
+| Codequalität | Module statt unstrukturierter Notebooks; vollständige Ausführung mit einem Befehl |
+| Analysequalität | Schwellenwert an Eurokosten gebunden; Fehlerfälle ehrlich untersucht |

@@ -16,3 +16,26 @@ Build and honestly evaluate a movie recommender on MovieLens 100k, progressing f
 - Qualitative spot check: show the top-10 recommendations for 3 distinct users and argue whether they're plausible
 
 Relevant techniques (look them up yourself): user-item matrix, cosine similarity, neighborhood-based CF, matrix factorization / latent factors, Precision@k, popularity bias.
+
+---
+
+# Deutsche Übersetzung
+
+# 13 — Empfehlungssystem: MovieLens
+
+Schwierigkeit: 🟠 Mittel bis anspruchsvoll | Thema: Empfehlungssysteme
+
+## 🎯 Projektziel
+Erstelle und bewerte ein Filmempfehlungssystem auf MovieLens 100k. Entwickle es von einer Popularitäts-Baseline bis zum kollaborativen Filtern weiter und beschäftige dich mit der oft ausgelassenen Frage: *Was bedeutet „gut“ bei einem Empfehlungssystem überhaupt?*
+
+## 📊 Datensatz und Bewertungsmetriken
+- **Datensatz:** MovieLens 100k mit 100.000 Bewertungen von 1 bis 5 durch 943 Personen für 1.682 Filme sowie Genreangaben. Download: https://files.grouplens.org/datasets/movielens/ml-100k.zip. Benötigt werden `u.data` und `u.item`.
+- **Bewertungsmetriken:** RMSE für die Bewertungsvorhersage sowie Precision@10 und Recall@10 für Top-N-Empfehlungen. Definiere Bewertungen ab 4 als relevant. Verwende je Nutzer eine zeitbasierte oder Leave-last-k-out-Aufteilung; zufällige Aufteilungen führen zu Datenlecks.
+
+## 🏁 Erfolgskriterien
+- Umsetzung und Vergleich von drei Ansätzen: Popularitäts- oder Mittelwert-Baseline, objektbasiertes kollaboratives Filtern mit Kosinusähnlichkeit und Matrixfaktorisierung, beispielsweise per SVD oder ALS
+- RMSE der Bewertungsvorhersage unter 0,95 und dokumentierte Precision@10 aller drei Ansätze
+- Zahlenbasierte Diskussion des Cold-Start-Problems anhand von Personen mit weniger als zehn Bewertungen
+- Qualitative Prüfung der zehn besten Empfehlungen für drei unterschiedliche Personen samt Begründung ihrer Plausibilität
+
+Relevante Verfahren zum selbstständigen Nachschlagen: Nutzer-Objekt-Matrix, Kosinusähnlichkeit, nachbarschaftsbasiertes kollaboratives Filtern, Matrixfaktorisierung und latente Faktoren, Precision@k sowie Popularitätsverzerrung.

@@ -29,3 +29,39 @@ Stretch dataset: **UCI Human Activity Recognition (HAR)** — 561 sensor feature
 - [scikit-learn PCA docs](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)
 - ["How to Use t-SNE Effectively" (distill.pub)](https://distill.pub/2016/misread-tsne/) — read this before trusting any t-SNE plot
 - Look up: *explained variance ratio*, *t-SNE perplexity*, *curse of dimensionality*, *UMAP vs t-SNE*
+
+---
+
+# Deutsche Übersetzung
+
+# 23 — Dimensionsreduktion und Manifold Learning 🗺️
+
+Schwierigkeit: 🟡 Mittel | Thema: Unüberwachtes Lernen und Dimensionsreduktion
+
+## 🎯 Projektziel
+Lerne, hochdimensionale Daten **sichtbar zu machen**. Verwende PCA als lineares und interpretierbares Standardverfahren und vergleiche sie mit nichtlinearen Manifold-Methoden wie t-SNE und UMAP. Verstehe genau, welche Aussagen die Verfahren erlauben und welche nicht.
+
+## 📊 Beschreibung des Datensatzes
+Primär wird `sklearn.datasets.load_digits()` verwendet: 1.797 Bilder handgeschriebener Ziffern mit jeweils 8×8 beziehungsweise 64 Merkmalen und Labels von 0 bis 9. Der Datensatz ist eingebaut. Die Labels dienen **nur zum Einfärben der Grafiken** und werden nicht zur Anpassung der unüberwachten Reduktion verwendet.
+
+Als Erweiterung bietet sich der **UCI Human Activity Recognition**-Datensatz mit 561 Sensormerkmalen und sechs Aktivitätsklassen an. Das Notebook lädt standardmäßig `digits`.
+
+## 💡 Empfohlenes Vorgehen
+1. Standardisiere die Merkmale und passe **PCA** an. Zeichne erklärte und kumulierte Varianz und bestimme die Anzahl Komponenten für 90 % der Varianz.
+2. Projiziere per PCA in zwei Dimensionen und färbe das Streudiagramm nach den zurückgehaltenen Labels. Forme die Ladungen der wichtigsten Komponenten zurück zu 8×8-Bildern, um „Eigen-Ziffern“ zu betrachten.
+3. Führe **t-SNE** in zwei Dimensionen durch und vergleiche die Darstellung mit PCA. Verstehe, warum die Cluster sauberer aussehen und weshalb dieser Eindruck teilweise täuscht.
+4. Variiere die `perplexity` und beobachte, dass Clustergrößen und Abstände zwischen Clustern **nicht** inhaltlich interpretierbar sind. Notiere drei Aussagen, die aus einer t-SNE-Grafik nicht abgeleitet werden dürfen.
+5. Ergänze optional UMAP und vergleiche Geschwindigkeit und Erhalt globaler Strukturen mit t-SNE.
+6. Prüfe eine nachgelagerte Aufgabe: Erreicht ein Klassifikator auf den wichtigsten k PCA-Komponenten fast dieselbe Leistung wie auf allen 64 Merkmalen? Quantifiziere den Kompromiss zwischen Accuracy und Dimension.
+
+## 🏁 Erfolgskriterien
+- Diagramme der erklärten und kumulierten Varianz mit dokumentierter Komponentenanzahl für 90 % Varianz
+- Zweidimensionales PCA-Streudiagramm nach Label sowie Darstellung der wichtigsten Komponenten im ursprünglichen Merkmalsraum
+- Direkter Vergleich eines zweidimensionalen t-SNE- und PCA-Streudiagramms
+- Explizite Liste interpretierbarer und nicht interpretierbarer Eigenschaften von t-SNE, gezeigt mit mindestens zwei Perplexity-Werten
+- Vergleich der Klassifikationsleistung auf den wichtigsten PCA-Komponenten und allen Merkmalen mit kurzem Fazit zum Kompromiss
+
+## 🔗 Nützliche Quellen
+- [scikit-learn-Dokumentation zu PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)
+- [„How to Use t-SNE Effectively“](https://distill.pub/2016/misread-tsne/) — vor der Interpretation von t-SNE-Grafiken lesen
+- Suchbegriffe: *explained variance ratio*, *t-SNE perplexity*, *curse of dimensionality*, *UMAP vs t-SNE*

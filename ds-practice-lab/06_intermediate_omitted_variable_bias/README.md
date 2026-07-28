@@ -31,3 +31,41 @@ The notebook contains a starting snippet for the synthetic data-generating proce
 - Look up: *omitted variable bias formula*, *confounder*, *backdoor path*
 - Cunningham, *Causal Inference: The Mixtape* — OVB chapter (free online)
 - Project [[05_intermediate_sampling_bias]] is a natural companion — biased samples and omitted variables are the two classic ways to fool yourself with data
+
+---
+
+# Deutsche Übersetzung
+
+# 06 — Verzerrung durch ausgelassene Variablen: Wenn Regression täuscht 📉 `[aus deinen Vorlesungen]`
+
+Schwierigkeit: 🟡 Mittel | Thema: Statistik — Regression und kausale Fallstricke
+
+## 🎯 Projektziel
+Zeige die Verzerrung durch ausgelassene Variablen empirisch. Erzeuge Daten mit bekannten kausalen Effekten und untersuche, wie das Weglassen eines Confounders Regressionskoeffizienten systematisch verzerrt. Überprüfe anschließend die theoretische OVB-Formel numerisch.
+
+## 📊 Beschreibung des Datensatzes
+Das Projekt besteht aus zwei Teilen:
+1. **Selbst erzeugte synthetische Lohndaten** mit beispielsweise `ability` als unbeobachteter Fähigkeit, davon abhängiger `education` und einem von beiden beeinflussten `wage`. Da du die Koeffizienten festlegst, kennst du das korrekte Ergebnis.
+2. **Ein realer Datensatz für die Übertragung**, etwa die Frage, ob Motorleistung den Kraftstoffverbrauch senkt, wenn das Fahrzeuggewicht kontrolliert wird. Eine einfache Wahl ist der seaborn-Datensatz `mpg` über `sns.load_dataset("mpg")`.
+
+Das Notebook enthält einen Ausgangspunkt für den synthetischen Datenerzeugungsprozess.
+
+## 💡 Empfohlenes Vorgehen
+1. Formuliere den Datenerzeugungsprozess mit expliziten wahren Parametern, beispielsweise wage = β₀ + β₁·education + β₂·ability + Fehler, wobei education mit ability korreliert ist.
+2. Schätze mit `statsmodels` OLS die **kurze Regression** wage ~ education und die **lange Regression** wage ~ education + ability. Vergleiche beide education-Koeffizienten mit dem wahren β₁.
+3. Prüfe die OVB-Formel: Verzerrung = β₂ · δ, wobei δ die Steigung aus der Regression der ausgelassenen auf die enthaltene Variable ist. Berechne sie und vergleiche sie mit der beobachteten Differenz.
+4. Untersuche die Struktur der Verzerrung über ein Raster aus Korrelation zwischen education und ability sowie Stärke des ability-Effekts. Stelle die Verzerrung als Heatmap dar und bestimme, wann sie null ist oder ihr Vorzeichen wechselt.
+5. Übertrage das Vorgehen auf reale Daten. Wähle im `mpg`-Datensatz eine Frage, bei der eine Kontrollvariable einen Koeffizienten deutlich verändert. Erkläre den Confounder und Richtung sowie Ursache der Veränderung.
+6. Formuliere abschließend, was diese Erkenntnisse für die Interpretation jedes Regressionskoeffizienten bedeuten.
+
+## 🏁 Erfolgskriterien
+- Vergleich der kurzen und langen Regression mit der bekannten Wahrheit sowie Interpretation von Koeffizient, Standardfehler und Konfidenzintervall
+- Numerische Bestätigung der OVB-Formel, sodass analytische und beobachtete Verzerrung ungefähr übereinstimmen
+- Heatmap über das Raster aus Korrelation und Effektstärke mit den beiden Bedingungen für eine Verzerrung von null
+- Reales Beispiel, in dem sich Vorzeichen oder Größe eines Koeffizienten nach Aufnahme einer Kontrollvariable verändern, samt kausaler Interpretation
+
+## 🔗 Nützliche Quellen
+- `statsmodels.formula.api.ols` für Formeln im R-Stil wie `"wage ~ education"`
+- Suchbegriffe: *omitted variable bias formula*, *confounder*, *backdoor path*
+- Cunningham, *Causal Inference: The Mixtape*, Kapitel zu OVB, frei online verfügbar
+- Projekt [[05_intermediate_sampling_bias]] ergänzt dieses Thema: Verzerrte Stichproben und ausgelassene Variablen sind zwei klassische Wege zu falschen Datenschlüssen.

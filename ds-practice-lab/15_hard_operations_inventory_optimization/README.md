@@ -27,3 +27,37 @@ System assumptions (your simulation must implement these):
 - Replenishment policy parameters optimized per item (any method: grid search over (s,S), newsvendor-style analytics, or smarter)
 - Final report: cost breakdown per item, achieved fill rates, and the cost of the 95% service-level constraint (how much would relaxing it to 90% save?)
 - Honest discussion of where forecast error hurts the inventory decision most
+
+---
+
+# Deutsche Übersetzung
+
+# 15 — Angewandte Operations: Prognosegestützte Bestandsoptimierung `[aus deinen Vorlesungen]`
+
+Schwierigkeit: 🔴 Anspruchsvoll | Thema: Operations Analytics mit Prognose, Simulation und Optimierung
+
+## 🎯 Projektziel
+Du übernimmst die Rolle des Data Scientists einer Einzelhandelskette. Erstelle eine vollständige Operations-Pipeline: Prognostiziere die Nachfrage je Artikel, speise diese Prognosen in eine Bestandssimulation ein und optimiere die Nachschubstrategie je Artikel, um die Gesamtkosten bei vorgegebenem Servicegrad zu minimieren.
+
+## 📊 Beschreibung des Datensatzes
+Die **Kaggle Store Item Demand Forecasting Challenge** enthält fünf Jahre täglicher Verkäufe für 50 Artikel in zehn Filialen, insgesamt etwa 913.000 vollständige Zeilen.
+Download: https://www.kaggle.com/c/demand-forecasting-kernels-only/data. Ein kostenloses Kaggle-Konto wird benötigt; verwende `train.csv`.
+
+Beschränke den Umfang auf **eine Filiale und zehn Artikel** mit unterschiedlichem Verkaufsvolumen.
+
+Die Simulation muss folgende Annahmen umsetzen:
+- Tägliche Prüfung; am Tagesende bestellte Ware trifft nach sieben Tagen Lieferzeit ein
+- Lagerkosten von 0,02 € je Einheit und Tag, fixe Bestellkosten von 8 € je Bestellposition und Fehlmengenkosten in Höhe der Artikelmarge; verwende 30 % eines angenommenen Preises und dokumentiere diese Annahmen
+- Geforderter Liefergrad von mindestens 95 % je Artikel
+
+## 📏 Bewertungsmetriken
+- Prognose: MAE je Artikel auf den letzten 90 Tagen, die bei allen Abstimmungen zurückgehalten werden
+- Operations: Gesamtkosten aus Lagerung, Bestellung und Fehlmengen im 90-tägigen Bewertungszeitraum; die Strategie darf nur zum Entscheidungszeitpunkt verfügbare Informationen nutzen
+- Nebenbedingung: mindestens 95 % Liefergrad je Artikel; Lösungen darunter sind unabhängig von ihren Kosten unzulässig
+
+## 🏁 Erfolgskriterien
+- Nachfrageprognosen, die je Artikel eine saisonal-naive Baseline übertreffen
+- Diskrete Ereignis- oder Tagesschleifensimulation des Bestandssystems, geprüft an manuell berechneten kleinen Beispielen
+- Optimierte Nachschubparameter je Artikel, etwa durch Rastersuche über (s,S), Newsvendor-Analytik oder ein anderes geeignetes Verfahren
+- Abschlussbericht mit Kostenaufschlüsselung und Liefergrad je Artikel sowie den Kosten der 95-%-Anforderung im Vergleich zu 90 %
+- Ehrliche Diskussion darüber, wo Prognosefehler die Bestandsentscheidung am stärksten beeinträchtigen

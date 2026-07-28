@@ -111,7 +111,7 @@ Lernen taugen, nicht als Nachschlagewerk ausufern.
 Jedes Projekt enthält eine `README.md` mit: **Ziel**, **Setup/Ausführung**,
 **Aufgabenstellung** (klare Schritte), **erwartetes Ergebnis** und einer **Referenz-/
 Musterlösung** (oder Lösungshinweisen). Die Musterlösung darf im Notebook/Code stecken,
-sollte aber als solche gekennzeichnet sein, damit der Nutzer erst selbst probieren kann.
+sollte aber als solche gekennzeichnet sein, damit der Nutzer erst selbst probieren kann. Die readme sollte eine englische und darunter eine deutsche Version enthalten. Keine emojis. Die notebooks oder code datein sollen ausschließlich auf englisch sein.
 
 ---
 

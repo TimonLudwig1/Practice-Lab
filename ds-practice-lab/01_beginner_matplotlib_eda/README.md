@@ -87,3 +87,97 @@ That last row is the biggest mindset shift: matplotlib has no `aes()` mapping. T
 - [Anatomy of a Figure](https://matplotlib.org/stable/gallery/showcase/anatomy.html)
 - [Lifecycle of a Plot](https://matplotlib.org/stable/tutorials/lifecycle.html) — pyplot vs OO API explained
 - [Palmer Penguins background](https://allisonhorst.github.io/palmerpenguins/)
+
+---
+
+# Deutsche Übersetzung
+
+# 01 — Matplotlib-Grundlagen: Explorative Analyse der Pinguin-Daten 🐧
+
+Schwierigkeit: 🟢 Einsteiger | Thema: Explorative Datenanalyse und Visualisierung
+
+## 🎯 Projektziel
+Lerne Matplotlib von Grund auf kennen, indem du den Palmer-Penguins-Datensatz untersuchst. Gleichzeitig entwickelst du eine gedankliche „Übersetzungstabelle“ für Konzepte aus ggplot beziehungsweise lets-plot.
+
+## 📚 Das lernst du
+- Das Grundmodell von Matplotlib: **Figure → Axes → Plot-Aufrufe**
+- Die beiden APIs: `pyplot` für schnelle Grafiken und die professionelle **objektorientierte API** mit `fig, ax = plt.subplots()`
+- Zentrale Diagrammtypen: Histogramm, Streudiagramm, Balkendiagramm und Boxplot
+- Subplots als Matplotlib-Entsprechung zu `facet_wrap`
+- Gestaltung mit Beschriftungen, Titeln, Legenden und Farben
+- Speichern von Grafiken als Dateien
+- Grundlegende explorative Datenanalyse mit pandas: `.info()`, `.describe()`, `.value_counts()` und `.groupby()`
+
+## 🗂️ Beschreibung des Datensatzes
+**Palmer Penguins** enthält 344 Pinguine aus drei Arten – Adelie, Chinstrap und Gentoo –, die in der Antarktis beobachtet wurden. Zu den Variablen gehören Art, Insel, Schnabellänge und -tiefe, Flossenlänge, Körpergewicht und Geschlecht. Der Datensatz wird mit seaborn ausgeliefert und muss nicht separat heruntergeladen werden:
+
+```python
+import seaborn as sns
+df = sns.load_dataset("penguins")
+```
+
+## 🚀 Erste Schritte
+```bash
+cd 01_beginner_matplotlib_eda
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+jupyter notebook notebooks/solution_template.ipynb
+```
+
+## 📋 Schritt-für-Schritt-Anleitung
+
+### Du kommst von ggplot? Lies zuerst diesen Abschnitt.
+In ggplot beschreibst du, *was* du darstellen möchtest (`aes(x=..., y=...) + geom_point()`), und die Bibliothek kümmert sich um die Umsetzung. In Matplotlib baust du das Bild *imperativ* auf: Du erzeugst eine Zeichenfläche (Figure), platzierst Koordinatensysteme (Axes) darauf und rufst Zeichenmethoden für diese Axes auf. Dieses Standardmuster verwendest du in **jeder einzelnen Zelle**:
+
+```python
+fig, ax = plt.subplots(figsize=(8, 5))   # Zeichenfläche und ein Koordinatensystem
+ax.<some_plot_method>(...)                # darin zeichnen
+ax.set_xlabel("..."); ax.set_ylabel("..."); ax.set_title("...")
+plt.show()
+```
+
+Übersetzungstabelle:
+
+| ggplot / lets-plot | matplotlib |
+|---|---|
+| `geom_point()` | `ax.scatter(x, y)` |
+| `geom_histogram()` | `ax.hist(values)` |
+| `geom_bar()` | `ax.bar(categories, heights)` |
+| `geom_boxplot()` | `ax.boxplot(...)` |
+| `facet_wrap(~var)` | `fig, axes = plt.subplots(nrows, ncols)` |
+| `labs(title=, x=, y=)` | `ax.set_title()`, `ax.set_xlabel()`, `ax.set_ylabel()` |
+| `aes(color=species)` | Gruppen einzeln durchlaufen, jeweils mit `label=` zeichnen und anschließend `ax.legend()` aufrufen |
+
+Die letzte Zeile beschreibt den größten gedanklichen Unterschied: Matplotlib besitzt keine `aes()`-Zuordnung. Um Kategorien unterschiedlich einzufärben, filterst du den DataFrame nach Kategorien und rufst für jede Gruppe einmal `ax.scatter()` auf.
+
+### Die Arbeitsschritte im Notebook
+1. **Laden und untersuchen** — Lade die Daten und verwende `.info()`, `.describe()` und `.isna().sum()`. *Warum:* Bevor du Daten visualisierst, solltest du Datentypen und fehlende Werte kennen.
+2. **Bereinigen** — Entferne Zeilen mit fehlenden Werten durch `.dropna()`. *Warum:* Matplotlib kann `NaN`-Werte überspringen oder damit Probleme haben; für diese Analyse ist das Entfernen von elf Zeilen vertretbar.
+3. **Erste Grafik: Histogramm** des Körpergewichts. *Warum:* Ein Histogramm vermittelt schnell einen Eindruck von der Verteilung einer numerischen Variable.
+4. **Streudiagramm** von Flossenlänge und Körpergewicht, nach Art eingefärbt. *Warum:* Dabei lernst du das Durchlaufen von Gruppen und erkennst zugleich einen besonders deutlichen Zusammenhang im Datensatz.
+5. **Balkendiagramm** der Pinguinanzahl pro Insel; aggregiere zunächst mit `.value_counts()`. *Warum:* Matplotlib erwartet für Balkendiagramme bereits zusammengefasste Daten.
+6. **Boxplots** der Schnabellänge nach Art. *Warum:* Boxplots ermöglichen den schnellen Vergleich von Verteilungen zwischen Gruppen.
+7. **Subplots** — Kombiniere vier Ansichten in einer 2×2-Abbildung. *Warum:* `plt.subplots(2, 2)` liefert ein Array von Axes und bildet die Grundlage für komplexere Abbildungen.
+8. **Gestalten und speichern** — Wähle deine beste Grafik, ergänze Beschriftungen, Titel und Legende und speichere sie mit `fig.savefig("../outputs/figures/penguins_final.png", dpi=150, bbox_inches="tight")`. *Warum:* Eine Grafik muss lesbar und auffindbar sein.
+
+## ✅ Checkliste zum Abschluss
+- [ ] Ich kann den Unterschied zwischen einer Figure und einer Axes erklären.
+- [ ] Ich habe für jede Grafik `fig, ax = plt.subplots()` verwendet und nicht nur `plt.plot()`.
+- [ ] Ich habe ein Histogramm, ein Streudiagramm, ein Balkendiagramm und einen Boxplot erstellt.
+- [ ] Ich habe ein Streudiagramm mithilfe einer Gruppenschleife nach Kategorien eingefärbt.
+- [ ] Ich habe ein 2×2-Raster aus Subplots erstellt.
+- [ ] Ich habe mindestens eine Grafik als PNG unter `outputs/figures/` gespeichert.
+- [ ] Ich kann drei Unterschiede zwischen ggplot und Matplotlib nennen.
+
+## 💡 Hinweise und Tipps
+- `plt.subplots(2, 2)` liefert `(fig, axes)`, wobei `axes` ein zweidimensionales NumPy-Array ist. Du greifst beispielsweise mit `axes[0, 0]` oder `axes[0, 1]` darauf zu.
+- Wenn sich Beschriftungen überlappen, rufe vor dem Anzeigen oder Speichern `fig.tight_layout()` auf.
+- Experimentiere bei `ax.hist(df["body_mass_g"], bins=20)` immer mit der Anzahl der Klassen über `bins`.
+- `ax.boxplot()` erwartet eine *Liste von Arrays*, eines pro Gruppe: `[df.loc[df.species == s, "bill_length_mm"] for s in species_list]`. Beschrifte sie anschließend mit `ax.set_xticklabels(species_list)`.
+- Für Farben nach Gruppen kannst du dieses Muster verwenden: `for species, group in df.groupby("species"): ax.scatter(group[x], group[y], label=species)` und danach `ax.legend()`.
+
+## 🔗 Weiterführende Informationen
+- [Matplotlib Quick Start Guide](https://matplotlib.org/stable/users/explain/quick_start.html) — besonders hilfreich ist die Abbildung „Parts of a Figure“
+- [Anatomy of a Figure](https://matplotlib.org/stable/gallery/showcase/anatomy.html)
+- [Lifecycle of a Plot](https://matplotlib.org/stable/tutorials/lifecycle.html) — erklärt den Unterschied zwischen pyplot und der objektorientierten API
+- [Hintergrund zu Palmer Penguins](https://allisonhorst.github.io/palmerpenguins/)

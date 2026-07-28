@@ -1,3 +1,212 @@
+# Internship Prep Lab — Project Catalog
+
+> **Goal:** Close the gap between “I can train a model in a notebook” and “I can contribute productively to a data science team.” This lab complements the existing labs (statistics, ML/DS, and modules) with the areas they do not cover: analytics SQL, data engineering, cloud concepts, BI, collaborative Git, and production-ready code.
+>
+> **Reference role:** Data science internship in industry. Typical stack: Python, SQL, AWS (Redshift/Athena/Glue/S3), Airflow, dbt, Looker, Git.
+
+## How to Use This Catalog
+
+- The projects are organized into **7 phases**. Phases 1–3 cover essential foundations (useful before any application), Phases 4–6 form the tooling core, and Phase 7 is the portfolio finale.
+- Everything runs **locally and is CPU-friendly**. Cloud services are replaced with local equivalents that use the same concepts and, in some cases, the same APIs:
+
+| Industry Tool | Local Equivalent Used Here | Why It Transfers |
+|---|---|---|
+| Redshift / Athena | DuckDB | The same SQL concepts (window functions, CTEs); like Athena, DuckDB can query files directly |
+| S3 | MinIO (Docker) or a local directory + boto3 | MinIO implements the S3 API; the boto3 code is identical |
+| Glue / Data Catalog | Parquet + Hive partitioning | The underlying concept (schema + file partitions) is the same |
+| Airflow | Airflow standalone (runs locally) | It is the real tool |
+| dbt | dbt-core + DuckDB adapter | It is the real tool with a local backend |
+| Looker | Metabase (Docker) or Streamlit | The semantics transfer: define metrics and build dashboards |
+
+- **Rule No. 1:** Treat every project like a work assignment: use a dedicated branch, maintain a clean commit history, and write a short summary (“What did I build, and what decision does it enable?”).
+- **Rule No. 2:** Business framing matters. A result without a recommendation (“What should the team do now?”) is not complete.
+- **Rule No. 3:** Try it yourself before looking at the solution.
+
+**Recommended stack:** Python, DuckDB, dbt-core, Apache Airflow, pandas, pytest, Streamlit or Metabase, Docker (optional, for MinIO/Metabase), Git + GitHub.
+
+---
+
+## Phase 1 — Analytics SQL (The Team's Language)
+
+SQL is an everyday language during an internship. The existing labs only touch on SQL; this phase develops it to an analytics level. All projects use one shared synthetic e-commerce database generated with a fixed seed: users, orders, order_items, products, sessions, and marketing_spend.
+
+### 1.1 Window Functions Until They Become Instinctive
+
+- **Concepts:** ROW_NUMBER, RANK, LAG/LEAD, rolling aggregations, PARTITION BY
+- **Task:** Answer 15 realistic analyst questions using only SQL (DuckDB): top three products by category and month, each customer's revenue change from the previous month, rolling seven-day revenue, time between the first and second order, and the share of repeat buyers by cohort.
+- **Data:** Generated (e-commerce database)
+- **Stretch:** Solve five questions in pandas as well and compare readability and runtime. Formulate a rule for when SQL is the right tool and when pandas is.
+
+### 1.2 Cohort Analysis and Retention
+
+- **Concepts:** Cohorts, retention matrix, CTEs, conditional aggregation
+- **Task:** Build a monthly retention matrix entirely in SQL (cohort = month of first order). Visualize it as a heatmap (matplotlib). Interpret the result: Which cohort drops off, and which hypotheses could explain it?
+- **Data:** Generated (with a built-in cohort effect, such as a poor acquisition campaign)
+- **Stretch:** Parameterize the analysis as a reusable SQL template that can define cohorts by week, month, or marketing channel.
+
+### 1.3 The Metric Layer: One Metric, One Truth
+
+- **Concepts:** Metric definitions, grain, join pitfalls (fan-out), deduplication
+- **Task:** Define five core metrics (revenue, AOV, conversion, active users, CAC) both in writing (definition, grain, exclusions) and as SQL views. Then build three intentionally incorrect variants (for example, revenue counted twice due to join fan-out) and document how to detect each error.
+- **Data:** Generated
+- **Stretch:** Write data quality checks in SQL (nulls, duplicates, referential integrity) that produce an error message when a rule is violated.
+
+### 1.4 Understanding Query Performance
+
+- **Concepts:** EXPLAIN, columnar formats, partitioning, predicate pushdown
+- **Task:** Export the e-commerce database as CSV and as Parquet partitioned by year/month. Benchmark the same five queries on both formats (DuckDB over files, analogous to Athena over S3). Explain the differences with EXPLAIN.
+- **Data:** Generated (scale the generator to several million rows)
+- **Stretch:** Find the partitioning strategy that accelerates your most frequent query the most and justify it.
+
+---
+
+## Phase 2 — Git and Collaboration (Working as a Team)
+
+You may know Git as a storage tool; within a team, it is a communication tool. This phase simulates team workflows even when you work alone.
+
+### 2.1 Practice the Feature Branch Workflow
+
+- **Concepts:** Branches, pull requests, reviews, clean history
+- **Task:** Choose an existing project from one of your labs. Implement three changes exclusively through feature branches and GitHub pull requests (including a PR description: what, why, and how it was tested). Write a self-review for every PR before merging it.
+- **Data:** Existing project
+- **Stretch:** Use `git rebase -i` to turn a messy branch with five chaotic commits into two meaningful commits before merging.
+
+### 2.2 Create and Resolve Merge Conflicts
+
+- **Concepts:** Conflicts, `git log`/`blame`/`bisect`, recovery
+- **Task:** Deliberately create three conflict scenarios in a test repository (the same line changed on two branches, a moved file, and a deleted-versus-modified file) and resolve them. Then hide a bug in one of 20 commits and locate it with `git bisect`.
+- **Data:** Test repository
+- **Stretch:** Simulate an “I committed and pushed directly to main—what now?” scenario and document the clean recovery path (revert vs. reset and when to use each).
+
+### 2.3 Repository Hygiene and Automation
+
+- **Concepts:** pre-commit, formatting, linting, CI
+- **Task:** Configure pre-commit with ruff (lint + format) in one lab. Add a GitHub Action that runs tests and linting on every push. Document the setup process in `CONTRIBUTING.md`.
+- **Data:** Existing lab
+- **Stretch:** Make CI execute a Jupyter notebook headlessly with nbconvert and fail when the notebook fails.
+
+---
+
+## Phase 3 — Production-Ready Python Code (From Notebook to Module)
+
+### 3.1 Notebook Refactoring
+
+- **Concepts:** Functions/modules, project structure, configuration, docstrings, type hints
+- **Task:** Take a completed analysis notebook from your labs and refactor it into a Python package (`src/` layout): separate modules for data loading, transformation, and analysis; parameters in a configuration file; and a small CLI entry point (`python -m project run`). Keep the notebook as a thin presentation layer that only calls functions.
+- **Data:** Existing project
+- **Stretch:** Replace print statements with logging (using the logging module and meaningful levels) and explain what belongs at INFO versus DEBUG.
+
+### 3.2 Testing Data Code
+
+- **Concepts:** pytest, fixtures, parametrization, testing transformations
+- **Task:** Write a test suite for the refactored package from 3.1: unit tests for transformations (small hand-built DataFrames as fixtures), edge cases (empty input, nulls, duplicates), and one integration test for the complete pipeline. The goal is to refactor confidently because the tests catch mistakes.
+- **Data:** From 3.1
+- **Stretch:** Measure coverage and consciously decide which 20% you will NOT test and why.
+
+### 3.3 Reproducible Environments
+
+- **Concepts:** Virtual environments, lockfiles, seeds, deterministic results
+- **Task:** Make a project fully reproducible: pinned dependencies (`requirements.txt` from pip freeze or uv/pip-tools), fixed seeds, and a `make setup && make run` command (or shell script) that produces identical results on a fresh computer. Verify this by deleting and recreating the environment.
+- **Data:** Existing project
+- **Stretch:** Package the same project in a minimal Dockerfile and compare both approaches.
+
+---
+
+## Phase 4 — Data Pipelines (dbt and Airflow)
+
+This is the core of the missing stack. The Phase 1 e-commerce database serves as the foundation again.
+
+### 4.1 dbt Fundamentals: From Raw Data to Models
+
+- **Concepts:** dbt-core, staging/marts, ref(), Jinja, dbt tests, documentation
+- **Task:** Build a dbt project on DuckDB: staging models (rename, cast, deduplicate), followed by marts (dim_customers, fct_orders, daily revenue marts). Add dbt tests (unique, not_null, relationships) and generate the documentation site (`dbt docs`).
+- **Data:** E-commerce database from Phase 1
+- **Stretch:** Build an incremental materialization for the fact table and demonstrate that a second run processes only new data.
+
+### 4.2 Airflow: Understanding Orchestration
+
+- **Concepts:** DAGs, tasks, dependencies, scheduling, retries, idempotency
+- **Task:** Install Airflow locally (standalone mode). Build a DAG with four tasks: generate raw data (simulated daily ingest) → quality check → dbt run → dbt test. Configure retries and a failure notification (a log message is sufficient). Backfill three “days.”
+- **Data:** From 4.1
+- **Stretch:** Deliberately make one task non-idempotent (append instead of overwrite), demonstrate the damage caused by a retry, and fix it. Idempotency is the most important pipeline concept of all.
+
+### 4.3 The Data Quality Watchdog
+
+- **Concepts:** Data quality, expectations, alerting, dead-letter thinking
+- **Task:** Extend the pipeline: On “day 4,” the ingest deliberately produces broken data (schema drift through a renamed column; data issues through negative prices and duplicates). The pipeline must detect this, stop the run, write bad rows to a quarantine table, and log an understandable error report.
+- **Data:** From 4.2, with an error injector
+- **Stretch:** Distinguish between “stop the pipeline” (broken schema) and “warn but continue” (2% outliers), and implement both paths.
+
+---
+
+## Phase 5 — Cloud Concepts Locally (The S3/Athena Layer)
+
+### 5.1 Object Storage with boto3
+
+- **Concepts:** S3 API, buckets, keys, upload/download, prefix layout
+- **Task:** Start MinIO with Docker (or use a local directory with the same folder structure as a fallback). Write a script that uploads the daily ingest files from Phase 4 using a path such as `raw/orders/year=2026/month=07/day=11/orders.parquet`, then lists and reads them—with boto3, exactly as it would against real S3.
+- **Data:** From Phase 4
+- **Stretch:** Implement a utility that finds the newest partition, as needed in almost every data team.
+
+### 5.2 Querying Files: Your Own Athena
+
+- **Concepts:** External tables, partition pruning, schema-on-read
+- **Task:** Query the Parquet files from 5.1 directly with DuckDB (`read_parquet` using a glob and Hive partitioning). Use timings to show that a filter on the partition column reads only the relevant files. Write half a page explaining what is conceptually identical in Athena/Glue and what differs.
+- **Data:** From 5.1
+- **Stretch:** Connect Phases 4 and 5: the Airflow pipeline writes to “S3,” and dbt reads from it. This recreates the job posting's architecture at a small scale.
+
+---
+
+## Phase 6 — BI and Communication (The Looker Layer)
+
+### 6.1 Dashboard with a Semantic Layer
+
+- **Concepts:** BI tools, self-service, metric consistency
+- **Task:** Start Metabase with Docker and connect it to your DuckDB database/marts (alternative: a Streamlit dashboard). Build an executive dashboard with the five metrics from 1.3: trend, comparison to the previous month, and breakdown by channel. Every tile must answer a concrete question—no decorative charts.
+- **Data:** Marts from Phase 4
+- **Stretch:** Ask another person (or yourself after one week) to use the dashboard without an explanation, note where it is confusing, and iterate once.
+
+### 6.2 The Decision Memo
+
+- **Concepts:** Stakeholder communication, recommendations, communicating uncertainty honestly
+- **Task:** Choose a completed analysis (such as the cohort analysis from 1.2 or an A/B test from another lab) and write a one-page memo for a fictional product manager: begin with the key message in two sentences, then provide evidence, followed by a recommendation and risks. Keep methodological details out of the main body (an appendix is allowed).
+- **Data:** Existing analysis
+- **Stretch:** Write the same analysis once for the product manager and once for a senior data scientist, making the differences explicit.
+
+### 6.3 Analysis Under Time Pressure
+
+- **Concepts:** Prioritization, 80/20, ad hoc requests
+- **Task:** Simulate a typical internship request: “Revenue in channel X dropped last week—why? We need an answer by 3 p.m.” Set a 90-minute timer and work on the e-commerce database (first inject a cause with a script without inspecting it). Deliver three bullet points, one chart, and a next step.
+- **Data:** Generated with a hidden cause
+- **Stretch:** Record where your 90 minutes went and determine what you would skip next time.
+
+---
+
+## Phase 7 — Capstone: The Mini Data Platform (Portfolio Project)
+
+### 7.1 End to End: From Raw Data to a Recommendation
+
+- **Concepts:** Everything combined
+- **Task:** Build the complete flow in a dedicated repository: simulated daily ingest → “S3” (MinIO/Parquet partitions) → an Airflow DAG orchestrating quality checks and dbt → marts in DuckDB → dashboard (Metabase/Streamlit) → ONE model project with business relevance to the job posting (choose CLV estimation, churn ranking, or demand forecasting; you may reuse the model from an existing lab—the integration is what matters here) → a one-page decision memo.
+- **Requirements:** A README with an architecture diagram; `make demo` (or a script) that starts everything from scratch; tests for the core transformations; and a clean branch/PR history.
+- **Stretch:** Write the README so it can serve as a conversation starter in an interview: Which trade-offs did you make, where, and why?
+
+---
+
+## Recommended Learning Path
+
+- **Minimum path before applying (about 4–6 weeks part-time):** 1.1 → 1.2 → 2.1 → 3.1 → 4.1 → 4.2 → 6.2
+- **Complete path:** Phase 1 → 2 → 3 → 4 → 5 → 6 → 7. The order within each phase is flexible; the numbering is a useful default.
+- You can work through Phases 1–3 alongside your existing labs; Phases 4–7 build on one another.
+
+## Scope Relative to the Existing Labs
+
+This lab deliberately contains NO statistics, ML, or modeling theory—that material lives in `statistics_practice_lab`, `ds-practice-lab`, `ML_DS_ITOP_Learn-Repository`, and `xtAI_Learn-Repository`. When a project requires a model (7.1), reuse one from those labs. Conversely, to make a model project from another lab “internship-ready,” apply Phases 2–3 of this lab to it.
+
+---
+
+# Deutsche Fassung
+
 # Internship Prep Lab — Der Praxiskatalog
 
 > **Ziel:** Die Lücke zwischen "Ich kann ein Modell in einem Notebook trainieren" und "Ich kann in einem Data-Science-Team produktiv mitarbeiten" schließen. Dieses Lab ergänzt die bestehenden Labs (Statistik, ML/DS, Module) gezielt um das, was dort fehlt: Analytics-SQL, Data Engineering, Cloud-Konzepte, BI, kollaboratives Git und produktionsreifen Code.

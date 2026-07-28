@@ -33,3 +33,43 @@ Data quality is intentionally messy: cancellations (invoices starting with "C"),
 - [sklearn KMeans](https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html) & [silhouette_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.silhouette_score.html)
 - Look up: *RFM analysis*, *elbow method*, *why k-means needs scaling*
 - `df.groupby("CustomerID").agg(...)` — the workhorse of step 2
+
+---
+
+# Deutsche Übersetzung
+
+# 10 — Unüberwachtes Lernen: Kundensegmentierung 🛒
+
+Schwierigkeit: 🟡 Mittel | Thema: Clustering und unüberwachtes Lernen
+
+## 🎯 Projektziel
+Segmentiere E-Commerce-Kunden aus rohen Transaktionsdaten mithilfe von RFM-Merkmalen und k-Means. Dabei lernst du eine schwierige Eigenschaft des unüberwachten Lernens: *Es gibt keine Accuracy; du musst begründen, warum deine Cluster sinnvoll sind.*
+
+## 📊 Beschreibung des Datensatzes
+**UCI Online Retail** enthält etwa 540.000 Transaktionspositionen eines britischen Onlinehändlers von Dezember 2010 bis Dezember 2011. Zu den Spalten gehören Rechnungsnummer, Produkt, Menge, Preis, Kunden-ID und Land.
+
+Download: https://archive.ics.uci.edu/static/public/352/online+retail.zip. Entpacke die `.xlsx`-Datei nach `data/raw/`. Das Einlesen mit `pd.read_excel` und `openpyxl` dauert etwas; speichere danach eine Parquet- oder CSV-Kopie unter `data/processed/`.
+
+Die Daten enthalten absichtlich Probleme wie Stornierungen, negative Mengen und fehlende Kunden-IDs. Die Bereinigung ist Teil des Projekts.
+
+## 💡 Empfohlenes Vorgehen
+1. Entferne Stornierungen, Zeilen ohne Kunden-ID und Einträge, die keine Produkte darstellen, und erzeuge eine Umsatzspalte.
+2. Verdichte die Transaktionen auf eine Zeile pro Kunde mit **RFM**: Recency als Zeit seit dem letzten Kauf, Frequency als Anzahl der Bestellungen und Monetary als Gesamtumsatz.
+3. RFM-Werte sind stark schief verteilt. Untersuche die Verteilungen, transformiere sie beispielsweise logarithmisch und skaliere sie. Da k-Means abstandsbasiert ist, würde sonst ein Merkmal dominieren.
+4. Wähle k anhand von Ellenbogenmethode und Silhouettenwert. Falls beide widersprechen, diskutiere die Abwägung.
+5. Führe k-Means aus und **beschreibe die Cluster** anhand der mittleren R-, F- und M-Werte sowie ihrer Größen. Vergib verständliche Namen wie „Champions“, „gefährdet“ oder „Einmalkäufer“.
+6. Visualisiere zwei RFM-Dimensionen als nach Clustern eingefärbtes Streudiagramm sowie normalisierte Clusterprofile als Heatmap oder Balkendiagramm.
+7. Prüfe die Stabilität mit verschiedenen Zufalls-Seeds und mit `k±1`. Untersuche, ob sich die inhaltliche Geschichte verändert.
+8. Als Erweiterung kannst du DBSCAN oder hierarchisches Clustering vergleichen und untersuchen, wie sie mit extrem umsatzstarken Ausreißern umgehen.
+
+## 🏁 Erfolgskriterien
+- Dokumentierte Bereinigungsentscheidungen einschließlich Anzahl und Grund entfernter Zeilen
+- Begründete Wahl von k anhand von Ellenbogen- und Silhouettenanalyse
+- Beschreibung und Benennung jedes Clusters mit einer empfohlenen Marketingmaßnahme pro Segment
+- Dokumentierte Stabilitätsprüfung über mehrere Seeds
+- Sämtliche Abbildungen in Matplotlib mit lesbaren Beschriftungen
+
+## 🔗 Nützliche Quellen
+- [sklearn KMeans](https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html) und [silhouette_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.silhouette_score.html)
+- Suchbegriffe: *RFM analysis*, *elbow method*, *why k-means needs scaling*
+- `df.groupby("CustomerID").agg(...)` als zentraler Arbeitsschritt von Schritt 2

@@ -34,3 +34,44 @@ The notebook contains a minimal SimPy snippet (environment + one resource) as a 
 - Look up: *M/M/c queue*, *warm-up period in simulation*, *common random numbers*
 - `numpy.random.default_rng(seed)` per replication for reproducibility
 - This project feeds directly into [[12_medium_hard_dynamic_decision_policy]] and [[15_hard_operations_inventory_optimization]]
+
+---
+
+# Deutsche Übersetzung
+
+# 07 — SimPy: Simulation einer ambulanten Klinik 🏥 `[aus deinen Vorlesungen]`
+
+Schwierigkeit: 🟡 Mittel | Thema: Diskrete Ereignissimulation mit SimPy
+
+## 🎯 Projektziel
+Erstelle mit SimPy eine diskrete Ereignissimulation einer ambulanten Klinik. Nutze sie anschließend wie ein Analyst, um Wartezeiten zu quantifizieren, Engpässe zu finden und Personalvarianten statistisch sauber zu vergleichen.
+
+## 📊 Beschreibung des Datensatzes
+Es gibt keinen externen Datensatz; die Simulation erzeugt die Daten. Das zu modellierende System:
+
+- Durchschnittlich zwölf Patienten pro Stunde treffen ein; die Ankünfte folgen einem Poisson-Prozess mit exponentiellen Zwischenankunftszeiten.
+- Ablauf: **Anmeldung** mit einer Arbeitskraft und etwa drei Minuten Bearbeitungszeit → **Behandlungsraum** mit Ärzten und einer rechtsschiefen Behandlungszeit von etwa 15 Minuten → 20 % benötigen einen **Labortest** mit einer Station und etwa zehn Minuten Dauer und sehen anschließend kurz erneut einen Arzt.
+- Die Klinik ist acht Stunden geöffnet; bereits anwesende Patienten werden auch nach der Schließung weiterbehandelt.
+
+Das Notebook enthält als Ausgangspunkt ein minimales SimPy-Beispiel mit Umgebung und einer Ressource.
+
+## 💡 Empfohlenes Vorgehen
+1. Führe das Minimalbeispiel aus und verstehe `env.process`, `env.timeout` und `Resource.request`.
+2. Modelliere den vollständigen Patientenfluss als Generatorfunktion. Sammle für jede Person Zeitstempel zu Ankunft, Beginn und Ende jeder Warteschlange sowie Verlassen der Klinik in einer Liste von Dictionaries und überführe sie in einen DataFrame.
+3. Entscheide über Aufwärmphase und Simulationsdauer und verwende zwei Ärzte als Basisszenario.
+4. Führe mindestens etwa 30 unabhängige Wiederholungen mit verschiedenen Seeds durch und berichte **Mittelwerte mit Konfidenzintervallen**. Ein einzelner Simulationslauf ist in Warteschlangensystemen zu zufällig.
+5. Analysiere Gesamtaufenthaltszeit, Wartezeit pro Station und Ressourcenauslastung. Bestimme den Engpass und visualisiere die Warteschlangenlänge über den Tag.
+6. Vergleiche zwei mit drei Ärzten sowie eine zusätzliche Kraft an der Anmeldung mit einem zusätzlichen Arzt. Welche Maßnahme reduziert die Wartezeit pro zusätzlicher Person stärker?
+7. Als Erweiterung kannst du eine vereinfachte Konfiguration mit M/M/c-Warteschlangenformeln vergleichen.
+
+## 🏁 Erfolgskriterien
+- Funktionierende Simulation des vollständigen Ablaufs einschließlich der Laborschleife für 20 % der Patienten
+- Ergebnisse aus mindestens 30 Wiederholungen mit 95-%-Konfidenzintervallen
+- Mit Auslastung und Warteschlangenlängen belegter Engpass
+- Klare, durch Zahlen und mindestens zwei Abbildungen gestützte Personalempfehlung
+
+## 🔗 Nützliche Quellen
+- [SimPy-Dokumentation zu „Basic Concepts“ und „Shared Resources“](https://simpy.readthedocs.io/)
+- Suchbegriffe: *M/M/c queue*, *warm-up period in simulation*, *common random numbers*
+- `numpy.random.default_rng(seed)` pro Wiederholung für Reproduzierbarkeit
+- Dieses Projekt führt direkt zu [[12_medium_hard_dynamic_decision_policy]] und [[15_hard_operations_inventory_optimization]].

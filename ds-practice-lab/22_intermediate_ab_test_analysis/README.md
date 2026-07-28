@@ -31,3 +31,41 @@ Download from Kaggle: *"Mobile Games A/B Testing - Cookie Cats"* → save `cooki
 - [statsmodels proportions_ztest](https://www.statsmodels.org/stable/generated/statsmodels.stats.proportion.proportions_ztest.html)
 - Look up: *two-proportion z-test*, *bootstrap confidence interval*, *statistical power*, *multiple comparisons / family-wise error*, *practical vs statistical significance*
 - This pairs naturally with project 02 (`hypothesis_testing`) — same tools, real decision.
+
+---
+
+# Deutsche Übersetzung
+
+# 22 — Experimente: Analyse eines A/B-Tests 🧪
+
+Schwierigkeit: 🟡 Mittel | Thema: Experimente und Inferenz
+
+## 🎯 Projektziel
+Analysiere einen echten A/B-Test eines mobilen Spiels vollständig und gib eine begründete **Einführen-/Nicht-einführen-Empfehlung** ab. Im Mittelpunkt steht die Übersetzung eines verrauschten Experiments in eine ehrliche Entscheidung unter Berücksichtigung von Effektstärke, Unsicherheit und dem Unterschied zwischen statistischer Signifikanz und praktischer Relevanz.
+
+## 📊 Beschreibung des Datensatzes
+Der **Cookie-Cats-A/B-Test** enthält etwa 90.000 zufällig `gate_30` als Kontrolle oder `gate_40` als Behandlung zugewiesene Spieler. Die Variante bestimmt, bei welchem Level eine Fortschrittssperre erscheint. Spalten: `userid`, `version`, `sum_gamerounds`, `retention_1` und `retention_7`.
+
+Lade „Mobile Games A/B Testing - Cookie Cats“ von Kaggle herunter und speichere `cookie_cats.csv` unter `data/raw/`. Das Notebook erwartet diesen Pfad.
+
+## 💡 Empfohlenes Vorgehen
+1. **Prüfe zuerst die Randomisierung**, bevor du Ergebnisse betrachtest: Sind die Gruppen ähnlich groß und gibt es doppelte Nutzer? Dieser oft übersprungene Schritt kann die gesamte Analyse ungültig machen.
+2. Lege die primäre Metrik bewusst fest; `retention_7` ist geschäftlich besonders relevant. Behandle `retention_1` und `sum_gamerounds` als sekundär und entscheide dies vor der Auswertung.
+3. Schätze für die binären Bindungsmetriken die Rate je Gruppe, ihre **Differenz** und ein Konfidenzintervall. Führe einen Test zweier Anteile mit `statsmodels.stats.proportion.proportions_ztest` durch und berichte die Effektstärke statt nur des p-Werts.
+4. `sum_gamerounds` ist stark schief und enthält extreme Ausreißer. Ein einfacher t-Test des Mittelwerts ist empfindlich. Untersuche die Verteilung und begründe ein Bootstrap-Konfidenzintervall oder einen rangbasierten Test.
+5. Visualisiere die Unsicherheit, etwa durch eine Bootstrap-Verteilung der Differenz in der 7-Tage-Bindung.
+6. Beachte das Problem **multipler Vergleiche**, da mehrere Metriken getestet werden, und beschreibe den Einfluss auf deine Sicherheit.
+7. Formuliere das Urteil mit geschätztem Effekt, Intervall und benötigten nächsten Schritten wie größerer Stichprobe, Power, längerem Horizont oder Guardrail-Metriken.
+
+## 🏁 Erfolgskriterien
+- Prüfung und Dokumentation von Randomisierung und Gruppenausgleich vor jeder Ergebnisanalyse
+- Vorab gewählte und begründete primäre Metrik
+- Differenz der 7-Tage-Bindung mit Konfidenzintervall und Signifikanztest, wobei die Effektstärke betont wird
+- Begründeter Umgang mit der schiefen Variable `sum_gamerounds` statt eines naiven Mittelwert-t-Tests
+- Eine Bootstrap-Abbildung zur Unsicherheit des Behandlungseffekts
+- Klare, in einfacher Sprache begründete Empfehlung für oder gegen die Einführung
+
+## 🔗 Nützliche Quellen
+- [statsmodels proportions_ztest](https://www.statsmodels.org/stable/generated/statsmodels.stats.proportion.proportions_ztest.html)
+- Suchbegriffe: *two-proportion z-test*, *bootstrap confidence interval*, *statistical power*, *multiple comparisons / family-wise error*, *practical vs statistical significance*
+- Dieses Lab ergänzt Projekt 02 zu Hypothesentests: dieselben Werkzeuge, aber eine reale Entscheidung.

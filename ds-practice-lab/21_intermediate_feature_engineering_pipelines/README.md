@@ -29,3 +29,39 @@ Load via `sklearn.datasets.fetch_openml("house_prices", as_frame=True)` (no manu
 - [ColumnTransformer + mixed types guide](https://scikit-learn.org/stable/auto_examples/compose/plot_column_transformer_mixed_types.html)
 - [TransformedTargetRegressor docs](https://scikit-learn.org/stable/modules/generated/sklearn.compose.TransformedTargetRegressor.html)
 - Look up: *data leakage in cross-validation*, *ordinal vs one-hot encoding*, *FunctionTransformer*, *custom sklearn transformers (`BaseEstimator`, `TransformerMixin`)*
+
+---
+
+# Deutsche Übersetzung
+
+# 21 — Feature Engineering und scikit-learn-Pipelines 🏗️
+
+Schwierigkeit: 🟡 Mittel | Thema: Feature Engineering
+
+## 🎯 Projektziel
+Prognostiziere Immobilienverkaufspreise im Ames-Housing-Datensatz, behandle aber **Feature Engineering und Pipeline** als eigentliches Ergebnis. Baue eine Pipeline ohne Datenleck, die rohe, unordentliche numerische und kategoriale Spalten mit fehlenden Werten bis zur Vorhersage verarbeitet, und belege den Nutzen deiner Entscheidungen.
+
+## 📊 Beschreibung des Datensatzes
+**Ames Housing** enthält etwa 1.460 Zeilen und 79 erklärende Merkmale zu Wohnhäusern in Ames, Iowa; die Zielvariable ist `SalePrice`. Der Datensatz ist komplexer als Boston oder California Housing: ordinale Qualitätsstufen, zahlreiche kategoriale Merkmale und inhaltlich bedeutsame fehlende Werte. So bedeutet `PoolQC = NaN` „kein Pool“ und nicht „unbekannt“.
+
+Lade die Daten ohne manuellen Download über `sklearn.datasets.fetch_openml("house_prices", as_frame=True)`. Das Notebook enthält ein Beispiel.
+
+## 💡 Empfohlenes Vorgehen
+1. Untersuche zuerst alle Spalten. Trenne numerische und kategoriale Merkmale und innerhalb der kategorialen Merkmale echte nominale von **ordinalen** Qualitätsstufen wie `Ex > Gd > TA > Fa > Po`. Dokumentiere strukturell bedeutsame fehlende Werte.
+2. Erstelle einen `ColumnTransformer`: Imputation und Skalierung numerischer Spalten, Imputation und One-Hot-Kodierung nominaler Spalten sowie **ordinale Kodierung** der Qualitätsmerkmale in richtiger Reihenfolge.
+3. Verbinde alles mit einem Modell in einer `Pipeline`. Imputation, Kodierung und Skalierung müssen innerhalb der Pipeline liegen, damit sie in jedem CV-Fold neu angepasst werden und kein Datenleck entsteht.
+4. Erzeuge abgeleitete Merkmale wie Gesamtwohnfläche, Alter beim Verkauf, Gesamtzahl der Bäder oder ein Garagen-Flag. Füge sie über einen eigenen Transformer oder `FunctionTransformer` innerhalb der Pipeline ein.
+5. Da `SalePrice` rechtsschief ist, untersuche `TransformedTargetRegressor` für eine methodisch korrekte Log-Transformation der Zielvariable.
+6. Vergleiche per `cross_val_score` die Median-Baseline, ein Modell nur mit numerischen Merkmalen und die vollständige Pipeline. Zeige, dass jede zusätzliche Komplexität einen messbaren Nutzen besitzt.
+
+## 🏁 Erfolgskriterien
+- Ein einzelnes `Pipeline`-/`ColumnTransformer`-Objekt, das den rohen DataFrame **ohne manuelle Vorverarbeitung außerhalb der Pipeline** in Vorhersagen umwandelt
+- Ordinale Spalten in echter Reihenfolge kodiert und strukturell fehlende Werte bewusst behandelt; je Entscheidung ein Begründungssatz
+- Mindestens drei innerhalb der Pipeline erzeugte Merkmale
+- Kreuzvalidierter RMSE auf **log(SalePrice)** für Baseline, rein numerisches Modell und vollständige Pipeline, wobei das Engineering eine Verbesserung zeigt
+- Kurzer Absatz dazu, welches erzeugte Merkmal am wichtigsten war und woran du dies erkennst
+
+## 🔗 Nützliche Quellen
+- [Anleitung zu ColumnTransformer und gemischten Datentypen](https://scikit-learn.org/stable/auto_examples/compose/plot_column_transformer_mixed_types.html)
+- [Dokumentation zu TransformedTargetRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.compose.TransformedTargetRegressor.html)
+- Suchbegriffe: *data leakage in cross-validation*, *ordinal vs one-hot encoding*, *FunctionTransformer*, *custom sklearn transformers (`BaseEstimator`, `TransformerMixin`)*

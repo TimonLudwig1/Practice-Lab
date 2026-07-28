@@ -59,3 +59,69 @@ jupyter notebook notebooks/solution_template.ipynb
 - [scikit-learn: Getting Started](https://scikit-learn.org/stable/getting_started.html)
 - [Underfitting vs Overfitting](https://scikit-learn.org/stable/auto_examples/model_selection/plot_underfitting_overfitting.html)
 - [StatQuest: Linear Regression (video)](https://www.youtube.com/watch?v=nk2CQITm_eo)
+
+---
+
+# Deutsche Übersetzung
+
+# 03 — Deine erste Regression: Immobilienpreise in Kalifornien 🏠
+
+Schwierigkeit: 🟢 Einsteiger | Thema: Regression mit tabellarischen Daten (scikit-learn)
+
+## 🎯 Projektziel
+Erstelle, bewerte und interpretiere dein erstes vollständiges Regressionsmodell zur Vorhersage mittlerer Immobilienpreise in kalifornischen Bezirken.
+
+## 📚 Das lernst du
+- Den grundlegenden ML-Ablauf: **aufteilen → trainieren → vorhersagen → bewerten**
+- Warum Trainings- und Testdaten getrennt werden müssen
+- `LinearRegression` und `DecisionTreeRegressor` aus scikit-learn
+- Die Regressionsmetriken MAE, RMSE und R² und ihre jeweilige Aussage
+- Interpretation von Modellkoeffizienten sowie den Unterschied zwischen Korrelation und Kausalität
+- Die Bedeutung eines Baseline-Modells
+
+## 🗂️ Beschreibung des Datensatzes
+**California Housing** aus der Volkszählung von 1990 enthält 20.640 Bezirke mit acht numerischen Merkmalen, darunter mittleres Einkommen, Alter der Häuser, durchschnittliche Zimmerzahl, Bevölkerung sowie Längen- und Breitengrad. Die Zielvariable ist der mittlere Immobilienwert in Einheiten von 100.000 US-Dollar. Der Datensatz ist in scikit-learn enthalten:
+
+```python
+from sklearn.datasets import fetch_california_housing
+data = fetch_california_housing(as_frame=True)
+df = data.frame
+```
+
+## 🚀 Erste Schritte
+```bash
+cd 03_beginner_california_housing_regression
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+jupyter notebook notebooks/solution_template.ipynb
+```
+
+## 📋 Schritt-für-Schritt-Anleitung
+1. **Laden und untersuchen** — Verwende `.describe()` und erstelle Histogramme der Zielvariable und von `MedInc`. *Warum:* Du erkennst, dass die Zielvariable bei 5,0 beziehungsweise 500.000 US-Dollar gedeckelt ist. Solche Besonderheiten beeinflussen die Interpretation der Fehler.
+2. **Merkmale und Zielvariable sowie Trainings- und Testdaten aufteilen** — Erzeuge `X` und `y` und verwende `train_test_split(X, y, test_size=0.2, random_state=42)`. *Warum:* Der Testsatz simuliert unbekannte Daten und sollte erst am Ende verwendet werden. `random_state` macht Ergebnisse reproduzierbar.
+3. **Baseline erstellen** — Verwende mit `DummyRegressor` ein Modell, das stets den Mittelwert der Trainingsdaten vorhersagt. *Warum:* Eine Metrik ist nur im Vergleich aussagekräftig; ein RMSE von 0,74 ist erst dann gut, wenn ein einfaches Modell beispielsweise 1,15 erreicht.
+4. **Lineare Regression trainieren** — Führe `model.fit(X_train, y_train)` aus, erzeuge Vorhersagen für den Testsatz und berechne MAE, RMSE und R². MAE ist der mittlere Fehler in der Einheit der Zielvariable, RMSE gewichtet große Fehler stärker und R² beschreibt den erklärten Varianzanteil.
+5. **Koeffizienten betrachten** — Ordne `model.coef_` den Merkmalen zu. Da die Merkmale unterschiedliche Skalen besitzen, sind Rohkoeffizienten nicht direkt miteinander vergleichbar.
+6. **DecisionTreeRegressor trainieren** — Verwende zunächst die Standardeinstellungen und anschließend `max_depth=8`. Vergleiche jeweils die Ergebnisse auf Trainings- und Testdaten. *Warum:* Der Standardbaum erreicht fast perfekte Trainingswerte, aber schwächere Testwerte – ein sichtbares Beispiel für Overfitting.
+7. **Vorhersagen und tatsächliche Werte darstellen** — Erstelle ein Streudiagramm von `y_test` und den Vorhersagen sowie eine diagonale Linie für perfekte Vorhersagen. *Warum:* Die Grafik zeigt Muster, die einzelne Kennzahlen verbergen, etwa den Effekt der Preisobergrenze.
+8. **Fazit formulieren** — Entscheide, welches Modell du einsetzen würdest, und beschreibe den erwarteten Fehler in US-Dollar.
+
+## ✅ Checkliste zum Abschluss
+- [ ] Ich kann erklären, warum ein Testsatz zurückgehalten wird.
+- [ ] Ich habe eine Dummy-Baseline erstellt und übertroffen.
+- [ ] Ich habe MAE, RMSE und R² berechnet und kann jede Metrik erklären.
+- [ ] Ich habe Overfitting anhand des Abstands zwischen Trainings- und Testergebnis beobachtet.
+- [ ] Ich habe Vorhersagen gegen tatsächliche Werte aufgetragen und den Effekt der Obergrenze erkannt.
+- [ ] Ich kann erklären, warum ein großer Rohkoeffizient nicht automatisch ein wichtiges Merkmal bezeichnet.
+
+## 💡 Hinweise und Tipps
+- Berechne den RMSE mit `mean_squared_error(y_true, y_pred)` und anschließend `np.sqrt(...)` oder mit `root_mean_squared_error` in neueren scikit-learn-Versionen.
+- Eine gut lesbare Koeffiziententabelle erhältst du mit `pd.Series(model.coef_, index=X.columns).sort_values()`.
+- Zeichne die Diagonale im Ist-gegen-Prognose-Diagramm mit `ax.plot([0, 5], [0, 5], "r--")`.
+- Die Zielvariable ist in Einheiten von 100.000 US-Dollar angegeben. Ein MAE von 0,53 entspricht daher einem mittleren Fehler von etwa 53.000 US-Dollar.
+- Optimiere den Baum nicht endlos; Ziel dieses Labs ist es, den Unterschied zwischen Trainings- und Testleistung zu erkennen.
+
+## 🔗 Weiterführende Informationen
+- [scikit-learn: Getting Started](https://scikit-learn.org/stable/getting_started.html)
+- [Underfitting vs Overfitting](https://scikit-learn.org/stable/auto_examples/model_selection/plot_underfitting_overfitting.html)
+- [StatQuest: Linear Regression (Video)](https://www.youtube.com/watch?v=nk2CQITm_eo)
