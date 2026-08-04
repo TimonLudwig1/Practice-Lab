@@ -41,8 +41,8 @@ Some projects also provide an executable demo class documented in their
 
 ## Current environment note
 
-No JDK is installed in the current workspace environment. Files can therefore be
-created and statically reviewed here, but compilation and JUnit execution require
-a Java 21 installation.
+A newer JDK and Maven are now available in the workspace. The projects still
+target Java 21 bytecode through `maven.compiler.release`, and Maven compilation
+plus JUnit execution are part of the module validation workflow.
 
 See `PROGRESS.md` for exact migration status.
